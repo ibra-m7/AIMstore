@@ -38,7 +38,8 @@ class AppServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('ai', function (Request $request) {
-            return Limit::perMinute(20)->by($request->ip());
+            return Limit::perMinute(\App\Support\AiSettings::rateLimitPerMinute())
+                ->by($request->ip());
         });
 
         RateLimiter::for('admin-ai-copy', function (Request $request) {

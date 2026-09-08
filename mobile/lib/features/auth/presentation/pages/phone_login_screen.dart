@@ -8,6 +8,9 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/gcc_phone.dart';
 import '../../../../core/widgets/brand_logo.dart';
 import '../../../../core/widgets/gcc_phone_field.dart';
+import '../../../content_pages/data/services/content_pages_api.dart';
+import '../../../content_pages/presentation/content_page_nav.dart';
+import '../../../onboarding/data/startup_api.dart';
 import '../../data/services/phone_auth_api.dart';
 import '../auth_flow.dart';
 import '../widgets/auth_widgets.dart';
@@ -28,6 +31,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen>
   final _phoneCtrl = TextEditingController();
   String _countryCode = GccPhone.defaultCode;
   bool _isLoading = false;
+  List<ContentPage> _authTermPages = const [];
 
   late final AnimationController _animCtrl;
   late final Animation<double> _fadeAnim;
@@ -36,6 +40,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen>
   @override
   void initState() {
     super.initState();
+    _countryCode = GccPhone.defaultCode;
     _animCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 780),
@@ -46,6 +51,30 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic));
     _animCtrl.forward();
+    _loadAuthTerms();
+    _ensureStartupPhoneConfig();
+  }
+
+  Future<void> _ensureStartupPhoneConfig() async {
+    try {
+      await StartupApi.instance.fetch();
+    } catch (_) {}
+    if (!mounted) return;
+    final next = GccPhone.defaultCode;
+    if (next != _countryCode &&
+        GccPhone.countries.any((country) => country.code == next)) {
+      setState(() => _countryCode = next);
+    } else if (!GccPhone.countries.any((c) => c.code == _countryCode)) {
+      setState(() => _countryCode = GccPhone.defaultCode);
+    }
+  }
+
+  Future<void> _loadAuthTerms() async {
+    final pages = await ContentPagesApi.instance.list(
+      placement: ContentPagePlacement.authTerms,
+    );
+    if (!mounted) return;
+    setState(() => _authTermPages = pages);
   }
 
   @override
@@ -192,8 +221,9 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen>
                                         'سنرسل لك رمز تحقق عبر واتساب',
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                          fontSize: 11,
+                                          fontSize: 10.5,
                                           height: 1.35,
+                                          fontWeight: FontWeight.w400,
                                           color: AppTheme.mutedText
                                               .withValues(alpha: 0.95),
                                         ),
@@ -213,6 +243,50 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen>
                               ),
                               const SizedBox(height: 14),
                               const AuthTrustRow(),
+                              if (_authTermPages.isNotEmpty) ...[
+                                const SizedBox(height: 14),
+                                Wrap(
+                                  alignment: WrapAlignment.center,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  spacing: 8,
+                                  runSpacing: 6,
+                                  children: [
+                                    for (var i = 0;
+                                        i < _authTermPages.length;
+                                        i++) ...[
+                                      if (i > 0)
+                                        Text(
+                                          '·',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.mutedText
+                                                .withValues(alpha: 0.7),
+                                          ),
+                                        ),
+                                      GestureDetector(
+                                        onTap: () => openContentPage(
+                                          context,
+                                          _authTermPages[i],
+                                        ),
+                                        child: Text(
+                                          _authTermPages[i].buttonLabel,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppTheme.primaryDark
+                                                .withValues(alpha: 0.95),
+                                            decoration:
+                                                TextDecoration.underline,
+                                            decorationColor: AppTheme
+                                                .primaryDark
+                                                .withValues(alpha: 0.45),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
                               const SizedBox(height: 18),
                               AuthTextLink(
                                 label: AppStrings.guestBrowse,

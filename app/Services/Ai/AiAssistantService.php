@@ -23,17 +23,11 @@ class AiAssistantService
     ) {}
 
     /**
-     * @return array{enabled: bool, guests_allowed: bool, name: string, welcome: string, max_products: int}
+     * @return array<string, mixed>
      */
     public function config(): array
     {
-        return [
-            'enabled' => AiSettings::enabled(),
-            'guests_allowed' => AiSettings::guestsAllowed(),
-            'name' => AiSettings::name(),
-            'welcome' => AiSettings::welcome(),
-            'max_products' => AiSettings::maxProducts(),
-        ];
+        return AiSettings::mobileConfig();
     }
 
     /**
@@ -75,7 +69,9 @@ class AiAssistantService
             : $message;
 
         try {
-            $raw = $this->gemini->generateJson($system, $userPrompt, $history);
+            $raw = AiSettings::fastMode()
+                ? $this->gemini->generateJsonFast($system, $userPrompt, $history)
+                : $this->gemini->generateJson($system, $userPrompt, $history);
         } catch (RuntimeException $e) {
             Log::warning('ai.chat.gemini', ['reason' => $e->getMessage()]);
             throw new AiAssistantException('تعذّر الرد الآن. حاول بعد لحظات.', 502);
@@ -98,13 +94,19 @@ class AiAssistantService
             'suggested_product_ids' => $products->pluck('id')->values()->all(),
         ]);
 
-        return [
+        $payload = [
             'conversation_id' => $conversation->id,
             'guest_token' => $guestToken,
             'reply' => $parsed['reply'],
             'products' => ProductResource::collection($products)->resolve(),
             'name' => AiSettings::name(),
         ];
+
+        if ($parsed['action'] !== null) {
+            $payload['action'] = $parsed['action'];
+        }
+
+        return $payload;
     }
 
     private function normalizeGuestToken(?string $guestToken, ?User $user): ?string
@@ -154,7 +156,7 @@ class AiAssistantService
     {
         return $conversation->messages()
             ->latest('id')
-            ->take(10)
+            ->take(AiSettings::historyLimit())
             ->get()
             ->reverse()
             ->values()
@@ -170,46 +172,49 @@ class AiAssistantService
      */
     private function candidateProducts(string $message, ?string $productId): Collection
     {
-        $relations = ['images', 'primaryImage', 'category', 'complementaryProducts.images', 'complementaryProducts.primaryImage'];
+        $limit = AiSettings::catalogLimit();
+        $searchLimit = (int) max(8, min(24, (int) round($limit * 0.5)));
+        $featuredLimit = (int) max(4, min(12, (int) round($limit * 0.25)));
+        $recentLimit = (int) max(4, min(16, (int) round($limit * 0.35)));
+
+        // خفيف للبرومبت — الصور تُجلب بعد اختيار المعرّفات.
+        $light = ['category:id,name'];
 
         $matched = Product::query()
             ->active()
-            ->with($relations)
+            ->with($light)
             ->search($message)
             ->orderByDesc('is_featured')
-            ->limit(24)
-            ->get();
+            ->limit($searchLimit)
+            ->get(['id', 'name', 'price', 'discount_price', 'category_id', 'is_featured', 'keywords', 'is_active']);
 
         $featured = Product::query()
             ->active()
-            ->with($relations)
+            ->with($light)
             ->featured()
-            ->limit(12)
-            ->get();
+            ->limit($featuredLimit)
+            ->get(['id', 'name', 'price', 'discount_price', 'category_id', 'is_featured', 'keywords', 'is_active']);
 
         $recent = Product::query()
             ->active()
-            ->with($relations)
+            ->with($light)
             ->latest('id')
-            ->limit(20)
-            ->get();
+            ->limit($recentLimit)
+            ->get(['id', 'name', 'price', 'discount_price', 'category_id', 'is_featured', 'keywords', 'is_active']);
 
         $priority = collect();
         if ($productId) {
-            $source = Product::query()->active()->with($relations)->find($productId);
+            $source = Product::query()->active()->with($light)->find($productId, ['id', 'name', 'price', 'discount_price', 'category_id', 'is_featured', 'keywords', 'is_active']);
             if ($source) {
                 $priority = $priority->push($source);
                 $priority = $priority->concat(
-                    $source->complementaryProducts->where('is_active', true)
-                );
-                $priority = $priority->concat(
                     Product::query()
                         ->active()
-                        ->with($relations)
+                        ->with($light)
                         ->where('category_id', $source->category_id)
                         ->where('id', '!=', $source->id)
                         ->limit(8)
-                        ->get()
+                        ->get(['id', 'name', 'price', 'discount_price', 'category_id', 'is_featured', 'keywords', 'is_active'])
                 );
             }
         }
@@ -219,7 +224,7 @@ class AiAssistantService
             ->concat($featured)
             ->concat($recent)
             ->unique('id')
-            ->take(60)
+            ->take($limit)
             ->values();
     }
 
@@ -233,16 +238,14 @@ class AiAssistantService
         }
 
         $lines = $candidates->map(function (Product $product) {
-            $keywords = collect($product->keywords ?? [])->take(4)->implode('، ');
             $category = $product->category?->name ?? 'عام';
 
             return sprintf(
-                '[%d] %s | %.2f '.AppStrings::CURRENCY.' | %s%s',
+                '[%d] %s | %.2f '.AppStrings::CURRENCY.' | %s',
                 $product->id,
                 $product->name,
                 (float) $product->effective_price,
-                $category,
-                $keywords !== '' ? ' | '.$keywords : ''
+                $category
             );
         })->implode("\n");
 
@@ -255,11 +258,13 @@ class AiAssistantService
 
         return <<<TXT
 صيغة الرد إلزامية: أرجعي JSON فقط بهذا الشكل:
-{"reply":"نص عربي قصير وواضح","product_ids":[1,2,3]}
+{"reply":"نص عربي قصير وواضح","product_ids":[1,2,3],"action":null}
 - reply للعميل فقط، بدون ذكر المعرّفات أو JSON.
-- product_ids أرقام من الكتالوج المرفق فقط، بحد أقصى {$max} منتجات.
-- عندما يطلب العميل منتجات أو يصف احتياجاً، أرجعي عدة منتجات مناسبة في شبكة عرض (2 إلى {$max}).
+- product_ids أرقام من الكتالوج المرفق فقط، بحد أقصى {$max} منتجات. اتركها [] إن لم يطلب العميل منتجات.
+- action اختياري فقط عند طلب صريح:
+  {"type":"clear_cart"} أو {"type":"navigate","target":"home|categories|cart|profile|orders|search|notifications"} أو {"type":"show_order","order_number":"123"}
 - لا تختلقي معرّفات غير موجودة في القائمة.
+- لا تملئي product_ids لمجرد التحية أو الأسئلة العامة.
 TXT;
     }
 
@@ -271,7 +276,7 @@ TXT;
     }
 
     /**
-     * @return array{reply: string, product_ids: list<int>}
+     * @return array{reply: string, product_ids: list<int>, action: array<string, mixed>|null}
      */
     private function parseReply(string $raw): array
     {
@@ -294,6 +299,22 @@ TXT;
             }
         }
 
+        $action = null;
+        if (is_array($data) && isset($data['action']) && is_array($data['action'])) {
+            $type = trim((string) ($data['action']['type'] ?? ''));
+            if (in_array($type, ['clear_cart', 'navigate', 'show_order'], true)) {
+                $action = [
+                    'type' => $type,
+                    'target' => isset($data['action']['target'])
+                        ? trim((string) $data['action']['target'])
+                        : null,
+                    'order_number' => isset($data['action']['order_number'])
+                        ? trim((string) $data['action']['order_number'])
+                        : null,
+                ];
+            }
+        }
+
         if ($reply === '') {
             $reply = 'تفضل هذه اختيارات من متجرنا، ويمكنك فتح أي منتج للتفاصيل.';
         }
@@ -301,6 +322,7 @@ TXT;
         return [
             'reply' => $reply,
             'product_ids' => array_values(array_unique($ids)),
+            'action' => $action,
         ];
     }
 
@@ -312,38 +334,24 @@ TXT;
     private function resolveProducts(array $ids, Collection $candidates, string $message): Collection
     {
         $max = AiSettings::maxProducts();
-        $allowed = $candidates->keyBy('id');
+        $wanted = collect($ids)->unique()->filter()->values();
 
-        $picked = collect($ids)
-            ->unique()
-            ->map(fn (int $id) => $allowed->get($id))
+        // لا تملأ منتجات تلقائياً إلا إذا أعاد النموذج معرّفات صريحة.
+        if ($wanted->isEmpty()) {
+            return collect();
+        }
+
+        $products = Product::query()
+            ->active()
+            ->with(['images', 'primaryImage', 'category'])
+            ->whereIn('id', $wanted->all())
+            ->get()
+            ->keyBy('id');
+
+        return $wanted
+            ->map(fn ($id) => $products->get((int) $id))
             ->filter()
+            ->take($max)
             ->values();
-
-        if ($picked->isEmpty() && $ids !== []) {
-            $picked = Product::query()
-                ->active()
-                ->with(['images', 'primaryImage', 'category'])
-                ->whereIn('id', $ids)
-                ->get();
-        }
-
-        if ($picked->isEmpty() && $this->looksLikeProductQuery($message)) {
-            $picked = $candidates->take($max);
-        }
-
-        return $picked->take($max)->values();
-    }
-
-    private function looksLikeProductQuery(string $message): bool
-    {
-        $needles = ['منتج', 'منظف', 'عرض', 'سعر', 'أبحث', 'ابي', 'أبي', 'أريد', 'وريني', 'اقترح', 'خصم', 'سلة'];
-        foreach ($needles as $needle) {
-            if (mb_stripos($message, $needle) !== false) {
-                return true;
-            }
-        }
-
-        return mb_strlen(trim($message)) > 12;
     }
 }

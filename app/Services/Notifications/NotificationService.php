@@ -110,6 +110,36 @@ class NotificationService
         );
     }
 
+    public function notifyUser(
+        User $user,
+        string $title,
+        string $body,
+        NotificationType $type = NotificationType::General,
+        array $data = [],
+        ?bool $push = null,
+    ): void {
+        $payload = array_merge([
+            'type' => $type->value,
+        ], $data);
+
+        $this->deliver(
+            $user,
+            $title,
+            $body,
+            $type,
+            $payload,
+            push: $push ?? (bool) $user->notifications_enabled,
+        );
+    }
+
+    public function notifyCustomersGeneral(
+        string $title,
+        string $body,
+        ?User $author = null,
+    ): NotificationCampaign {
+        return $this->broadcast($title, $body, NotificationType::General, $author);
+    }
+
     public function broadcast(
         string $title,
         string $body,

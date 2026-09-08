@@ -7,6 +7,7 @@ use App\Models\OnboardingSlide;
 use App\Models\SplashScreen;
 use App\Support\ApiResponse;
 use App\Support\Media;
+use App\Support\Phone;
 use Illuminate\Http\JsonResponse;
 
 class StartupController extends Controller
@@ -31,6 +32,7 @@ class StartupController extends Controller
         return ApiResponse::success('إعدادات البداية', [
             'splash' => $splash?->toStartupPayload(),
             'onboarding' => $slides,
+            'phone' => Phone::startupPhonePayload(),
         ]);
     }
 }

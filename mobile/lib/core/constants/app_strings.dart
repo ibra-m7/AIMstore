@@ -35,6 +35,7 @@ abstract class AppStrings {
   // ── Bottom Navigation ──────────────────────────────────────────────────────
   static const navHome = 'الرئيسية';
   static const navCategories = 'الأقسام';
+  static const navCart = 'السلة';
   static const navAssistant = 'المساعد';
   static const navProfile = 'حسابي';
 
@@ -271,6 +272,7 @@ abstract class AppStrings {
   // ── Product ────────────────────────────────────────────────────────────────
   static const productAddToCart = 'أضف للسلة';
   static const productOutOfStock = 'نفد المخزون';
+  static const productNoLongerAvailable = 'لم يعد متوفر هذا المنتج';
   static const productAiTips = 'نصائح المساعد الذكي';
   static const productDescription = 'وصف المنتج';
   static const productUsage = 'طريقة الاستخدام';

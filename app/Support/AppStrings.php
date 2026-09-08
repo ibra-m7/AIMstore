@@ -135,6 +135,16 @@ final class AppStrings
 
     public const NAV_PAGES = 'الصفحات';
 
+    public const ADD_PAGE = 'إضافة صفحة';
+
+    public const EDIT_PAGE = 'تعديل الصفحة';
+
+    public const PAGE_CREATED = 'تم إضافة الصفحة بنجاح.';
+
+    public const PAGE_UPDATED = 'تم تحديث الصفحة بنجاح.';
+
+    public const PAGE_DELETED = 'تم حذف الصفحة بنجاح.';
+
     public const NAV_DYNAMIC_PAGES = 'صفحات ترويجية';
 
     public const ADD_DYNAMIC_PAGE = 'إضافة صفحة ترويجية';

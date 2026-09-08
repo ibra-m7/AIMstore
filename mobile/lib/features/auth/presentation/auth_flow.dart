@@ -129,8 +129,8 @@ class _GuestLoginSheet extends StatelessWidget {
                 const Text(
                   AppStrings.guestLoginRequiredTitle,
                   style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
                     color: AppTheme.darkText,
                   ),
                 ),
@@ -139,26 +139,30 @@ class _GuestLoginSheet extends StatelessWidget {
                   message,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 14.5,
-                    height: 1.65,
+                    fontSize: 13.5,
+                    height: 1.6,
+                    fontWeight: FontWeight.w400,
                     color: AppTheme.mutedText,
                   ),
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
-                  height: 52,
+                  height: 46,
                   child: FilledButton(
                     onPressed: () => Navigator.pop(context, true),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppTheme.primaryDark,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
                     child: const Text(
                       AppStrings.guestLoginCta,
-                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ),
@@ -168,7 +172,8 @@ class _GuestLoginSheet extends StatelessWidget {
                   child: const Text(
                     AppStrings.guestBrowse,
                     style: TextStyle(
-                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
                       color: AppTheme.mutedText,
                     ),
                   ),

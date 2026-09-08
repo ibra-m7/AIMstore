@@ -23,7 +23,7 @@ class PriceLine extends StatelessWidget {
     this.priceSize = 14,
     this.currencySize = 0,
     this.maxHeight,
-    this.alignment = AlignmentDirectional.centerEnd,
+    this.alignment = AlignmentDirectional.centerStart,
     this.swapPrices = false,
   });
 
@@ -63,7 +63,7 @@ class PriceLine extends StatelessWidget {
       final integer = row * 0.90;
       return (
         integer: integer,
-        decimal: integer * 0.42,
+        decimal: integer * 0.62,
         currency: currencySize > 0 ? currencySize : integer * 0.72,
         original: integer * 0.48,
         numberGap: 1,
@@ -76,7 +76,7 @@ class PriceLine extends StatelessWidget {
     final integer = base * 1.48;
     return (
       integer: integer,
-      decimal: base * 0.55,
+      decimal: base * 0.72,
       currency: currencySize > 0 ? currencySize : integer * 0.72,
       original: base * 0.64,
       numberGap: 1,
@@ -87,7 +87,8 @@ class PriceLine extends StatelessWidget {
 
   TextStyle _priceStyle({
     required double size,
-    FontWeight weight = FontWeight.w800,
+    FontWeight weight = FontWeight.w700,
+    double letterSpacing = 0,
   }) {
     return TextStyle(
       fontFamily: _priceFont,
@@ -95,42 +96,36 @@ class PriceLine extends StatelessWidget {
       fontWeight: weight,
       color: color,
       height: 1,
+      letterSpacing: letterSpacing,
     );
   }
 
-  Widget _ltrText(
-    String value, {
-    required TextStyle style,
-  }) {
-    return Text(
-      value,
-      textDirection: TextDirection.ltr,
-      style: style,
-    );
-  }
-
-  /// 6,00 — كل جزء Widget مستقل حتى لا تعكس خوارزمية RTL الفاصلة.
+  /// 13,12 — Text.rich واحد حتى تبقى أرقام الجزء الصحيح متلاصقة والفاصلة واضحة.
   Widget _buildAmount() {
     final parts = _splitPrice(price);
     final sizes = _sizes;
-    final decimalStyle =
-        _priceStyle(size: sizes.decimal, weight: FontWeight.w700);
+    final integerStyle = _priceStyle(
+      size: sizes.integer,
+      weight: FontWeight.w700,
+      letterSpacing: -0.8,
+    );
+    final decimalStyle = _priceStyle(
+      size: sizes.decimal,
+      weight: FontWeight.w600,
+    );
 
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
+    return Text.rich(
+      TextSpan(
         children: [
-          _ltrText(
-            parts.integer,
-            style: _priceStyle(size: sizes.integer, weight: FontWeight.w800),
-          ),
-          _ltrText('\u200E,', style: decimalStyle),
-          _ltrText(parts.fraction, style: decimalStyle),
+          TextSpan(text: parts.integer, style: integerStyle),
+          TextSpan(text: ',', style: decimalStyle.copyWith(letterSpacing: 0)),
+          TextSpan(text: parts.fraction, style: decimalStyle),
         ],
       ),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+      overflow: TextOverflow.clip,
+      softWrap: false,
     );
   }
 
@@ -179,6 +174,7 @@ class PriceLine extends StatelessWidget {
             decorationColor: _originalColor,
             fontWeight: FontWeight.w500,
             height: 1,
+            letterSpacing: -0.6,
           ),
         ),
       ],
@@ -225,7 +221,11 @@ class PriceLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final content = _buildContent();
+    final content = FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: alignment,
+      child: _buildContent(),
+    );
 
     if (maxHeight == null) {
       return Align(alignment: alignment, child: content);

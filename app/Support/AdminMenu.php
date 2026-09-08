@@ -28,6 +28,7 @@ final class AdminMenu
                     ['label' => AppStrings::NAV_HOME_SECTIONS, 'route' => 'admin.home-sections.index', 'icon' => 'bi-house'],
                     ['label' => AppStrings::NAV_BANNERS, 'route' => 'admin.banners.index', 'icon' => 'bi-image'],
                     ['label' => AppStrings::NAV_DYNAMIC_PAGES, 'route' => 'admin.dynamic-pages.index', 'icon' => 'bi-layout-text-window-reverse'],
+                    ['label' => AppStrings::NAV_PAGES, 'route' => 'admin.pages.index', 'icon' => 'bi-file-text'],
                     ['label' => AppStrings::NAV_SPLASH, 'route' => 'admin.splash-screens.index', 'icon' => 'bi-phone'],
                     ['label' => AppStrings::NAV_ONBOARDING, 'route' => 'admin.onboarding.index', 'icon' => 'bi-collection'],
                 ],

@@ -10,6 +10,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_scale.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_count_badge.dart';
 import '../../../../core/widgets/app_network_image.dart';
@@ -35,6 +36,7 @@ import '../manager/orders_cubit.dart';
 import '../widgets/header_search_bar.dart';
 import '../widgets/main_bottom_nav_bar.dart';
 import '../widgets/main_shell_scope.dart';
+import '../widgets/mint_to_white_blend.dart';
 import '../widgets/price_line.dart';
 import '../widgets/product_card.dart';
 import '../widgets/auto_scroll_horizontal_list.dart';
@@ -454,13 +456,19 @@ class _HomeMagicHeaderDelegate extends SliverPersistentHeaderDelegate {
         final blendH = lerpDouble(bannerFadeHeight, 2, p)!;
         final blendOpacity = (1.0 - p).clamp(0.0, 1.0);
         final searchTop = lerpDouble(topPad + 8 + logoRow + 6, topPad + 8, p)!;
-        // تضييق الحقل من اليسار (خصوصاً فوق البانر).
-        final searchLeft = lerpDouble(12, 56, p)!;
-        final searchRight = lerpDouble(12, 12, p)!;
+        // مع بانر: تضييق من اليسار فوق الصورة. بدون بانر: عند التمرير مثل الأقسام (16).
+        final searchLeft = _hasBanner
+            ? lerpDouble(12, 56, p)!
+            : lerpDouble(12, 16, p)!;
+        final searchRight = _hasBanner
+            ? 12.0
+            : lerpDouble(12, 16, p)!;
         final logoScale = lerpDouble(1.0, 0.72, p)!;
+        // بدون بانر: الوضع الموسّع كالسابق، والمنكمش بأسلوب الأقسام.
+        final noBannerCollapsed = !_hasBanner && p > 0.35;
 
         return AnnotatedRegion<SystemUiOverlayStyle>(
-          value: p > 0.55
+          value: (_hasBanner && p > 0.55)
               ? SystemUiOverlayStyle.light.copyWith(
                   statusBarColor: Colors.transparent,
                 )
@@ -538,18 +546,73 @@ class _HomeMagicHeaderDelegate extends SliverPersistentHeaderDelegate {
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [
-                            _homeAppBarColor.withValues(alpha: barOpacity),
-                            _homeAppBarColor.withValues(
-                              alpha: barOpacity * 0.85,
-                            ),
-                            _homeAppBarColor.withValues(alpha: 0),
-                          ],
+                          colors: _hasBanner
+                              ? [
+                                  _homeAppBarColor.withValues(
+                                    alpha: barOpacity,
+                                  ),
+                                  _homeAppBarColor.withValues(
+                                    alpha: barOpacity * 0.85,
+                                  ),
+                                  _homeAppBarColor.withValues(alpha: 0),
+                                ]
+                              : [
+                                  // بدون بانر: خلفية مثل الأقسام، تثبت مع التمرير.
+                                  Color.lerp(
+                                    _homeAppBarColor.withValues(
+                                      alpha: barOpacity,
+                                    ),
+                                    AppTheme.background,
+                                    p,
+                                  )!,
+                                  Color.lerp(
+                                    _homeAppBarColor.withValues(
+                                      alpha: barOpacity * 0.85,
+                                    ),
+                                    AppTheme.background,
+                                    p,
+                                  )!,
+                                  Color.lerp(
+                                    _homeAppBarColor.withValues(alpha: 0),
+                                    AppTheme.background.withValues(
+                                      alpha: 0,
+                                    ),
+                                    p,
+                                  )!,
+                                ],
                         ),
                       ),
                     ),
                   ),
                 ),
+                // بدون بانر عند التمرير: طبقة خلفية أقسام كاملة.
+                if (!_hasBanner && p > 0.02)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Opacity(
+                        opacity: Curves.easeOut.transform(p),
+                        child: const ColoredBox(color: AppTheme.background),
+                      ),
+                    ),
+                  ),
+                // تدرّج من الأسفل مثل صفحة الأقسام.
+                if (!_hasBanner && p > 0.12)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: lerpDouble(0, 28, p)!,
+                    child: IgnorePointer(
+                      child: Opacity(
+                        opacity: Curves.easeOut.transform(
+                          ((p - 0.12) / 0.88).clamp(0.0, 1.0),
+                        ),
+                        child: MintToWhiteBlend(
+                          height: lerpDouble(0, 28, p)!,
+                        ),
+                      ),
+                    ),
+                  ),
                 Positioned(
                   top: topPad + 2,
                   left: 10,
@@ -593,14 +656,19 @@ class _HomeMagicHeaderDelegate extends SliverPersistentHeaderDelegate {
                   height: searchH,
                   child: HeaderSearchRow(
                     onSearchTap: onSearchTap,
-                    onImage: p > 0.4,
+                    onImage: _hasBanner && p > 0.4,
                     chromeVisibility: chrome,
-                    // فوق البانر: زجاجي + نصف قطر أخف.
-                    glassAmount: Curves.easeOut.transform(p),
-                    searchBorderRadius: lerpDouble(14, 10, p)!,
+                    // بدون بانر + تمرير: حقل صلب بنص التلميح الصغير القوي كما في الوضع الموسّع.
+                    glassAmount: noBannerCollapsed
+                        ? 0
+                        : Curves.easeOut.transform(p),
+                    searchBorderRadius: _hasBanner
+                        ? lerpDouble(14, 10, p)!
+                        : 14,
+                    glassMode: HeaderSearchGlassMode.home,
                   ),
                 ),
-                if (p > 0.35)
+                if (_hasBanner && p > 0.35)
                   Positioned(
                     left: 0,
                     right: 0,
@@ -702,10 +770,8 @@ class _CurvedProductCarouselSection extends StatelessWidget {
                                 title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.titleLarge
-                                    ?.copyWith(
-                                      fontSize: scale.s(16),
-                                      fontWeight: FontWeight.w900,
+                                style: AppTextStyles.sectionTitle.copyWith(
+                                      fontSize: scale.s(22),
                                       color: titleColor ?? AppTheme.primaryDark,
                                       height: 1.15,
                                     ),
@@ -1020,9 +1086,8 @@ class _ExploreCategoriesStrip extends StatelessWidget {
                   AppStrings.homeExploreSections,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
+                  style: AppTextStyles.sectionTitle.copyWith(
+                        fontSize: 19,
                         color: AppTheme.darkText,
                       ),
                 ),
@@ -1378,7 +1443,7 @@ class _MainScreenState extends State<MainScreen> {
             ),
             child: Scaffold(
               extendBody: true,
-              resizeToAvoidBottomInset: true,
+              resizeToAvoidBottomInset: false,
               backgroundColor: AppTheme.background,
               body: Stack(
                 fit: StackFit.expand,
@@ -1392,8 +1457,9 @@ class _MainScreenState extends State<MainScreen> {
                     AiMorphFloatingPanel(
                       isOpen: _aiSheetOpen,
                       cubit: _aiCubit!,
+                      // طرف القوس أعمق داخل زر المساعد.
                       bottomOffset:
-                          MediaQuery.paddingOf(context).bottom + 100,
+                          MediaQuery.paddingOf(context).bottom + 46,
                       onDismiss: _closeAiSheet,
                     ),
                 ],

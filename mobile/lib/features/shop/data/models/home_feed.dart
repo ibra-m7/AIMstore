@@ -208,6 +208,13 @@ class PaymentOption {
       iconUrl: (json['icon_url'] as String?) ?? '',
     );
   }
+
+  /// يثبّت «الدفع عند الاستلام» في أول خانة الشبكة مهما تغيّر sort_order.
+  static List<PaymentOption> withCashPinnedFirst(List<PaymentOption> methods) {
+    final cash = methods.where((method) => method.id == 'cash');
+    final others = methods.where((method) => method.id != 'cash');
+    return [...cash, ...others];
+  }
 }
 
 class DeliveryRuleInfo {

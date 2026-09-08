@@ -4,11 +4,12 @@ namespace App\Console\Commands;
 
 use App\Jobs\RefreshProductRecommendations;
 use App\Models\Product;
+use App\Support\AiSettings;
 use Illuminate\Console\Command;
 
 class TrainRecommendationsCommand extends Command
 {
-    protected $signature = 'recommendations:train {--product=} {--limit=80}';
+    protected $signature = 'recommendations:train {--product=} {--limit=}';
 
     protected $description = 'تدريب مساعد Gemini على علاقات التوصية وحسنت ترتيبها';
 
@@ -20,7 +21,11 @@ class TrainRecommendationsCommand extends Command
         if ($productId > 0) {
             $query->where('id', $productId);
         } else {
-            $query->limit(max(1, (int) $this->option('limit')));
+            $limit = $this->option('limit');
+            $limit = ($limit === null || $limit === '')
+                ? AiSettings::trainLimit()
+                : max(1, min(200, (int) $limit));
+            $query->limit($limit);
         }
 
         $ids = $query->pluck('id');

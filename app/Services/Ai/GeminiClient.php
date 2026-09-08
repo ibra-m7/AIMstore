@@ -47,7 +47,7 @@ class GeminiClient
         }
 
         $model = AiSettings::model();
-        $timeout = 20;
+        $timeout = AiSettings::timeoutSeconds();
         $url = 'https://generativelanguage.googleapis.com/v1beta/models/'.$model.':generateContent';
 
         $responses = Http::pool(function (Pool $pool) use ($requests, $apiKey, $url, $timeout) {
@@ -135,7 +135,7 @@ class GeminiClient
 
         $lastError = '';
         $models = $this->modelsToTry($fast);
-        $timeout = $fast ? 20 : 45;
+        $timeout = AiSettings::timeoutSeconds();
 
         foreach ($models as $model) {
             foreach ($this->payloads($system, $contents, $fast) as $payload) {

@@ -9,6 +9,7 @@ import '../../features/auth/presentation/pages/phone_login_screen.dart';
 import '../../features/auth/presentation/pages/profile_screen.dart';
 import '../../features/auth/presentation/pages/register_screen.dart';
 import '../../features/auth/presentation/pages/settings_screen.dart';
+import '../../features/content_pages/presentation/pages/content_page_screen.dart';
 import '../../features/notifications/presentation/pages/notifications_screen.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../../features/onboarding/presentation/pages/splash_screen.dart';
@@ -63,6 +64,7 @@ abstract class AppRouter {
   static const main           = MainScreen.routeName;          // '/main'
   static const profile        = ProfileScreen.routeName;       // '/profile'
   static const accountSettings  = SettingsScreen.routeName;      // '/settings'
+  static const contentPage      = ContentPageScreen.routeName;   // '/content-page'
   static const productDetails = ProductDetailsScreen.routeName;// '/product-details'
   static const checkout       = CheckoutScreen.routeName;      // '/checkout'
   static const invoice        = InvoiceScreen.routeName;       // '/invoice'
@@ -173,6 +175,17 @@ abstract class AppRouter {
           settings,
           direction: _SlideDir.right,
         );
+
+      case contentPage:
+        final contentArgs = settings.arguments;
+        if (contentArgs is ContentPageArgs) {
+          return _slide(
+            ContentPageScreen(args: contentArgs),
+            settings,
+            direction: _SlideDir.right,
+          );
+        }
+        return _errorRoute(settings, 'تعذّر فتح الصفحة — بيانات غير صحيحة');
 
       // ── Product Details ───────────────────────────────────────────────────
       case productDetails:

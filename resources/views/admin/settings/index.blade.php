@@ -218,7 +218,43 @@
 
                 <div class="tab-pane fade {{ $tab === 'privacy' ? 'show active' : '' }}" id="pane-privacy" role="tabpanel" aria-labelledby="tab-privacy" tabindex="0">
                     <h2 class="settings-pane-title">الخصوصية</h2>
-                    <p class="settings-pane-lead mb-4">إدارة أرقام الدخول المباشر إلى التطبيق.</p>
+                    <p class="settings-pane-lead mb-4">إدارة أرقام الدخول المباشر ودول رمز الهاتف في التطبيق.</p>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">دول رمز الهاتف في تسجيل الدخول</label>
+                        <p class="text-muted small mb-2">اختر الدول التي تظهر للمستخدم عند اختيار رمز الدولة. يجب اختيار دولة واحدة على الأقل.</p>
+                        @php
+                            $selectedPhoneCountries = old('phone_allowed_countries', $settings['phone_allowed_countries'] ?? []);
+                            if (! is_array($selectedPhoneCountries)) {
+                                $selectedPhoneCountries = [];
+                            }
+                        @endphp
+                        <div class="row g-2">
+                            @foreach ($phoneCountryCatalog as $code => $meta)
+                                <div class="col-md-6 col-lg-4">
+                                    <label class="form-check border rounded-3 px-3 py-2 h-100">
+                                        <input
+                                            class="form-check-input @error('phone_allowed_countries') is-invalid @enderror @error('phone_allowed_countries.*') is-invalid @enderror"
+                                            type="checkbox"
+                                            name="phone_allowed_countries[]"
+                                            value="{{ $code }}"
+                                            @checked(in_array($code, $selectedPhoneCountries, true))
+                                        >
+                                        <span class="form-check-label">
+                                            {{ $meta['flag'] }} {{ $meta['name'] }}
+                                            <span class="text-muted" dir="ltr">{{ $meta['dial'] }}</span>
+                                        </span>
+                                    </label>
+                                </div>
+                            @endforeach
+                        </div>
+                        @error('phone_allowed_countries')
+                            <div class="text-danger small mt-2">{{ $message }}</div>
+                        @enderror
+                        @error('phone_allowed_countries.*')
+                            <div class="text-danger small mt-2">{{ $message }}</div>
+                        @enderror
+                    </div>
 
                     <x-admin.otp-bypass-phones-picker
                         :phones="old('otp_bypass_phones', $settings['otp_bypass_phones'])"

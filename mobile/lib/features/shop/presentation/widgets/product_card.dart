@@ -65,13 +65,15 @@ class _ProductCardState extends State<ProductCard> {
   static const _cartButtonInset = 6.0;
   static const _cartButtonBottom = 32.0;
 
-  double _compactFooterHeight(AppScale scale, {required bool hasQuantityLabel}) {
+  double _compactFooterHeight(AppScale scale) {
     return scale.s(1) +
-        scale.s(12) +
+        scale.s(13) +
         scale.s(1) +
-        scale.s(15) +
-        (hasQuantityLabel ? scale.s(12) : 0) +
-        scale.s(28) +
+        scale.s(20) +
+        scale.s(2) +
+        scale.s(14) +
+        scale.s(2) +
+        scale.s(34) +
         scale.s(2);
   }
 
@@ -115,7 +117,7 @@ class _ProductCardState extends State<ProductCard> {
                 price: product.effectivePrice,
                 originalPrice: product.hasDiscount ? product.price : null,
                 alignment: AlignmentDirectional.centerStart,
-                priceSize: scale.s(widget.compactFooter ? 17 : 18),
+                priceSize: scale.s(widget.compactFooter ? 21 : 22),
                 maxHeight: priceH,
               ),
             ),
@@ -135,7 +137,7 @@ class _ProductCardState extends State<ProductCard> {
                 product.packDisplayLabel,
                 style: TextStyle(
                   fontSize: scale.s(9),
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                   color: Colors.white,
                   height: 1.1,
                 ),
@@ -187,22 +189,26 @@ class _ProductCardState extends State<ProductCard> {
               height: nameH,
               child: ProductNameText(
                 product.name,
-                baseSize: scale.s(widget.compactFooter ? 12 : 13),
-                maxLines: widget.compactFooter ? 1 : 2,
+                baseSize: scale.s(widget.compactFooter ? 13.5 : 16),
+                fontWeight: widget.compactFooter
+                    ? FontWeight.w400
+                    : FontWeight.w500,
               ),
             ),
-            if (quantityLabel.isNotEmpty) ...[
-              SizedBox(height: scale.s(widget.compactFooter ? 0 : 2)),
+            if (widget.compactFooter || quantityLabel.isNotEmpty) ...[
+              SizedBox(height: scale.s(widget.compactFooter ? 0 : 4)),
               SizedBox(
                 height: quantityH,
-                child: QuantityLabelChip(
-                  product: product,
-                  fontSize: scale.s(widget.compactFooter ? 9 : 10),
-                  compact: true,
-                ),
+                child: quantityLabel.isNotEmpty
+                    ? QuantityLabelChip(
+                        product: product,
+                        fontSize: scale.s(widget.compactFooter ? 12 : 13),
+                        compact: true,
+                      )
+                    : const SizedBox.shrink(),
               ),
             ],
-            SizedBox(height: scale.s(widget.compactFooter ? 0 : 2)),
+            SizedBox(height: scale.s(widget.compactFooter ? 2 : 4)),
             _buildPriceRow(
               scale: scale,
               product: product,
@@ -220,11 +226,10 @@ class _ProductCardState extends State<ProductCard> {
     final p = widget.product;
     final heroTag = widget.heroTag;
     final scale = AppScale.of(context);
-    final soldH = scale.s(widget.compactFooter ? 12 : 16);
-    final nameH = scale.s(widget.compactFooter ? 15 : 19);
-    final quantityH = scale.s(widget.compactFooter ? 12 : 14);
-    final priceH = scale.s(widget.compactFooter ? 28 : 34);
-    final hasQuantityLabel = p.quantityLabel.trim().isNotEmpty;
+    final soldH = scale.s(widget.compactFooter ? 13 : 17);
+    final nameH = scale.s(widget.compactFooter ? 18 : 21);
+    final quantityH = scale.s(widget.compactFooter ? 14 : 16);
+    final priceH = scale.s(widget.compactFooter ? 34 : 40);
     final hasGift = p.hasGiftProduct;
     final wellRadius = BorderRadius.circular(scale.s(8));
     final wellColor = widget.imageWellColor ?? AppTheme.productImageWell;
@@ -250,15 +255,8 @@ class _ProductCardState extends State<ProductCard> {
                     width: double.infinity,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
+                        color: wellColor,
                         borderRadius: wellRadius,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                            spreadRadius: -1,
-                          ),
-                        ],
                       ),
                       child: ClipRRect(
                         borderRadius: wellRadius,
@@ -365,10 +363,7 @@ class _ProductCardState extends State<ProductCard> {
           ),
           if (widget.compactFooter)
             SizedBox(
-              height: _compactFooterHeight(
-                scale,
-                hasQuantityLabel: hasQuantityLabel,
-              ),
+              height: _compactFooterHeight(scale),
               child: ClipRect(
                 child: _buildCardFooter(
                   scale: scale,

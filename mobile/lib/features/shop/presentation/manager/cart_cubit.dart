@@ -110,11 +110,14 @@ class CartCubit extends Cubit<CartState> {
   }
 
   void addToCart(Product product) {
+    if (product.stock <= 0) return;
+
     final items = List<CartItem>.from(state.items);
     final paidKey = 'paid:${product.id}';
     final idx = items.indexWhere((i) => i.cartKey == paidKey);
 
     if (idx >= 0) {
+      if (items[idx].quantity >= product.stock) return;
       items[idx] = items[idx].copyWith(quantity: items[idx].quantity + 1);
     } else {
       items.add(CartItem(product: ProductModel.fromEntity(product)));

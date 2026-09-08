@@ -7,6 +7,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/circle_back_button.dart';
+import '../../../content_pages/data/services/content_pages_api.dart';
+import '../../../content_pages/presentation/content_page_nav.dart';
 import '../../../notifications/data/services/notifications_api.dart';
 import '../../../notifications/data/services/push_service.dart';
 import '../../../notifications/presentation/manager/notifications_cubit.dart';
@@ -25,6 +27,22 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  List<ContentPage> _legalPages = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLegalPages();
+  }
+
+  Future<void> _loadLegalPages() async {
+    final pages = await ContentPagesApi.instance.list(
+      placement: ContentPagePlacement.settings,
+    );
+    if (!mounted) return;
+    setState(() => _legalPages = pages);
+  }
+
   Future<void> _toggleNotifications(bool enabled) async {
     final user = AuthSession.instance.user;
     if (user == null) return;
@@ -225,6 +243,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   const SizedBox(height: 18),
+                  if (_legalPages.isNotEmpty) ...[
+                    const _SettingsSectionLabel('المعلومات القانونية'),
+                    const SizedBox(height: 8),
+                    _SettingsCard(
+                      child: Column(
+                        children: [
+                          for (var i = 0; i < _legalPages.length; i++) ...[
+                            if (i > 0)
+                              Divider(
+                                height: 18,
+                                color: AppTheme.primaryLight
+                                    .withValues(alpha: 0.7),
+                              ),
+                            InkWell(
+                              onTap: () =>
+                                  openContentPage(context, _legalPages[i]),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 2),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 34,
+                                      height: 34,
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primarySurface,
+                                        borderRadius:
+                                            BorderRadius.circular(11),
+                                      ),
+                                      child: Icon(
+                                        Icons.description_outlined,
+                                        size: 18,
+                                        color: AppTheme.primaryDark
+                                            .withValues(alpha: 0.9),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        _legalPages[i].buttonLabel,
+                                        style: const TextStyle(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppTheme.darkText,
+                                        ),
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.chevron_right_rounded,
+                                      size: 18,
+                                      color: AppTheme.mutedText
+                                          .withValues(alpha: 0.6),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                  ],
                   _SettingsSectionLabel(AppStrings.settingsSectionAccount),
                   const SizedBox(height: 8),
                   _SettingsCard(

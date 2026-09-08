@@ -85,7 +85,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
     Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
     Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
-    Route::get('pages', [PageController::class, 'index'])->name('pages.index');
+    Route::resource('pages', PageController::class)->except(['show']);
     Route::resource('splash-screens', SplashScreenController::class)->except(['show']);
     Route::resource('onboarding', OnboardingController::class)->except(['show']);
     Route::resource('search-placeholders', SearchPlaceholderController::class)->except(['show', 'create', 'edit']);
@@ -130,6 +130,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::get('ai', [AiAssistantController::class, 'index'])->name('ai.index');
     Route::put('ai', [AiAssistantController::class, 'update'])->name('ai.update');
+    Route::post('ai/train', [AiAssistantController::class, 'train'])->name('ai.train');
     Route::get('ai/conversations', [AiAssistantController::class, 'conversations'])->name('ai.conversations');
     Route::get('ai/conversations/{conversation}', [AiAssistantController::class, 'show'])->name('ai.conversations.show');
+    Route::delete('ai/conversations/{conversation}', [AiAssistantController::class, 'destroyConversation'])->name('ai.conversations.destroy');
 });

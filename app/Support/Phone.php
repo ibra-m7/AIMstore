@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Models\Setting;
+
 final class Phone
 {
     public static function countryCode(): string
@@ -10,11 +12,44 @@ final class Phone
     }
 
     /**
+     * القائمة الكاملة المدعومة في النظام (كتالوج ثابت).
+     *
+     * @return list<string>
+     */
+    public static function catalogCountryCodes(): array
+    {
+        return ['966', '971', '965', '973', '974', '968', '967'];
+    }
+
+    /**
+     * الدول المسموح ظهورها في تسجيل الدخول والتحقق.
+     *
      * @return list<string>
      */
     public static function allowedCountryCodes(): array
     {
-        return ['966', '971', '965', '973', '974', '968', '967'];
+        $raw = Setting::getValue(Constants::SETTING_PHONE_ALLOWED_COUNTRIES);
+        $codes = [];
+
+        if (is_string($raw) && $raw !== '') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $codes = $decoded;
+            }
+        } elseif (is_array($raw)) {
+            $codes = $raw;
+        }
+
+        $catalog = self::catalogCountryCodes();
+        $allowed = [];
+        foreach ($codes as $code) {
+            $code = (string) $code;
+            if (in_array($code, $catalog, true) && ! in_array($code, $allowed, true)) {
+                $allowed[] = $code;
+            }
+        }
+
+        return $allowed !== [] ? $allowed : $catalog;
     }
 
     public static function isAllowedCountry(string $e164): bool
@@ -28,9 +63,6 @@ final class Phone
         return false;
     }
 
-    /**
-     * يحوّل المدخل إلى أرقام لاتينية فقط.
-     */
     public static function digits(string $raw): string
     {
         $mapped = strtr($raw, [
@@ -43,9 +75,6 @@ final class Phone
         return (string) preg_replace('/\D+/', '', $mapped);
     }
 
-    /**
-     * يعيد الرقم بصيغة دولية بدون + (مثال: 967778369448) أو null إن كان غير صالح.
-     */
     public static function normalize(?string $raw): ?string
     {
         if ($raw === null || trim($raw) === '') {
@@ -80,9 +109,6 @@ final class Phone
         return self::normalizeGcc($raw);
     }
 
-    /**
-     * يطبّع الرقم ويرفضه إن لم يكن من دول الخليج أو اليمن.
-     */
     public static function normalizeGcc(?string $raw): ?string
     {
         if ($raw === null || trim($raw) === '') {
@@ -111,12 +137,9 @@ final class Phone
             $digits = substr($digits, 1);
         }
 
-        if (self::isValidNational($digits)) {
-            return self::countryCode().$digits;
-        }
-
-        if (self::isValidYemenNational($digits)) {
-            return '967'.$digits;
+        $default = self::defaultAllowedCountryCode();
+        if (self::isValidNationalForCountry($default, $digits)) {
+            return $default.$digits;
         }
 
         return null;
@@ -148,11 +171,10 @@ final class Phone
         }
 
         if (strlen($digits) === 9) {
-            if (self::isValidNational($digits)) {
-                $candidates[] = self::countryCode().$digits;
-            }
-            if (self::isValidYemenNational($digits)) {
-                $candidates[] = '967'.$digits;
+            foreach (self::allowedCountryCodes() as $cc) {
+                if (self::isValidNationalForCountry($cc, $digits)) {
+                    $candidates[] = $cc.$digits;
+                }
             }
         }
 
@@ -185,7 +207,7 @@ final class Phone
 
     public static function national(string $e164): string
     {
-        foreach (self::allowedCountryCodes() as $cc) {
+        foreach (self::catalogCountryCodes() as $cc) {
             if (str_starts_with($e164, $cc)) {
                 return substr($e164, strlen($cc));
             }
@@ -219,7 +241,7 @@ final class Phone
         }
 
         $digits = self::digits($e164);
-        foreach (self::allowedCountryCodes() as $cc) {
+        foreach (self::catalogCountryCodes() as $cc) {
             if (! str_starts_with($digits, $cc)) {
                 continue;
             }
@@ -235,7 +257,7 @@ final class Phone
 
     public static function combineGcc(string $countryCode, ?string $national): ?string
     {
-        if (! in_array($countryCode, self::allowedCountryCodes(), true)) {
+        if (! in_array($countryCode, self::catalogCountryCodes(), true)) {
             return null;
         }
 
@@ -290,8 +312,17 @@ final class Phone
             '966', '971' => '5XXXXXXXX',
             '967' => '7XXXXXXXX',
             '965' => '5XXXXXXX',
-            '973', '974', '968' => '3XXXXXXX',
+            '973', '974' => '3XXXXXXX',
+            '968' => '7XXXXXXX',
             default => 'XXXXXXXX',
+        };
+    }
+
+    public static function maxNationalLength(string $countryCode): int
+    {
+        return match ($countryCode) {
+            '965', '973', '974', '968' => 8,
+            default => 9,
         };
     }
 
@@ -306,5 +337,53 @@ final class Phone
             '968' => (bool) preg_match('/^[79]\d{7}$/', $national),
             default => false,
         };
+    }
+
+    public static function defaultAllowedCountryCode(): string
+    {
+        $configured = self::countryCode();
+        $allowed = self::allowedCountryCodes();
+        if (in_array($configured, $allowed, true)) {
+            return $configured;
+        }
+
+        return $allowed[0] ?? '966';
+    }
+
+    /**
+     * @return list<array{code: string, flag: string, name: string, dial: string, placeholder: string, max_national_length: int}>
+     */
+    public static function countryCatalogForApi(): array
+    {
+        $catalog = self::countryCatalog();
+        $items = [];
+
+        foreach (self::allowedCountryCodes() as $code) {
+            $meta = $catalog[$code] ?? null;
+            if ($meta === null) {
+                continue;
+            }
+            $items[] = [
+                'code' => $code,
+                'flag' => $meta['flag'],
+                'name' => $meta['name'],
+                'dial' => $meta['dial'],
+                'placeholder' => self::nationalPlaceholder($code),
+                'max_national_length' => self::maxNationalLength($code),
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * @return array{default_country_code: string, countries: list<array{code: string, flag: string, name: string, dial: string, placeholder: string, max_national_length: int}>}
+     */
+    public static function startupPhonePayload(): array
+    {
+        return [
+            'default_country_code' => self::defaultAllowedCountryCode(),
+            'countries' => self::countryCatalogForApi(),
+        ];
     }
 }

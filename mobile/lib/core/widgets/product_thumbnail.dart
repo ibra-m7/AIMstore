@@ -5,7 +5,7 @@ import '../theme/app_scale.dart';
 import '../theme/app_theme.dart';
 import 'app_network_image.dart';
 
-/// صورة منتج موحّدة للبطاقات: مربع ثابت، بدون قص، مع خلفية محايدة.
+/// صورة منتج موحّدة للبطاقات: تملأ الحاوية، بدون قص، مع خلفية محايدة.
 class ProductThumbnail extends StatelessWidget {
   final String imageUrl;
   final String? heroTag;
@@ -63,19 +63,21 @@ class ProductThumbnail extends StatelessWidget {
     final scale = AppScale.of(context);
     final wellColor = backgroundColor;
 
+    final content = overlay == null
+        ? _imageContent(scale, wellColor)
+        : Stack(
+            fit: StackFit.expand,
+            children: [
+              _imageContent(scale, wellColor),
+              overlay!,
+            ],
+          );
+
     final imageBox = ClipRRect(
       borderRadius: borderRadius,
       child: ColoredBox(
         color: wellColor,
-        child: overlay == null
-            ? _imageContent(scale, wellColor)
-            : Stack(
-                fit: StackFit.expand,
-                children: [
-                  _imageContent(scale, wellColor),
-                  overlay!,
-                ],
-              ),
+        child: content,
       ),
     );
 
@@ -86,34 +88,6 @@ class ProductThumbnail extends StatelessWidget {
       );
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final hasBoundedHeight = constraints.hasBoundedHeight &&
-            constraints.maxHeight.isFinite &&
-            constraints.maxHeight > 0;
-        final hasBoundedWidth = constraints.hasBoundedWidth &&
-            constraints.maxWidth.isFinite &&
-            constraints.maxWidth > 0;
-
-        if (hasBoundedHeight && hasBoundedWidth) {
-          final side = constraints.maxWidth < constraints.maxHeight
-              ? constraints.maxWidth
-              : constraints.maxHeight;
-          return Align(
-            alignment: Alignment.center,
-            child: SizedBox(
-              width: side,
-              height: side,
-              child: imageBox,
-            ),
-          );
-        }
-
-        return AspectRatio(
-          aspectRatio: aspectRatio,
-          child: imageBox,
-        );
-      },
-    );
+    return SizedBox.expand(child: imageBox);
   }
 }

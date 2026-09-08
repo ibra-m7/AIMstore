@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../content_pages/data/services/content_pages_api.dart';
+import '../../../content_pages/presentation/content_page_nav.dart';
 import '../../../notifications/data/services/push_service.dart';
 import '../../../notifications/presentation/manager/notifications_cubit.dart';
 import '../../../shop/presentation/manager/favorite_cubit.dart';
@@ -50,40 +52,90 @@ class _ProfileScreenState extends State<ProfileScreen> {
         textDirection: TextDirection.rtl,
         child: AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
           ),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
+          titlePadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+          contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+          actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+          buttonPadding: EdgeInsets.zero,
           title: const Text(
             AppStrings.profileSignOutConfirmTitle,
-            style: TextStyle(fontWeight: FontWeight.w800),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              height: 1.3,
+            ),
           ),
           content: const Text(
             AppStrings.profileSignOutConfirmBody,
-            style: TextStyle(height: 1.6),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text(AppStrings.cancel),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+              height: 1.45,
+              color: Color(0xFF5A5A5A),
             ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(dialogContext);
-                await PushService.instance.unregisterForLogout();
-                await PhoneAuthApi.instance.logout();
-                if (!mounted) return;
-                try {
-                  context.read<OrdersCubit>().load();
-                } catch (_) {}
-                try {
-                  context.read<NotificationsCubit>().load();
-                } catch (_) {}
-                try {
-                  context.read<AddressCubit>().load();
-                } catch (_) {}
-              },
-              child: const Text(
-                AppStrings.profileSignOut,
-                style: TextStyle(color: Colors.redAccent),
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: Row(
+                textDirection: TextDirection.ltr,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () async {
+                      Navigator.pop(dialogContext);
+                      await PushService.instance.unregisterForLogout();
+                      await PhoneAuthApi.instance.logout();
+                      if (!mounted) return;
+                      try {
+                        context.read<OrdersCubit>().load();
+                      } catch (_) {}
+                      try {
+                        context.read<NotificationsCubit>().load();
+                      } catch (_) {}
+                      try {
+                        context.read<AddressCubit>().load();
+                      } catch (_) {}
+                    },
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                    ),
+                    child: const Text(
+                      AppStrings.profileSignOut,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.redAccent,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                    ),
+                    child: const Text(
+                      AppStrings.cancel,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -135,6 +187,8 @@ class _LoggedInProfileViewState extends State<_LoggedInProfileView>
   static const _appVersion = '1.0.0';
 
   late final AnimationController _entrance;
+  List<ContentPage> _menuPages = const [];
+  List<ContentPage> _footerPages = const [];
 
   @override
   void initState() {
@@ -153,6 +207,22 @@ class _LoggedInProfileViewState extends State<_LoggedInProfileView>
           orders.load();
         }
       } catch (_) {}
+    });
+
+    _loadContentPages();
+  }
+
+  Future<void> _loadContentPages() async {
+    final menu = await ContentPagesApi.instance.list(
+      placement: ContentPagePlacement.profileMenu,
+    );
+    final footer = await ContentPagesApi.instance.list(
+      placement: ContentPagePlacement.profileFooter,
+    );
+    if (!mounted) return;
+    setState(() {
+      _menuPages = menu;
+      _footerPages = footer;
     });
   }
 
@@ -250,6 +320,15 @@ class _LoggedInProfileViewState extends State<_LoggedInProfileView>
                       onTap: () => Navigator.of(context, rootNavigator: true)
                           .pushNamed(AppRouter.accountSettings),
                     ),
+                    for (var i = 0; i < _menuPages.length; i++)
+                      _LuxeMenuRow(
+                        icon: Icons.description_outlined,
+                        label: _menuPages[i].buttonLabel,
+                        labelSize: 13.5,
+                        entrance: _entrance,
+                        order: 6 + i,
+                        onTap: () => openContentPage(context, _menuPages[i]),
+                      ),
                   ],
                 ),
               ),
@@ -258,6 +337,7 @@ class _LoggedInProfileViewState extends State<_LoggedInProfileView>
               _ProfileFooter(
                 version: _appVersion,
                 onSignOut: widget.onSignOut,
+                contentPages: _footerPages,
               ),
             ],
           ),
@@ -407,10 +487,12 @@ class _LuxeCountBadge extends StatelessWidget {
 class _ProfileFooter extends StatelessWidget {
   final String version;
   final VoidCallback onSignOut;
+  final List<ContentPage> contentPages;
 
   const _ProfileFooter({
     required this.version,
     required this.onSignOut,
+    this.contentPages = const [],
   });
 
   @override
@@ -423,30 +505,37 @@ class _ProfileFooter extends StatelessWidget {
         top: false,
         child: Column(
           children: [
-            InkWell(
-              onTap: onSignOut,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 17),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.logout_rounded,
-                      size: 20,
-                      color: kLuxeFooterText,
-                      textDirection: TextDirection.ltr,
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 17),
+              child: Align(
+                alignment: Alignment.center,
+                child: InkWell(
+                  onTap: onSignOut,
+                  borderRadius: BorderRadius.circular(8),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.logout_rounded,
+                          size: 20,
+                          color: kLuxeFooterText,
+                          textDirection: TextDirection.ltr,
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          AppStrings.profileSignOut,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                            color: kLuxeFooterText,
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(width: 12),
-                    Text(
-                      AppStrings.profileSignOut,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.2,
-                        color: kLuxeFooterText,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -457,21 +546,43 @@ class _ProfileFooter extends StatelessWidget {
                 color: kLuxeFooterText.withValues(alpha: 0.7),
               ),
             ),
-            InkWell(
-              onTap: () {},
-              child: Padding(
+            if (contentPages.isNotEmpty)
+              Padding(
                 padding: const EdgeInsets.only(bottom: 10, top: 4),
-                child: Text(
-                  AppStrings.profilePrivacyAndTerms,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: kLuxeFooterText.withValues(alpha: 0.7),
-                    decoration: TextDecoration.underline,
-                    decorationColor: kLuxeFooterText.withValues(alpha: 0.4),
-                  ),
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    for (var i = 0; i < contentPages.length; i++) ...[
+                      if (i > 0)
+                        Text(
+                          '·',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: kLuxeFooterText.withValues(alpha: 0.45),
+                          ),
+                        ),
+                      InkWell(
+                        onTap: () => openContentPage(context, contentPages[i]),
+                        child: Text(
+                          contentPages[i].buttonLabel,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: kLuxeFooterText.withValues(alpha: 0.7),
+                            decoration: TextDecoration.underline,
+                            decorationColor:
+                                kLuxeFooterText.withValues(alpha: 0.4),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              ),
-            ),
+              )
+            else
+              const SizedBox(height: 10),
           ],
         ),
       ),
@@ -568,8 +679,8 @@ class _GuestProfileView extends StatelessWidget {
                         AppStrings.guestProfileTitle,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
                           color: AppTheme.darkText,
                         ),
                       ),
@@ -580,14 +691,15 @@ class _GuestProfileView extends StatelessWidget {
                         AppStrings.guestProfileBody,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 14.5,
-                          height: 1.7,
+                          fontSize: 13.5,
+                          height: 1.65,
+                          fontWeight: FontWeight.w400,
                           color: AppTheme.mutedText.withValues(alpha: 0.95),
                         ),
                       ),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 26),
                       SizedBox(
-                        height: 54,
+                        height: 46,
                         width: double.infinity,
                         child: FilledButton(
                           onPressed: onLogin,
@@ -595,14 +707,14 @@ class _GuestProfileView extends StatelessWidget {
                             backgroundColor: kLuxeDeepA,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(14),
                             ),
                           ),
                           child: const Text(
                             AppStrings.guestLoginCta,
                             style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
                             ),
                           ),
                         ),

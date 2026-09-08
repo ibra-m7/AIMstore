@@ -408,7 +408,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
           ),
           title: const Text(
             'مراجعة الطلب',
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16.5),
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
           ),
           centerTitle: true,
         ),
@@ -479,14 +479,15 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
             );
             final effectiveShipping = free ? 0.0 : shipping;
             final grand = subtotal - discount + effectiveShipping;
-            final methods = store.paymentMethods;
+            final paymentMethods =
+                PaymentOption.withCashPinnedFirst(store.paymentMethods);
             return Stack(
               children: [
                 ListView(
                   padding: const EdgeInsets.fromLTRB(12, 2, 12, 96),
                   children: [
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.only(bottom: 12),
                         child: OrderMethodToggle(
                           value: _orderMethod,
                           pickupEnabled: store.delivery.pickupEnabled,
@@ -521,7 +522,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
                               'التوصيل إلى',
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
-                                fontSize: 14.5,
+                                fontSize: 16,
                                 color: AppTheme.darkText,
                               ),
                             ),
@@ -533,7 +534,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w900,
-                                  fontSize: 14.5,
+                                  fontSize: 16,
                                   color: AppTheme.primaryDark,
                                 ),
                               ),
@@ -561,7 +562,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
                                 'موقع الاستلام',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 14.5,
+                                  fontSize: 16,
                                   color: AppTheme.darkText,
                                 ),
                               ),
@@ -575,7 +576,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w900,
-                                    fontSize: 14.5,
+                                    fontSize: 16,
                                     color: AppTheme.primaryDark,
                                   ),
                                 ),
@@ -663,7 +664,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
                                 style: const TextStyle(
                                   color: Color(0xFFC62828),
                                   fontWeight: FontWeight.w500,
-                                  fontSize: 11.5,
+                                  fontSize: 13,
                                 ),
                               ),
                             ],
@@ -674,7 +675,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
                                 style: TextStyle(
                                   color: Color(0xFFC77800),
                                   fontWeight: FontWeight.w500,
-                                  fontSize: 11.5,
+                                  fontSize: 13,
                                 ),
                               ),
                             ],
@@ -757,7 +758,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
                                     style: const TextStyle(
                                       color: AppTheme.mutedText,
                                       fontWeight: FontWeight.w500,
-                                      fontSize: 11,
+                                      fontSize: 12.5,
                                     ),
                                   ),
                                 ),
@@ -773,7 +774,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
                                     style: const TextStyle(
                                       color: AppTheme.mutedText,
                                       fontWeight: FontWeight.w500,
-                                      fontSize: 11,
+                                      fontSize: 12.5,
                                       height: 1.35,
                                     ),
                                   ),
@@ -786,7 +787,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
                                   style: const TextStyle(
                                     color: Color(0xFFC62828),
                                     fontWeight: FontWeight.w500,
-                                    fontSize: 11.5,
+                                    fontSize: 13,
                                   ),
                                 ),
                               ],
@@ -831,7 +832,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
                             GridView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
-                              itemCount: store.paymentMethods.length,
+                              itemCount: paymentMethods.length,
                               gridDelegate:
                                   const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 3,
@@ -840,7 +841,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
                                 childAspectRatio: 1.32,
                               ),
                               itemBuilder: (context, index) {
-                                final method = store.paymentMethods[index];
+                                final method = paymentMethods[index];
                                 final selected =
                                     _paymentChosen && _method == method.id;
                                 final subtitle = method.id == 'stc_pay' &&
@@ -867,7 +868,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w500,
-                                    fontSize: 11.5,
+                                    fontSize: 13,
                                     height: 1.5,
                                   ),
                                 ),
@@ -954,7 +955,7 @@ class _InvoicePlainCard extends StatelessWidget {
     );
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
@@ -999,7 +1000,7 @@ class _InvoiceCard extends StatelessWidget {
         contentPadding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
         labelStyle: const TextStyle(
           fontWeight: FontWeight.w900,
-          fontSize: 15.5,
+          fontSize: 17,
           color: AppTheme.darkText,
         ),
         border: OutlineInputBorder(
@@ -1035,7 +1036,7 @@ class _InvoiceCard extends StatelessWidget {
             title!,
             style: const TextStyle(
               fontWeight: FontWeight.w900,
-              fontSize: 15.5,
+              fontSize: 17,
               color: AppTheme.darkText,
             ),
           ),
@@ -1066,7 +1067,7 @@ class _InvoiceCard extends StatelessWidget {
     );
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 16),
       child: Material(
         color: Colors.transparent,
         child: onTap == null
@@ -1118,7 +1119,7 @@ class _CouponStickerChip extends StatelessWidget {
             Text(
               code,
               style: const TextStyle(
-                fontSize: 12.5,
+                fontSize: 14,
                 fontWeight: FontWeight.w800,
                 color: AppTheme.darkText,
                 height: 1.1,
@@ -1200,7 +1201,7 @@ class _DeliveryOptionCard extends StatelessWidget {
                       style: TextStyle(
                         fontWeight:
                             selected ? FontWeight.w900 : FontWeight.w700,
-                        fontSize: 11.5,
+                        fontSize: 13,
                         height: 1.15,
                         color: AppTheme.darkText,
                       ),
@@ -1211,7 +1212,7 @@ class _DeliveryOptionCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
-                        fontSize: 9.5,
+                        fontSize: 11,
                         height: 1.2,
                         color: selected
                             ? AppTheme.primaryDark
@@ -1244,7 +1245,7 @@ class _TableHead extends StatelessWidget {
   Widget build(BuildContext context) {
     const style = TextStyle(
       fontWeight: FontWeight.w800,
-      fontSize: 11,
+      fontSize: 12.5,
       color: AppTheme.mutedText,
     );
     return const Row(
@@ -1292,7 +1293,7 @@ class _PayRow extends StatelessWidget {
           label,
           style: TextStyle(
             fontWeight: labelWeight,
-            fontSize: emphasize ? 13.5 : bold ? 12.5 : 11.5,
+            fontSize: emphasize ? 15 : bold ? 14 : 13,
             color: AppTheme.darkText,
           ),
         ),
@@ -1302,7 +1303,7 @@ class _PayRow extends StatelessWidget {
           style: TextStyle(
             fontWeight: valueWeight,
             color: emphasize ? AppTheme.primaryDark : AppTheme.darkText,
-            fontSize: emphasize ? 14.5 : bold ? 12.5 : 11.5,
+            fontSize: emphasize ? 16 : bold ? 14 : 13,
           ),
         ),
       ],
@@ -1401,7 +1402,7 @@ class _PaymentTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
-                    fontSize: 8.5,
+                    fontSize: 10,
                     height: 1,
                     color: selected ? AppTheme.primaryDark : AppTheme.darkText,
                   ),
@@ -1414,7 +1415,7 @@ class _PaymentTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 7,
+                      fontSize: 8.5,
                       color: AppTheme.mutedText,
                       fontWeight: FontWeight.w500,
                     ),
@@ -1472,7 +1473,7 @@ class _NotesEntryButton extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontWeight: FontWeight.w500,
-                            fontSize: 12,
+                            fontSize: 13.5,
                             color: AppTheme.bodyText,
                             height: 1.35,
                           ),
@@ -1484,7 +1485,7 @@ class _NotesEntryButton extends StatelessWidget {
                               'أضف ملاحظات للطلب',
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
-                                fontSize: 12,
+                                fontSize: 13.5,
                                 color: AppTheme.darkText,
                               ),
                             ),
@@ -1495,7 +1496,7 @@ class _NotesEntryButton extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontWeight: FontWeight.w500,
-                                fontSize: 11,
+                                fontSize: 12.5,
                                 color: AppTheme.mutedText,
                                 height: 1.25,
                               ),

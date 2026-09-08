@@ -62,6 +62,7 @@
                                         ['label' => $order->isPickup() ? 'فترة التجهيز' : 'وقت التنفيذ', 'value' => $order->fulfillment_type === 'scheduled'
                                             ? 'مجدول'.($order->scheduled_at ? ' — '.$order->scheduled_at->format('Y-m-d H:i') : '')
                                             : 'الآن'],
+                                        ['label' => 'سبب الإلغاء', 'value' => $order->status === \App\Enums\OrderStatus::Cancelled ? $order->cancel_reason : null],
                                         ['label' => 'التاريخ', 'value' => $order->created_at?->format('Y-m-d H:i')],
                                     ], fn ($row) => filled($row['value'] ?? null))),
                                     'blocks' => [[
@@ -131,23 +132,41 @@
                                 <td class="fw-bold">{{ number_format((float) $order->total, 2) }} {{ $strings::CURRENCY }}</td>
                                 <td><span class="badge badge-soft">{{ $order->status?->label() }}</span></td>
                                 <td>
-                                    <form method="POST" action="{{ route('admin.orders.update', $order) }}" class="d-flex flex-wrap gap-1 align-items-center">
+                                    <form method="POST" action="{{ route('admin.orders.update', $order) }}" class="d-flex flex-column gap-1 order-status-form">
                                         @csrf
                                         @method('PATCH')
-                                        <select name="status" class="form-select form-select-sm" style="min-width: 140px">
-                                            @foreach ($statuses as $status)
-                                                <option value="{{ $status->value }}" @selected($order->status === $status)>{{ $status->label() }}</option>
-                                            @endforeach
-                                        </select>
-                                        <select name="payment_status" class="form-select form-select-sm" style="min-width: 120px">
-                                            @foreach ($paymentStatuses as $pay)
-                                                <option value="{{ $pay->value }}" @selected($order->payment_status === $pay)>{{ $pay->label() }}</option>
-                                            @endforeach
-                                        </select>
-                                        <button class="btn btn-sm btn-brand">حفظ</button>
-                                        @if ($order->status?->value !== 'cancelled')
-                                            <a href="{{ route('admin.orders.edit', $order) }}" class="btn btn-sm btn-outline-success rounded-pill">{{ $strings::EDIT }}</a>
-                                        @endif
+                                        <div class="d-flex flex-wrap gap-1 align-items-center">
+                                            <select
+                                                name="status"
+                                                class="form-select form-select-sm js-order-status"
+                                                style="min-width: 140px"
+                                                data-was-cancelled="{{ $order->status === \App\Enums\OrderStatus::Cancelled ? '1' : '0' }}"
+                                            >
+                                                @foreach ($statuses as $status)
+                                                    <option value="{{ $status->value }}" @selected($order->status === $status)>{{ $status->label() }}</option>
+                                                @endforeach
+                                            </select>
+                                            <select name="payment_status" class="form-select form-select-sm" style="min-width: 120px">
+                                                @foreach ($paymentStatuses as $pay)
+                                                    <option value="{{ $pay->value }}" @selected($order->payment_status === $pay)>{{ $pay->label() }}</option>
+                                                @endforeach
+                                            </select>
+                                            <button class="btn btn-sm btn-brand">حفظ</button>
+                                            @if ($order->status?->value !== 'cancelled')
+                                                <a href="{{ route('admin.orders.edit', $order) }}" class="btn btn-sm btn-outline-success rounded-pill">{{ $strings::EDIT }}</a>
+                                            @endif
+                                        </div>
+                                        <input
+                                            type="text"
+                                            name="cancel_reason"
+                                            class="form-control form-control-sm js-cancel-reason"
+                                            style="max-width: 280px; {{ $order->status === \App\Enums\OrderStatus::Cancelled ? '' : 'display:none;' }}"
+                                            placeholder="سبب الإلغاء"
+                                            maxlength="250"
+                                            value="{{ old('cancel_reason', $order->cancel_reason) }}"
+                                            @if ($order->status !== \App\Enums\OrderStatus::Cancelled) disabled @endif
+                                            @if ($order->status !== \App\Enums\OrderStatus::Cancelled) aria-hidden="true" @endif
+                                        >
                                     </form>
                                 </td>
                             </tr>
@@ -158,4 +177,29 @@
             {{ $orders->links() }}
         @endif
     </div>
+
+    <script>
+        (function () {
+            function syncCancelReason(select) {
+                const form = select.closest('.order-status-form');
+                if (!form) return;
+                const input = form.querySelector('.js-cancel-reason');
+                if (!input) return;
+                const isCancelled = select.value === 'cancelled';
+                input.style.display = isCancelled ? '' : 'none';
+                input.disabled = !isCancelled;
+                input.setAttribute('aria-hidden', isCancelled ? 'false' : 'true');
+                if (isCancelled && select.dataset.wasCancelled !== '1') {
+                    input.required = true;
+                } else {
+                    input.required = false;
+                }
+            }
+
+            document.querySelectorAll('.js-order-status').forEach((select) => {
+                syncCancelReason(select);
+                select.addEventListener('change', () => syncCancelReason(select));
+            });
+        })();
+    </script>
 </x-layouts.admin>

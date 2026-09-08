@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/brand_logo.dart';
+import '../../../content_pages/data/services/content_pages_api.dart';
+import '../../../content_pages/presentation/content_page_nav.dart';
 import '../../data/services/auth_service.dart';
 import '../widgets/auth_widgets.dart';
 
@@ -422,70 +424,107 @@ class _PasswordStrengthBar extends StatelessWidget {
 }
 
 // ── مربع الموافقة على الشروط ─────────────────────────────────────────────────
-class _TermsCheckbox extends StatelessWidget {
+class _TermsCheckbox extends StatefulWidget {
   final bool value;
   final ValueChanged<bool?> onChanged;
 
   const _TermsCheckbox({required this.value, required this.onChanged});
 
   @override
+  State<_TermsCheckbox> createState() => _TermsCheckboxState();
+}
+
+class _TermsCheckboxState extends State<_TermsCheckbox> {
+  List<ContentPage> _pages = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPages();
+  }
+
+  Future<void> _loadPages() async {
+    final pages = await ContentPagesApi.instance.list(
+      placement: ContentPagePlacement.authTerms,
+    );
+    if (!mounted) return;
+    setState(() => _pages = pages);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => onChanged(!value),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 24,
-            height: 24,
-            child: Checkbox(
-              value: value,
-              onChanged: onChanged,
-              fillColor: WidgetStateProperty.resolveWith(
-                (states) => states.contains(WidgetState.selected)
-                    ? const Color(0xFF4CAF50)
-                    : Colors.transparent,
-              ),
-              side: BorderSide(
-                color: Colors.white.withValues(alpha: 0.4),
-                width: 1.5,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(5),
-              ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Checkbox(
+            value: widget.value,
+            onChanged: widget.onChanged,
+            fillColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.selected)
+                  ? const Color(0xFF4CAF50)
+                  : Colors.transparent,
+            ),
+            side: BorderSide(
+              color: Colors.white.withValues(alpha: 0.4),
+              width: 1.5,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(5),
             ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.75),
-                  fontSize: 13,
-                  height: 1.5,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _pages.isEmpty
+              ? Text(
+                  'أوافق على شروط الاستخدام وسياسة الخصوصية',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.75),
+                    fontSize: 13,
+                    height: 1.5,
+                  ),
+                )
+              : Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      'أوافق على ',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.75),
+                        fontSize: 13,
+                        height: 1.5,
+                      ),
+                    ),
+                    for (var i = 0; i < _pages.length; i++) ...[
+                      if (i > 0)
+                        Text(
+                          i == _pages.length - 1 ? ' و' : '، ',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.75),
+                            fontSize: 13,
+                            height: 1.5,
+                          ),
+                        ),
+                      GestureDetector(
+                        onTap: () => openContentPage(context, _pages[i]),
+                        child: Text(
+                          _pages[i].buttonLabel,
+                          style: const TextStyle(
+                            color: Color(0xFFA5D6A7),
+                            fontSize: 13,
+                            height: 1.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-                children: const [
-                  TextSpan(text: 'أوافق على '),
-                  TextSpan(
-                    text: 'شروط الاستخدام',
-                    style: TextStyle(
-                      color: Color(0xFFA5D6A7),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  TextSpan(text: ' و'),
-                  TextSpan(
-                    text: 'سياسة الخصوصية',
-                    style: TextStyle(
-                      color: Color(0xFFA5D6A7),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

@@ -20,6 +20,7 @@ import 'price_line.dart';
 import 'product_fly_overlay.dart';
 import 'product_gift_overlay.dart';
 import 'quantity_label_chip.dart';
+import 'stock_limit_snackbar.dart';
 
 Future<void> showProductPreview(
   BuildContext context,
@@ -270,7 +271,13 @@ class _ProductPreviewSheetState extends State<ProductPreviewSheet>
 
   Future<void> _addToCart([ProductModel? item]) async {
     final product = item ?? p;
-    if (!product.isAvailable) return;
+    final qty = context.read<CartCubit>().state.items
+        .where((i) => i.product.id == product.id && !i.isGift)
+        .fold<int>(0, (sum, i) => sum + i.quantity);
+    if (!product.isAvailable || qty >= product.stock) {
+      showProductUnavailableSnackBar(context);
+      return;
+    }
     HapticFeedback.mediumImpact();
     context.read<CartCubit>().addToCart(product);
 
@@ -490,7 +497,7 @@ class _ProductPreviewSheetState extends State<ProductPreviewSheet>
                                   maxLines: 1,
                                   softWrap: false,
                                   style: const TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 17.5,
                                     fontWeight: FontWeight.w500,
                                     color: AppTheme.darkText,
                                     height: 1.2,
@@ -541,7 +548,7 @@ class _ProductPreviewSheetState extends State<ProductPreviewSheet>
                           Text(
                             p.description,
                             style: const TextStyle(
-                              fontSize: 14,
+                              fontSize: 15.5,
                               height: 1.7,
                               color: AppTheme.bodyText,
                             ),
@@ -691,7 +698,7 @@ class _StickyCartBar extends StatelessWidget {
                       child: Text(
                         p.packDisplayLabel,
                         style: const TextStyle(
-                          fontSize: 11,
+                          fontSize: 12.5,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
                         ),
@@ -745,7 +752,7 @@ class _CartActionControl extends StatelessWidget {
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w800,
-                fontSize: 12,
+                fontSize: 13.5,
               ),
             ),
           ),
@@ -764,7 +771,7 @@ class _CartActionControl extends StatelessWidget {
             'إضافة للسلة',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
           ),
           style: FilledButton.styleFrom(
             backgroundColor: AppTheme.primaryDark,
@@ -792,7 +799,13 @@ class _CartActionControl extends StatelessWidget {
           children: [
             _StepperIcon(
               icon: Icons.add_rounded,
-              onTap: quantity < product.stock ? onAdd : null,
+              onTap: () {
+                if (quantity < product.stock) {
+                  onAdd();
+                } else {
+                  showProductUnavailableSnackBar(context);
+                }
+              },
             ),
             Expanded(
               child: Text(
@@ -800,7 +813,7 @@ class _CartActionControl extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: 17.5,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -865,7 +878,7 @@ class _RecommendRow extends StatelessWidget {
         Text(
           title,
           style: const TextStyle(
-            fontSize: 13,
+            fontSize: 14.5,
             fontWeight: FontWeight.w700,
             color: AppTheme.darkText,
             height: 1.2,
@@ -976,13 +989,13 @@ class _RelatedTileState extends State<_RelatedTile> {
                 const SizedBox(height: 6),
                 Text(
                   product.name,
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w500,
-                    height: 1.25,
+                    height: 1.2,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -991,7 +1004,7 @@ class _RelatedTileState extends State<_RelatedTile> {
                   originalPrice: product.hasDiscount ? product.price : null,
                   priceSize: 13,
                   currencySize: 15,
-                  alignment: Alignment.center,
+                  alignment: AlignmentDirectional.centerStart,
                 ),
               ],
             ),

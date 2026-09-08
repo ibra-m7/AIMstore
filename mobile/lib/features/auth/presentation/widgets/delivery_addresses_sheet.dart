@@ -13,25 +13,33 @@ import '../pages/add_address_screen.dart';
 
 class DeliveryAddressesSheet {
   static Future<void> show(BuildContext context) async {
-    if (!AuthSession.instance.isLoggedIn) {
-      await AuthFlow.requireLogin(
-        context,
-        message: AppStrings.guestAddressMessage,
+    try {
+      if (!AuthSession.instance.isLoggedIn) {
+        await AuthFlow.requireLogin(
+          context,
+          message: AppStrings.guestAddressMessage,
+        );
+        return;
+      }
+      if (!context.mounted) return;
+      final cubit = context.read<AddressCubit>();
+      // لا ننتظر التحميل قبل فتح الشيت — يقلل ضغط الرسم عند الفتح.
+      cubit.load();
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: false,
+        backgroundColor: Colors.transparent,
+        barrierColor: Colors.black.withValues(alpha: 0.45),
+        useRootNavigator: true,
+        builder: (_) => BlocProvider.value(
+          value: cubit,
+          child: const _DeliveryAddressesBody(),
+        ),
       );
-      return;
+    } catch (e, st) {
+      debugPrint('DeliveryAddressesSheet.show failed: $e\n$st');
     }
-    final cubit = context.read<AddressCubit>()..load();
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: false,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (_) => BlocProvider.value(
-        value: cubit,
-        child: const _DeliveryAddressesBody(),
-      ),
-    );
   }
 }
 
@@ -57,7 +65,7 @@ class _DeliveryAddressesBody extends StatelessWidget {
                 clipBehavior: Clip.none,
                 children: [
                   const Padding(
-                    padding: EdgeInsets.fromLTRB(22, 18, 22, 8),
+                    padding: EdgeInsets.fromLTRB(20, 16, 20, 6),
                     child: Align(
                       alignment: Alignment.centerRight,
                       child: Column(
@@ -66,17 +74,19 @@ class _DeliveryAddressesBody extends StatelessWidget {
                           Text(
                             AppStrings.deliveryTo,
                             style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              height: 1.25,
                               color: AppTheme.darkText,
                             ),
                           ),
-                          SizedBox(height: 4),
+                          SizedBox(height: 3),
                           Text(
                             AppStrings.deliveryChooseAddress,
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: 12,
                               fontWeight: FontWeight.w500,
+                              height: 1.35,
                               color: AppTheme.mutedText,
                             ),
                           ),
@@ -85,8 +95,8 @@ class _DeliveryAddressesBody extends StatelessWidget {
                     ),
                   ),
                   const Positioned(
-                    top: 14,
-                    left: 16,
+                    top: 12,
+                    left: 14,
                     child: CheckoutSheetCloseButton(),
                   ),
                 ],
@@ -99,16 +109,25 @@ class _DeliveryAddressesBody extends StatelessWidget {
                     }
                     if (state.addresses.isEmpty) {
                       return const Center(
-                        child: Text(
-                          AppStrings.deliveryEmpty,
-                          style: TextStyle(color: AppTheme.mutedText),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24),
+                          child: Text(
+                            AppStrings.deliveryEmpty,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w500,
+                              height: 1.4,
+                              color: AppTheme.mutedText,
+                            ),
+                          ),
                         ),
                       );
                     }
                     return ListView.separated(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                       itemCount: state.addresses.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 10),
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (context, index) {
                         final address = state.addresses[index];
                         return _AddressCard(
@@ -123,14 +142,14 @@ class _DeliveryAddressesBody extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
                 child: SafeArea(
                   top: false,
                   child: Align(
                     alignment: Alignment.center,
                     child: Material(
                       color: AppTheme.background,
-                      borderRadius: BorderRadius.circular(22),
+                      borderRadius: BorderRadius.circular(20),
                       child: InkWell(
                         onTap: () async {
                           final added = await Navigator.of(context).pushNamed(
@@ -140,20 +159,20 @@ class _DeliveryAddressesBody extends StatelessWidget {
                             context.read<AddressCubit>().load();
                           }
                         },
-                        borderRadius: BorderRadius.circular(22),
+                        borderRadius: BorderRadius.circular(20),
                         child: Container(
-                          height: 44,
+                          height: 40,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(22),
+                            borderRadius: BorderRadius.circular(20),
                             border: Border.all(color: const Color(0xFFD4DDD6)),
                           ),
-                          padding: const EdgeInsets.fromLTRB(14, 0, 10, 0),
+                          padding: const EdgeInsets.fromLTRB(12, 0, 10, 0),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
-                                width: 24,
-                                height: 24,
+                                width: 22,
+                                height: 22,
                                 alignment: Alignment.center,
                                 decoration: const BoxDecoration(
                                   color: AppTheme.primaryDark,
@@ -161,7 +180,7 @@ class _DeliveryAddressesBody extends StatelessWidget {
                                 ),
                                 child: const Icon(
                                   Icons.add_rounded,
-                                  size: 16,
+                                  size: 14,
                                   color: Colors.white,
                                 ),
                               ),
@@ -169,8 +188,9 @@ class _DeliveryAddressesBody extends StatelessWidget {
                               const Text(
                                 AppStrings.deliveryAddNew,
                                 style: TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 12,
+                                  height: 1.2,
                                   color: AppTheme.primaryDark,
                                 ),
                               ),
@@ -206,17 +226,38 @@ class _DeliveryAddressesBody extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(AppStrings.deliveryDeleteConfirm),
-        content: const Text(AppStrings.deliveryDeleteBody),
+        title: const Text(
+          AppStrings.deliveryDeleteConfirm,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.darkText,
+          ),
+        ),
+        content: const Text(
+          AppStrings.deliveryDeleteBody,
+          style: TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w500,
+            height: 1.45,
+            color: AppTheme.mutedText,
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(AppStrings.cancel),
+            child: const Text(
+              AppStrings.cancel,
+              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+            ),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text(AppStrings.delete),
+            child: const Text(
+              AppStrings.delete,
+              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+            ),
           ),
         ],
       ),
@@ -261,19 +302,23 @@ class _AddressCard extends StatelessWidget {
         onTap: onOpen,
         borderRadius: BorderRadius.circular(18),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+          padding: const EdgeInsets.fromLTRB(10, 10, 6, 10),
           child: Row(
             children: [
               Container(
-                width: 52,
-                height: 52,
+                width: 40,
+                height: 40,
                 decoration: const BoxDecoration(
                   color: AppTheme.primary,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.location_on_rounded, color: Colors.white),
+                child: const Icon(
+                  Icons.location_on_rounded,
+                  size: 20,
+                  color: Colors.white,
+                ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,8 +331,9 @@ class _AddressCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13.5,
+                              height: 1.25,
                               color: AppTheme.darkText,
                             ),
                           ),
@@ -298,23 +344,26 @@ class _AddressCard extends StatelessWidget {
                             'الحالي',
                             style: TextStyle(
                               color: AppTheme.primaryDark,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 10,
+                              height: 1.2,
                             ),
                           ),
                         ],
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     SizedBox(
-                      height: 20,
+                      height: 18,
                       child: MarqueeText(
                         text: address.subtitle.isEmpty
                             ? 'بدون وصف إضافي'
                             : address.subtitle,
                         style: const TextStyle(
                           color: AppTheme.mutedText,
-                          fontSize: 12.5,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                          height: 1.3,
                         ),
                       ),
                     ),
@@ -323,7 +372,12 @@ class _AddressCard extends StatelessWidget {
               ),
               IconButton(
                 onPressed: busy ? null : onDelete,
-                icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFE53935)),
+                visualDensity: VisualDensity.compact,
+                iconSize: 20,
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: Color(0xFFE53935),
+                ),
               ),
             ],
           ),
@@ -364,16 +418,17 @@ class _AddressDetailsSheet extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
               const Text(
                 AppStrings.deliveryCurrentDetails,
                 style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  height: 1.25,
                   color: AppTheme.darkText,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               _detailRow('اسم الموقع', address.label),
               _detailRow('الوصف', address.subtitle.isEmpty ? '—' : address.subtitle),
               if (address.city != null) _detailRow('المدينة', address.city!),
@@ -383,9 +438,9 @@ class _AddressDetailsSheet extends StatelessWidget {
                   '${address.latitude!.toStringAsFixed(5)} , ${address.longitude!.toStringAsFixed(5)}',
                 ),
               _detailRow('عدد الطلبات من هنا', '${address.ordersCount}'),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
               SizedBox(
-                height: 52,
+                height: 42,
                 child: FilledButton(
                   onPressed: address.isDefault
                       ? () => Navigator.pop(context)
@@ -399,14 +454,18 @@ class _AddressDetailsSheet extends StatelessWidget {
                   style: FilledButton.styleFrom(
                     backgroundColor: AppTheme.primaryDark,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                   child: Text(
                     address.isDefault
                         ? 'هذا هو عنوان التوصيل الحالي'
                         : AppStrings.deliveryUseThis,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                    ),
                   ),
                 ),
               ),
@@ -419,24 +478,30 @@ class _AddressDetailsSheet extends StatelessWidget {
 
   Widget _detailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 110,
+            width: 104,
             child: Text(
               label,
-              style: const TextStyle(color: AppTheme.mutedText, fontSize: 13),
+              style: const TextStyle(
+                color: AppTheme.mutedText,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+                height: 1.35,
+              ),
             ),
           ),
           Expanded(
             child: Text(
               value,
               style: const TextStyle(
-                fontWeight: FontWeight.w800,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
                 color: AppTheme.darkText,
-                height: 1.4,
+                height: 1.35,
               ),
             ),
           ),

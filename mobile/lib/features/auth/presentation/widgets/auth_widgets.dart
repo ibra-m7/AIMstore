@@ -117,9 +117,9 @@ class AuthScreenHeader extends StatelessWidget {
         Text(
           AppStrings.appName,
           style: TextStyle(
-            fontSize: 11.5,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.4,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
             color: AppTheme.primaryDark.withValues(alpha: 0.85),
           ),
         ),
@@ -128,8 +128,8 @@ class AuthScreenHeader extends StatelessWidget {
           title,
           textAlign: TextAlign.center,
           style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w900,
+            fontSize: 19,
+            fontWeight: FontWeight.w700,
             height: 1.2,
             color: AppTheme.darkText,
           ),
@@ -140,9 +140,9 @@ class AuthScreenHeader extends StatelessWidget {
             subtitle!,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontSize: 12.5,
+              fontSize: 12,
               height: 1.45,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w400,
               color: AppTheme.mutedText,
             ),
           ),
@@ -206,8 +206,8 @@ class AuthFieldLabel extends StatelessWidget {
         Text(
           text,
           style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w600,
             color: AppTheme.darkText,
           ),
         ),
@@ -430,7 +430,7 @@ class AuthPrimaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 48,
+      height: 44,
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppTheme.radiusPill),
@@ -468,8 +468,8 @@ class AuthPrimaryButton extends StatelessWidget {
               : Text(
                   label,
                   style: const TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                     letterSpacing: 0.2,
                   ),
                 ),

@@ -57,15 +57,33 @@ class OrderController extends Controller
 
     public function update(Request $request, Order $order): RedirectResponse
     {
+        $becomingCancelled = $request->input('status') === OrderStatus::Cancelled->value
+            && $order->status !== OrderStatus::Cancelled;
+
         $data = $request->validate([
             'status' => ['required', Rule::enum(OrderStatus::class)],
             'payment_status' => ['nullable', Rule::enum(PaymentStatus::class)],
+            'cancel_reason' => [
+                Rule::requiredIf($becomingCancelled),
+                'nullable',
+                'string',
+                'max:250',
+            ],
+        ], [
+            'cancel_reason.required' => 'أدخل سبب إلغاء الطلب.',
         ]);
+
+        $note = null;
+        if (($data['status'] ?? null) === OrderStatus::Cancelled->value) {
+            $trimmed = trim((string) ($data['cancel_reason'] ?? ''));
+            $note = $trimmed !== '' ? $trimmed : null;
+        }
 
         $this->orders->updateStatus(
             $order,
             OrderStatus::from($data['status']),
             isset($data['payment_status']) ? PaymentStatus::from($data['payment_status']) : null,
+            $note,
         );
 
         return back()->with('success', 'تم تحديث الطلب '.$order->order_number.' بنجاح.');

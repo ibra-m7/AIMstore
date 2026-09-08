@@ -52,16 +52,16 @@ class BundleItemCard extends StatelessWidget {
             Text(
               _title(product),
               textAlign: TextAlign.center,
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: scale.s(12.5),
                 fontWeight: FontWeight.w800,
                 color: AppTheme.darkText,
-                height: 1.25,
+                height: 1.2,
               ),
             ),
-            SizedBox(height: scale.s(10)),
+            SizedBox(height: scale.s(8)),
             Expanded(
               child: Container(
                 alignment: Alignment.center,

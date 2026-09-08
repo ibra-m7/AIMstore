@@ -72,6 +72,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   }
 
   Future<void> _applyFix(DeviceFix fix, {bool moveMap = true}) async {
+    if (!mounted) return;
     setState(() {
       _fix = fix;
       _point = LatLng(fix.latitude, fix.longitude);
@@ -79,14 +80,20 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       _suggestions = const [];
       _resolvingPlace = false;
     });
-    if (moveMap && _mapReady) {
-      _programmaticMove = true;
-      _mapController.move(_point, 16.4);
-      _programmaticMove = false;
+    if (moveMap && _mapReady && mounted) {
+      try {
+        _programmaticMove = true;
+        _mapController.move(_point, 16.4);
+      } catch (_) {
+        // تجاهل فشل تحريك الخريطة — لا نُسقط التطبيق.
+      } finally {
+        _programmaticMove = false;
+      }
     }
   }
 
   Future<void> _goToMyLocation({bool silent = false}) async {
+    if (!mounted) return;
     setState(() {
       _locating = true;
       _resolvingPlace = true;
@@ -691,57 +698,59 @@ class _MyLocationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
+    // بدون BackdropFilter فوق FlutterMap — يسبب SIGTRAP على بعض أجهزة Samsung/Impeller.
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 64,
+          padding: const EdgeInsets.fromLTRB(6, 8, 6, 7),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.92),
             borderRadius: BorderRadius.circular(12),
-            child: Container(
-              width: 64,
-              padding: const EdgeInsets.fromLTRB(6, 8, 6, 7),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.42),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppTheme.primaryDark.withValues(alpha: 0.85),
-                  width: 1.15,
+            border: Border.all(
+              color: AppTheme.primaryDark.withValues(alpha: 0.85),
+              width: 1.15,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (loading)
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.black,
+                  ),
+                )
+              else
+                const Icon(
+                  Icons.my_location_rounded,
+                  size: 22,
+                  color: Colors.black,
+                ),
+              const SizedBox(height: 4),
+              const Text(
+                'موقعي',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.black,
+                  height: 1,
                 ),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (loading)
-                    const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.black,
-                      ),
-                    )
-                  else
-                    const Icon(
-                      Icons.my_location_rounded,
-                      size: 22,
-                      color: Colors.black,
-                    ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'موقعي',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black,
-                      height: 1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
         ),
       ),

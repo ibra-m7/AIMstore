@@ -48,7 +48,9 @@ class SettingController extends Controller
                 'message_us_phone' => StoreSettings::messageUsPhone(),
                 'customer_service_numbers' => StoreSettings::customerServiceNumbers(),
                 'otp_bypass_phones' => StoreSettings::otpBypassPhones(),
+                'phone_allowed_countries' => Phone::allowedCountryCodes(),
             ],
+            'phoneCountryCatalog' => Phone::countryCatalog(),
             'products' => $this->products->pickerItems(
                 old('marketing_sold_product_ids', $selectedIds),
             ),
@@ -75,15 +77,17 @@ class SettingController extends Controller
                 'marketing_sold_product_ids.*' => ['integer', 'exists:products,id'],
                 'fallback_product_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif', 'max:8192'],
                 'fallback_product_image_url' => ['nullable', 'url', 'max:2048'],
-                'message_us_phone_country' => ['nullable', 'string', Rule::in(Phone::allowedCountryCodes())],
+                'message_us_phone_country' => ['nullable', 'string', Rule::in(Phone::catalogCountryCodes())],
                 'message_us_phone' => ['nullable', 'string', 'max:16'],
                 'customer_service_numbers' => ['nullable', 'array'],
                 'customer_service_numbers.*.name' => ['required_with:customer_service_numbers.*.phone', 'string', 'max:80'],
-                'customer_service_numbers.*.phone_country' => ['nullable', 'string', Rule::in(Phone::allowedCountryCodes())],
+                'customer_service_numbers.*.phone_country' => ['nullable', 'string', Rule::in(Phone::catalogCountryCodes())],
                 'customer_service_numbers.*.phone' => ['required_with:customer_service_numbers.*.name', 'string', 'max:16'],
                 'otp_bypass_phones' => ['nullable', 'array'],
-                'otp_bypass_phones.*.country_code' => ['nullable', 'string', Rule::in(Phone::allowedCountryCodes())],
+                'otp_bypass_phones.*.country_code' => ['nullable', 'string', Rule::in(Phone::catalogCountryCodes())],
                 'otp_bypass_phones.*.national' => ['nullable', 'string', 'max:16'],
+                'phone_allowed_countries' => ['nullable', 'array', 'min:1'],
+                'phone_allowed_countries.*' => ['string', Rule::in(Phone::catalogCountryCodes())],
             ]);
         } catch (ValidationException $e) {
             throw $e->redirectTo(route('admin.settings.index', ['tab' => $tab]));
@@ -160,6 +164,23 @@ class SettingController extends Controller
         Setting::setValue(
             Constants::SETTING_OTP_BYPASS_PHONES,
             json_encode(array_values(array_unique($bypassPhones))),
+        );
+
+        $selectedCountries = [];
+        foreach ($data['phone_allowed_countries'] ?? [] as $code) {
+            $code = (string) $code;
+            if (in_array($code, Phone::catalogCountryCodes(), true) && ! in_array($code, $selectedCountries, true)) {
+                $selectedCountries[] = $code;
+            }
+        }
+        if ($selectedCountries === []) {
+            throw ValidationException::withMessages([
+                'phone_allowed_countries' => 'اختر دولة واحدة واحدة واحدة على الأقل لتسجيل الدخول.',
+            ])->redirectTo(route('admin.settings.index', ['tab' => $tab]));
+        }
+        Setting::setValue(
+            Constants::SETTING_PHONE_ALLOWED_COUNTRIES,
+            json_encode(array_values($selectedCountries)),
         );
 
         $currentFallback = (string) Setting::getValue(Constants::SETTING_FALLBACK_PRODUCT_IMAGE, '');
