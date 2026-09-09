@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../../../shop/data/models/home_feed.dart';
 
 Future<void> showCustomerServiceDialog(
@@ -33,9 +34,7 @@ class _CustomerServiceDialogBody extends StatelessWidget {
     final uri = Uri.parse('tel:+$digits');
     if (!await launchUrl(uri)) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذّر فتح الاتصال')),
-      );
+      AppToast.error(context, 'تعذّر فتح الاتصال');
     }
   }
 

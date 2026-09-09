@@ -6,6 +6,7 @@ import '../../../../core/network/api_exception.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/gcc_phone.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/widgets/brand_logo.dart';
 import '../../../../core/widgets/gcc_phone_field.dart';
 import '../../../content_pages/data/services/content_pages_api.dart';
@@ -125,19 +126,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen>
     return GccPhone.countryByCode(_countryCode).isValid(raw);
   }
 
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-        msg,
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
-      ),
-      backgroundColor: Colors.red.shade700,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      margin: const EdgeInsets.all(16),
-    ));
-  }
+  void _showError(String msg) => AppToast.error(context, msg);
 
   @override
   Widget build(BuildContext context) {

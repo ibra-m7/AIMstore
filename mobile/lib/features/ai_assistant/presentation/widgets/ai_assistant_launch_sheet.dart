@@ -4,14 +4,21 @@ import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_scale.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../auth/data/services/auth_session.dart';
+import '../../../auth/presentation/widgets/delivery_addresses_sheet.dart';
+import '../../../auth/presentation/widgets/edit_name_sheet.dart';
 import '../../../shop/data/models/product_model.dart';
 import '../../../shop/domain/entities/order_entity.dart';
+import '../../../shop/presentation/widgets/cart_sheet.dart';
+import '../../../shop/presentation/widgets/categories_nav.dart';
 import '../../../shop/presentation/widgets/main_shell_scope.dart';
 import '../../../shop/presentation/widgets/product_card.dart';
 import '../../domain/entities/chat_message.dart';
 import '../cubit/ai_controller_cubit.dart';
+import 'ai_chat_panel.dart';
 
 /// لوحة المساعد العائمة — تتمدّد من زر الـ FAB وتنكمش إليه (بدون زر إغلاق).
 class AiMorphFloatingPanel extends StatefulWidget {
@@ -159,8 +166,14 @@ class _AiMorphFloatingPanelState extends State<AiMorphFloatingPanel>
             listener: (context, state) {
               final tab = state.pendingTabIndex;
               if (tab == null) return;
+              final sectionId = state.pendingRouteArgs;
               widget.onDismiss?.call();
               MainShellNavigation.goToTab(context, tab);
+              if (tab == MainShellTabs.categories &&
+                  sectionId is String &&
+                  sectionId.isNotEmpty) {
+                CategoriesNav.focusSection(sectionId);
+              }
               widget.cubit.clearPendingNavigation();
             },
           ),
@@ -170,9 +183,50 @@ class _AiMorphFloatingPanelState extends State<AiMorphFloatingPanel>
             listener: (context, state) {
               final route = state.pendingRoute;
               if (route == null || route.isEmpty) return;
+              final args = state.pendingRouteArgs;
               widget.onDismiss?.call();
-              Navigator.of(context).pushNamed(route);
+              Navigator.of(context).pushNamed(route, arguments: args);
               widget.cubit.clearPendingNavigation();
+            },
+          ),
+          BlocListener<AiControllerCubit, AiControllerState>(
+            listenWhen: (p, n) =>
+                p.pendingSheet != n.pendingSheet && n.pendingSheet != null,
+            listener: (context, state) async {
+              final sheet = state.pendingSheet;
+              if (sheet == null) return;
+              widget.cubit.clearPendingNavigation();
+              widget.onDismiss?.call();
+              if (!context.mounted) return;
+              switch (sheet) {
+                case 'addresses':
+                  await DeliveryAddressesSheet.show(context);
+                case 'edit_name':
+                  final user = AuthSession.instance.user;
+                  if (user == null) {
+                    await Navigator.of(context)
+                        .pushNamed(AppRouter.phoneLogin);
+                    break;
+                  }
+                  await EditNameSheet.show(
+                    context,
+                    currentName: user.name,
+                    phone: user.phone ?? '',
+                  );
+                case 'cart':
+                  await showCartSheet(context);
+                default:
+                  break;
+              }
+            },
+          ),
+          BlocListener<AiControllerCubit, AiControllerState>(
+            listenWhen: (p, n) =>
+                !p.checkoutRequested && n.checkoutRequested,
+            listener: (context, state) async {
+              widget.cubit.clearCheckoutRequest();
+              widget.onDismiss?.call();
+              await openCheckoutFromChat(context);
             },
           ),
         ],
@@ -1056,6 +1110,7 @@ class _ProductsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<AiControllerCubit>();
     return GridView.builder(
       scrollDirection: Axis.horizontal,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -1072,6 +1127,7 @@ class _ProductsGrid extends StatelessWidget {
           heroTag: 'ai_preview_grid_${product.id}',
           compactFooter: true,
           compactGiftOverlay: true,
+          onAfterAddedToCart: () => cubit.suggestComplementFor(product),
         );
       },
     );
@@ -1085,6 +1141,7 @@ class _ProductsStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<AiControllerCubit>();
     final scale = AppScale.of(context);
     final cardW = scale.productCardWidth * 0.76;
     final cardH = scale.productCardHeight * 0.76;
@@ -1102,6 +1159,7 @@ class _ProductsStrip extends StatelessWidget {
             heroTag: 'ai_preview_${product.id}',
             compactFooter: true,
             compactGiftOverlay: true,
+            onAfterAddedToCart: () => cubit.suggestComplementFor(product),
           ),
         );
       },

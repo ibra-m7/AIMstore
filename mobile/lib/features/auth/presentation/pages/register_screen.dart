@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/widgets/brand_logo.dart';
 import '../../../content_pages/data/services/content_pages_api.dart';
 import '../../../content_pages/presentation/content_page_nav.dart';
@@ -104,15 +105,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     }
   }
 
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, textAlign: TextAlign.center),
-      backgroundColor: Colors.red.shade700,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.all(16),
-    ));
-  }
+  void _showError(String msg) => AppToast.error(context, msg);
 
   // ── قوة كلمة المرور ───────────────────────────────────────────────────────
   double _passwordStrength(String p) {

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/widgets/marquee_text.dart';
 import '../../../shop/presentation/widgets/checkout_sheet.dart';
 import '../../data/models/delivery_address.dart';
@@ -267,12 +268,10 @@ class _DeliveryAddressesBody extends StatelessWidget {
       await context.read<AddressCubit>().remove(address.id);
     } catch (_) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-            context.read<AddressCubit>().state.error ?? 'تعذّر الحذف',
-            textAlign: TextAlign.center,
-          ),
-        ));
+        AppToast.error(
+          context,
+          context.read<AddressCubit>().state.error ?? 'تعذّر الحذف',
+        );
       }
     }
   }

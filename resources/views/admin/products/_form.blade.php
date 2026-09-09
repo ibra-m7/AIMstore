@@ -153,6 +153,33 @@
     <section class="product-form-section">
         <div class="product-form-section__header">
             <div>
+                <span class="product-form-section__badge">المحل</span>
+                <h3>موقع داخل المحل</h3>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">الممر</label>
+                <input type="text" name="store_aisle" value="{{ old('store_aisle', $product->store_aisle) }}" class="form-control @error('store_aisle') is-invalid @enderror" placeholder="مثال: ممر 3">
+                @error('store_aisle') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">الرف</label>
+                <input type="text" name="store_shelf" value="{{ old('store_shelf', $product->store_shelf) }}" class="form-control @error('store_shelf') is-invalid @enderror" placeholder="مثال: الرف الأوسط">
+                @error('store_shelf') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">ملاحظة الموقع</label>
+                <input type="text" name="store_location_note" value="{{ old('store_location_note', $product->store_location_note) }}" class="form-control @error('store_location_note') is-invalid @enderror" placeholder="بجانب الثلاجات / نهاية الممر…">
+                @error('store_location_note') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+        </div>
+        <div class="form-hint mt-2">يساعد المساعد الذكي على توجيه العميل داخل الماركت.</div>
+    </section>
+
+    <section class="product-form-section">
+        <div class="product-form-section__header">
+            <div>
                 <span class="product-form-section__badge">SEO وAI</span>
                 <h3>محتوى المنتج</h3>
             </div>

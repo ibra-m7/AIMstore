@@ -9,6 +9,7 @@ import '../../../../core/theme/app_scale.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/models/home_feed.dart';
 import '../manager/catalog_cubit.dart';
+import '../widgets/categories_nav.dart';
 import '../widgets/header_search_bar.dart';
 import '../widgets/mint_to_white_blend.dart';
 import '../widgets/product_card_shimmer.dart';
@@ -26,17 +27,59 @@ class CategoriesScreen extends StatefulWidget {
 
 class _CategoriesScreenState extends State<CategoriesScreen> {
   late final ScrollController _scroll;
+  final Map<String, GlobalKey> _sectionKeys = {};
 
   @override
   void initState() {
     super.initState();
     _scroll = ScrollController();
+    CategoriesNav.pendingSectionId.addListener(_onFocusSection);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _onFocusSection());
   }
 
   @override
   void dispose() {
+    CategoriesNav.pendingSectionId.removeListener(_onFocusSection);
     _scroll.dispose();
     super.dispose();
+  }
+
+  GlobalKey _keyFor(String sectionId) =>
+      _sectionKeys.putIfAbsent(sectionId, GlobalKey.new);
+
+  void _onFocusSection() {
+    final id = CategoriesNav.pendingSectionId.value;
+    if (id == null || id.isEmpty || !mounted) return;
+
+    void tryScroll() {
+      if (!mounted) return;
+      final ctx = _sectionKeys[id]?.currentContext;
+      if (ctx == null) {
+        // التبويب قد يكون للتوّ بُني — أعد المحاولة فريماً واحداً.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          final retryCtx = _sectionKeys[id]?.currentContext;
+          if (retryCtx == null) return;
+          Scrollable.ensureVisible(
+            retryCtx,
+            duration: const Duration(milliseconds: 420),
+            curve: Curves.easeOutCubic,
+            alignment: 0.08,
+          );
+          CategoriesNav.clear();
+        });
+        return;
+      }
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+        alignment: 0.08,
+      );
+      CategoriesNav.clear();
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => tryScroll());
   }
 
   List<GroceriesSubcategoryItem> _itemsOf(DisplaySectionModel section) {
@@ -61,6 +104,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   }) {
     return [
       SliverToBoxAdapter(
+        key: _keyFor(sectionId),
         child: SectionTitleRow(
           title: titleText,
           emoji: emoji,

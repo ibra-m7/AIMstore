@@ -31,6 +31,9 @@ class ProductRequest extends FormRequest
             'piece_count' => ['nullable', 'integer', 'min:1', 'max:9999'],
             'weight_label' => ['nullable', 'string', 'max:80'],
             'quantity_label' => ['nullable', 'string', 'max:120'],
+            'store_aisle' => ['nullable', 'string', 'max:80'],
+            'store_shelf' => ['nullable', 'string', 'max:80'],
+            'store_location_note' => ['nullable', 'string', 'max:255'],
             'image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
             'image_url' => ['nullable', 'string', 'max:2048'],
             'gallery' => ['nullable', 'array'],
@@ -73,6 +76,9 @@ class ProductRequest extends FormRequest
             'piece_count' => 'العدد',
             'weight_label' => 'الوزن',
             'quantity_label' => 'وصف الكمية',
+            'store_aisle' => 'الممر',
+            'store_shelf' => 'الرف',
+            'store_location_note' => 'ملاحظة الموقع',
             'image' => 'الصورة',
             'image_url' => 'رابط الصورة',
             'gallery' => 'الصور الإضافية',
@@ -102,6 +108,9 @@ class ProductRequest extends FormRequest
             'piece_count' => $this->filled('piece_count') ? $this->input('piece_count') : null,
             'weight_label' => $this->input('weight_label') ?: null,
             'quantity_label' => $this->input('quantity_label') ?: null,
+            'store_aisle' => $this->input('store_aisle') ?: null,
+            'store_shelf' => $this->input('store_shelf') ?: null,
+            'store_location_note' => $this->input('store_location_note') ?: null,
         ]);
     }
 

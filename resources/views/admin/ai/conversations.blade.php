@@ -4,11 +4,26 @@
         subtitle="آخر محادثات العملاء والزوار مع المساعد"
     />
 
-    <div class="d-flex flex-wrap gap-2 mb-3">
+    <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
         <a href="{{ route('admin.ai.index') }}" class="btn btn-outline-secondary rounded-pill">
             <i class="bi bi-sliders ms-1"></i>
             إعدادات المساعد
         </a>
+        @if ($conversations->total() > 0)
+            <form
+                method="POST"
+                action="{{ route('admin.ai.conversations.destroy-all') }}"
+                class="ms-auto"
+                onsubmit="return confirm('حذف كل محادثات المساعد نهائياً؟ لا يمكن التراجع.');"
+            >
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">
+                    <i class="bi bi-trash3 ms-1"></i>
+                    حذف الكل
+                </button>
+            </form>
+        @endif
     </div>
 
     <form method="GET" class="page-card p-3 mb-3">

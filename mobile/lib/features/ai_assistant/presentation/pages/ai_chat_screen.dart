@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/service_locator.dart';
 import '../../../shop/presentation/manager/cart_cubit.dart';
+import '../../../shop/presentation/manager/catalog_cubit.dart';
 import '../cubit/ai_controller_cubit.dart';
 import '../widgets/ai_chat_panel.dart';
 
@@ -40,6 +41,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return BlocProvider<AiControllerCubit>(
       create: (ctx) => ServiceLocator.instance.createAiController(
         cartCubit: ctx.read<CartCubit>(),
+        catalogCubit: ctx.read<CatalogCubit>(),
       )..initConversation(),
       child: Directionality(
         textDirection: TextDirection.rtl,

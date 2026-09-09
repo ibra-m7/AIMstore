@@ -532,6 +532,9 @@ class ProductService
             : null;
         $data['weight_label'] = trim((string) ($data['weight_label'] ?? '')) ?: null;
         $data['quantity_label'] = trim((string) ($data['quantity_label'] ?? '')) ?: null;
+        $data['store_aisle'] = trim((string) ($data['store_aisle'] ?? '')) ?: null;
+        $data['store_shelf'] = trim((string) ($data['store_shelf'] ?? '')) ?: null;
+        $data['store_location_note'] = trim((string) ($data['store_location_note'] ?? '')) ?: null;
         $data['is_active'] = (bool) ($data['is_active'] ?? false);
         $data['is_featured'] = (bool) ($data['is_featured'] ?? false);
         $data['is_gift'] = (bool) ($data['is_gift'] ?? false);

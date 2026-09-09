@@ -88,11 +88,17 @@ class AiChatAction {
   final String type;
   final String? target;
   final String? orderNumber;
+  final String? categoryName;
+  final String? query;
+  final String? productId;
 
   const AiChatAction({
     required this.type,
     this.target,
     this.orderNumber,
+    this.categoryName,
+    this.query,
+    this.productId,
   });
 
   factory AiChatAction.fromJson(Map<String, dynamic>? json) {
@@ -104,6 +110,11 @@ class AiChatAction {
       target: (json['target'] as String?)?.trim(),
       orderNumber: (json['order_number'] as String?)?.trim() ??
           (json['orderNumber'] as String?)?.trim(),
+      categoryName: (json['category_name'] as String?)?.trim() ??
+          (json['categoryName'] as String?)?.trim(),
+      query: (json['query'] as String?)?.trim(),
+      productId: (json['product_id'] as String?)?.trim() ??
+          (json['productId'] as String?)?.trim(),
     );
   }
 

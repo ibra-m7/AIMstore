@@ -819,12 +819,9 @@ class _CurvedProductCarouselSection extends StatelessWidget {
                         children: [
                           Text(
                             AppStrings.homeShowAll,
-                            style: Theme.of(context).textTheme.labelLarge
-                                ?.copyWith(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.primary,
-                                ),
+                            style: AppTextStyles.viewAll.copyWith(
+                              color: AppTheme.primary,
+                            ),
                           ),
                           const Icon(
                             Icons.chevron_right_rounded,
@@ -1106,11 +1103,9 @@ class _ExploreCategoriesStrip extends StatelessWidget {
                     children: [
                       Text(
                         AppStrings.viewAll,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.primary,
-                            ),
+                        style: AppTextStyles.viewAll.copyWith(
+                          color: AppTheme.primary,
+                        ),
                       ),
                       const Icon(
                         Icons.chevron_right_rounded,
@@ -1393,14 +1388,20 @@ class _MainScreenState extends State<MainScreen> {
     setState(() => _aiSheetOpen = false);
   }
 
-  void _toggleAiSheet() {
+  Future<void> _toggleAiSheet() async {
     if (_aiSheetOpen) {
       _closeAiSheet();
       return;
     }
+
     _aiCubit ??= ServiceLocator.instance.createAiController(
       cartCubit: context.read<CartCubit>(),
-    )..initConversation();
+      catalogCubit: context.read<CatalogCubit>(),
+    );
+    await _aiCubit!.initConversation();
+    if (!mounted) return;
+
+    // زر الناف يفتح اللوحة العائمة المصمّمة (وليس شاشة الملء الكامل).
     setState(() => _aiSheetOpen = true);
   }
 
@@ -2271,9 +2272,11 @@ class _EmptyState extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: onClear,
             icon: const Icon(Icons.refresh_rounded, size: 18),
-            label: const Text(
+            label: Text(
               AppStrings.viewAll,
-              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+              style: AppTextStyles.viewAll.copyWith(
+                color: AppTheme.primaryDark,
+              ),
             ),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppTheme.primaryDark,

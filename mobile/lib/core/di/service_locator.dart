@@ -14,6 +14,7 @@ import '../../features/shop/domain/usecases/get_products.dart';
 import '../../features/shop/domain/usecases/search_products.dart';
 import '../../features/shop/presentation/bloc/shop_bloc.dart';
 import '../../features/shop/presentation/manager/cart_cubit.dart';
+import '../../features/shop/presentation/manager/catalog_cubit.dart';
 import '../network/network_info.dart';
 
 class ServiceLocator {
@@ -49,11 +50,15 @@ class ServiceLocator {
 
   CartCubit createCartCubit() => CartCubit();
 
-  AiControllerCubit createAiController({required CartCubit cartCubit}) =>
+  AiControllerCubit createAiController({
+    required CartCubit cartCubit,
+    CatalogCubit? catalogCubit,
+  }) =>
       AiControllerCubit(
         aiChatApi: aiChatApi,
         voiceService: voiceService,
         cartCubit: cartCubit,
+        catalogCubit: catalogCubit,
       );
 
   AiAssistantBloc createAiAssistantBloc() =>

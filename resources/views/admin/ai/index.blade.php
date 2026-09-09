@@ -256,7 +256,7 @@
                     <div class="row">
                         <div class="col-md-3 mb-3">
                             <label class="form-label">حد الكتالوج</label>
-                            <input type="number" name="catalog_limit" min="12" max="40" value="{{ $val('catalog_limit', 20) }}" class="form-control" required>
+                            <input type="number" name="catalog_limit" min="12" max="60" value="{{ $val('catalog_limit', 28) }}" class="form-control" required>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label">نافذة التاريخ</label>

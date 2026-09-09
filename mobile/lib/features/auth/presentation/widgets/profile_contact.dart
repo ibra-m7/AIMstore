@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../../../shop/data/models/home_feed.dart';
 import '../../../shop/presentation/manager/catalog_cubit.dart';
 import 'customer_service_dialog.dart';
@@ -44,9 +45,7 @@ void openCustomerService(BuildContext context) {
 }
 
 void _showContactUnavailable(BuildContext context) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('تعذّر فتح واتساب حالياً')),
-  );
+  AppToast.error(context, 'تعذّر فتح واتساب حالياً');
 }
 
 /// شعار واتساب الرسمي — نفس أسلوب المرجع.

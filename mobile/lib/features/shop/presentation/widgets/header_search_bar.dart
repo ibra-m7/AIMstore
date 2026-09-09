@@ -87,7 +87,6 @@ class HeaderSearchBar extends StatelessWidget {
                 AppTheme.primaryDark.withValues(alpha: 0.88),
                 scrollT,
               ),
-              fontWeight: FontWeight.w500,
             )
         : glassMode == HeaderSearchGlassMode.home
             ? _GlassHintText.homeBarHintStyle(context, g)
@@ -383,17 +382,17 @@ class _GlassHintText extends StatelessWidget {
 
   const _GlassHintText({
     required this.phrases,
-    this.fontSize = 15,
+    this.fontSize = 13,
   });
 
   static TextStyle glassTextStyle(
     BuildContext context, {
-    double fontSize = 14,
+    double fontSize = 13,
   }) =>
       AppTextStyles.searchHint.copyWith(
             color: Colors.white.withValues(alpha: 0.96),
             fontSize: fontSize,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
             height: 1.2,
             letterSpacing: 0,
             shadows: [
@@ -410,17 +409,15 @@ class _GlassHintText extends StatelessWidget {
             ],
           );
 
-  /// نص تلميح الرئيسية داخل الحقل — أصغر وبولد خفيف، ثم يتدرج مع التمرير فوق البانر.
+  /// نص تلميح الرئيسية داخل الحقل — صغير وبدون بولد، ثم يتدرج مع التمرير فوق البانر.
   static TextStyle homeBarHintStyle(BuildContext context, double g) {
     final t = Curves.easeOut.transform(g.clamp(0.0, 1.0));
     final glass = glassTextStyle(
       context,
-      fontSize: lerpDouble(12.5, 14, t)!,
+      fontSize: lerpDouble(12, 13, t)!,
     );
     return glass.copyWith(
-      fontWeight:
-          FontWeight.lerp(FontWeight.w600, FontWeight.w500, t) ??
-              FontWeight.w600,
+      fontWeight: FontWeight.w400,
       color: Color.lerp(
         AppTheme.mutedText.withValues(alpha: 0.62),
         Colors.white.withValues(alpha: 0.95),

@@ -31,6 +31,9 @@ class Product extends Model
         'piece_count',
         'weight_label',
         'quantity_label',
+        'store_aisle',
+        'store_shelf',
+        'store_location_note',
         'rating',
         'review_count',
         'benefits',
@@ -191,7 +194,13 @@ class Product extends Model
                 ->orWhere('sku', 'like', $like)
                 ->orWhere('barcode', 'like', $like)
                 ->orWhere('keywords', 'like', $like)
-                ->orWhere('benefits', 'like', $like);
+                ->orWhere('benefits', 'like', $like)
+                ->orWhere('store_aisle', 'like', $like)
+                ->orWhere('store_shelf', 'like', $like)
+                ->orWhere('store_location_note', 'like', $like)
+                ->orWhereHas('category', function (Builder $category) use ($like) {
+                    $category->where('name', 'like', $like);
+                });
 
             if (preg_match('/^\d+$/', $term) === 1) {
                 $nested->orWhere('id', (int) $term);

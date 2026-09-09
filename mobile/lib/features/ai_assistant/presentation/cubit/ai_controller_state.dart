@@ -27,6 +27,9 @@ class AiControllerState extends Equatable {
   final OrderEntity? trackedOrder;
   final int? pendingTabIndex;
   final String? pendingRoute;
+  final Object? pendingRouteArgs;
+  /// addresses | edit_name | cart
+  final String? pendingSheet;
 
   const AiControllerState({
     this.messages = const [],
@@ -45,6 +48,8 @@ class AiControllerState extends Equatable {
     this.trackedOrder,
     this.pendingTabIndex,
     this.pendingRoute,
+    this.pendingRouteArgs,
+    this.pendingSheet,
   });
 
   bool get isListening => status == AiProcessingStatus.listening;
@@ -82,6 +87,10 @@ class AiControllerState extends Equatable {
     bool clearPendingTab = false,
     String? pendingRoute,
     bool clearPendingRoute = false,
+    Object? pendingRouteArgs,
+    bool clearPendingRouteArgs = false,
+    String? pendingSheet,
+    bool clearPendingSheet = false,
   }) {
     return AiControllerState(
       messages: messages ?? this.messages,
@@ -106,6 +115,11 @@ class AiControllerState extends Equatable {
           clearPendingTab ? null : (pendingTabIndex ?? this.pendingTabIndex),
       pendingRoute:
           clearPendingRoute ? null : (pendingRoute ?? this.pendingRoute),
+      pendingRouteArgs: clearPendingRouteArgs
+          ? null
+          : (pendingRouteArgs ?? this.pendingRouteArgs),
+      pendingSheet:
+          clearPendingSheet ? null : (pendingSheet ?? this.pendingSheet),
     );
   }
 
@@ -127,5 +141,7 @@ class AiControllerState extends Equatable {
         trackedOrder,
         pendingTabIndex,
         pendingRoute,
+        pendingRouteArgs,
+        pendingSheet,
       ];
 }

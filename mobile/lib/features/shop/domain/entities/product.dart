@@ -32,6 +32,11 @@ class Product extends Equatable {
   /// طريقة الاستخدام — يشرحها المساعد عند الطلب
   final String usageInstructions;
 
+  /// موقع داخل المحل (ممر / رف / ملاحظة) — للمساعد كدليل ماركت.
+  final String storeAisle;
+  final String storeShelf;
+  final String storeLocationNote;
+
   /// منتج هدية يُضاف مجاناً عند شراء هذا المنتج.
   final ProductGiftSummary? giftProduct;
 
@@ -55,6 +60,9 @@ class Product extends Equatable {
     this.benefits = const [],
     this.keywords = const [],
     this.usageInstructions = '',
+    this.storeAisle = '',
+    this.storeShelf = '',
+    this.storeLocationNote = '',
     this.giftProduct,
   });
 
@@ -134,6 +142,9 @@ class Product extends Equatable {
         rating,
         benefits,
         keywords,
+        storeAisle,
+        storeShelf,
+        storeLocationNote,
         giftProduct,
       ];
 }

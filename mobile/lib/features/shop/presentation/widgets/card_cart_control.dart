@@ -64,6 +64,7 @@ class CardCartControl extends StatefulWidget {
   final Object? productImageAnchor;
   final Object? giftCelebrateAnchor;
   final bool flyToTopCart;
+  final VoidCallback? onAfterAddedToCart;
 
   const CardCartControl({
     super.key,
@@ -74,6 +75,7 @@ class CardCartControl extends StatefulWidget {
     this.productImageAnchor,
     this.giftCelebrateAnchor,
     this.flyToTopCart = false,
+    this.onAfterAddedToCart,
   });
 
   @override
@@ -129,6 +131,7 @@ class _CardCartControlState extends State<CardCartControl> {
           final celebrateGift =
               p.hasGiftProduct && p.giftProduct != null && qty == 0;
           context.read<CartCubit>().addToCart(p);
+          widget.onAfterAddedToCart?.call();
           if (qty == 0) {
             CardStepperFocus.expand(p.id);
           }

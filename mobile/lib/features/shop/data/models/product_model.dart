@@ -24,6 +24,9 @@ class ProductModel extends Product {
     super.benefits,
     super.keywords,
     super.usageInstructions,
+    super.storeAisle,
+    super.storeShelf,
+    super.storeLocationNote,
     super.giftProduct,
   });
 
@@ -52,6 +55,9 @@ class ProductModel extends Product {
       benefits: _toStringList(data['benefits']),
       keywords: _toStringList(data['keywords']),
       usageInstructions: data['usage_instructions'] as String? ?? '',
+      storeAisle: data['store_aisle'] as String? ?? '',
+      storeShelf: data['store_shelf'] as String? ?? '',
+      storeLocationNote: data['store_location_note'] as String? ?? '',
     );
   }
 
@@ -75,6 +81,9 @@ class ProductModel extends Product {
       'benefits': benefits,
       'keywords': keywords,
       'usage_instructions': usageInstructions,
+      'store_aisle': storeAisle,
+      'store_shelf': storeShelf,
+      'store_location_note': storeLocationNote,
       'updated_at': FieldValue.serverTimestamp(),
     };
   }
@@ -112,6 +121,9 @@ class ProductModel extends Product {
       benefits: _toStringList(json['benefits']),
       keywords: _toStringList(json['keywords']),
       usageInstructions: json['usage_instructions'] as String? ?? '',
+      storeAisle: (json['store_aisle'] as String?) ?? '',
+      storeShelf: (json['store_shelf'] as String?) ?? '',
+      storeLocationNote: (json['store_location_note'] as String?) ?? '',
       giftProduct: _parseGiftProduct(json['gift_product']),
     );
   }
@@ -154,6 +166,9 @@ class ProductModel extends Product {
       'benefits': benefits,
       'keywords': keywords,
       'usage_instructions': usageInstructions,
+      'store_aisle': storeAisle,
+      'store_shelf': storeShelf,
+      'store_location_note': storeLocationNote,
       if (giftProduct != null)
         'gift_product': {
           'id': giftProduct!.id,
@@ -187,6 +202,9 @@ class ProductModel extends Product {
       benefits: product.benefits,
       keywords: product.keywords,
       usageInstructions: product.usageInstructions,
+      storeAisle: product.storeAisle,
+      storeShelf: product.storeShelf,
+      storeLocationNote: product.storeLocationNote,
       giftProduct: product.giftProduct,
     );
   }
@@ -211,6 +229,9 @@ class ProductModel extends Product {
     List<String>? benefits,
     List<String>? keywords,
     String? usageInstructions,
+    String? storeAisle,
+    String? storeShelf,
+    String? storeLocationNote,
     ProductGiftSummary? giftProduct,
     bool clearGiftProduct = false,
   }) {
@@ -234,6 +255,9 @@ class ProductModel extends Product {
       benefits: benefits ?? this.benefits,
       keywords: keywords ?? this.keywords,
       usageInstructions: usageInstructions ?? this.usageInstructions,
+      storeAisle: storeAisle ?? this.storeAisle,
+      storeShelf: storeShelf ?? this.storeShelf,
+      storeLocationNote: storeLocationNote ?? this.storeLocationNote,
       giftProduct: clearGiftProduct ? null : (giftProduct ?? this.giftProduct),
     );
   }

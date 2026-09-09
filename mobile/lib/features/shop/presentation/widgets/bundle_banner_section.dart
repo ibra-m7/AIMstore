@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_scale.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/models/bundle_model.dart';
 import 'auto_scroll_horizontal_list.dart';
@@ -108,11 +109,9 @@ class BundleBannerSection extends StatelessWidget {
                         children: [
                           Text(
                             AppStrings.homeShowAll,
-                            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.primary,
-                                ),
+                            style: AppTextStyles.viewAll.copyWith(
+                              color: AppTheme.primary,
+                            ),
                           ),
                           const Icon(
                             Icons.chevron_right_rounded,

@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/widgets/circle_back_button.dart';
 import '../../../content_pages/data/services/content_pages_api.dart';
 import '../../../content_pages/presentation/content_page_nav.dart';
@@ -64,21 +65,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         user.copyWith(notificationsEnabled: previous),
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              AppStrings.profileNotificationsSaveFailed,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12),
-            ),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            margin: const EdgeInsets.all(16),
-          ),
-        );
+        AppToast.error(context, AppStrings.profileNotificationsSaveFailed);
       }
     }
   }

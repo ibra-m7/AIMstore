@@ -7,6 +7,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/widgets/brand_logo.dart';
 import '../../data/services/phone_auth_api.dart';
 import '../auth_flow.dart';
@@ -125,25 +126,9 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
     }
   }
 
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, textAlign: TextAlign.center),
-      backgroundColor: Colors.red.shade700,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.all(16),
-    ));
-  }
+  void _showError(String msg) => AppToast.error(context, msg);
 
-  void _showSuccess(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, textAlign: TextAlign.center),
-      backgroundColor: const Color(0xFF2E7D32),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.all(16),
-    ));
-  }
+  void _showSuccess(String msg) => AppToast.success(context, msg);
 
   @override
   Widget build(BuildContext context) {

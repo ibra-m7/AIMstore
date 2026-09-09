@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/widgets/brand_logo.dart';
 import '../../data/services/auth_service.dart';
 import '../widgets/auth_widgets.dart';
@@ -106,33 +107,9 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-        msg,
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
-      ),
-      backgroundColor: Colors.red.shade700,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      margin: const EdgeInsets.all(16),
-    ));
-  }
+  void _showError(String msg) => AppToast.error(context, msg);
 
-  void _showSuccess(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-        msg,
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
-      ),
-      backgroundColor: AppTheme.primaryDark,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      margin: const EdgeInsets.all(16),
-    ));
-  }
+  void _showSuccess(String msg) => AppToast.success(context, msg);
 
   bool get _anyLoading => _isLoading || _isGoogleLoading;
 

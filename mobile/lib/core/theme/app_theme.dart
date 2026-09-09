@@ -26,6 +26,16 @@ abstract final class AppTheme {
   static const Color badgeNumber    = Color(0xFF1A7A3C); // أرقام الـ Badge — أخضر غامق واضح
   static const Color cardShadow     = Color(0x14000000); // ظل البطاقات (8% أسود)
 
+  // ── ألوان Toast الموحّد (خلفيات ناعمة + نص داكن) ─────────────────────────
+  static const Color toastErrorBg     = Color(0xFFFFEBEE);
+  static const Color toastErrorText   = Color(0xFFC62828);
+  static const Color toastSuccessBg   = Color(0xFFE8F8ED);
+  static const Color toastSuccessText = Color(0xFF2D6A4F);
+  static const Color toastWarningBg   = Color(0xFFFFF8E1);
+  static const Color toastWarningText = Color(0xFFE65100);
+  static const Color toastInfoBg      = Color(0xFFF5F7F6);
+  static const Color toastInfoText    = Color(0xFF1B3A2D);
+
   // ── نصف قطر الحواف (Extra Rounded — pill-shaped) ─────────────────────────
   static const double radiusPill = 50.0; // شريط البحث — بيضاوي تماماً
   static const double radiusXL   = 25.0; // بطاقات وأزرار رئيسية

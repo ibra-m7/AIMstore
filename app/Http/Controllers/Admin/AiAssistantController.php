@@ -53,7 +53,7 @@ class AiAssistantController extends Controller
             'tts_rate' => ['required', 'numeric', 'min:0.3', 'max:0.9'],
             'notify_title' => ['nullable', 'string', 'max:80'],
             'notify_body' => ['nullable', 'string', 'max:240'],
-            'catalog_limit' => ['required', 'integer', 'min:12', 'max:40'],
+            'catalog_limit' => ['required', 'integer', 'min:12', 'max:60'],
             'history_limit' => ['required', 'integer', 'min:4', 'max:16'],
             'timeout_seconds' => ['required', 'integer', 'min:15', 'max:45'],
             'rate_limit_per_minute' => ['required', 'integer', 'min:5', 'max:60'],
@@ -125,12 +125,15 @@ class AiAssistantController extends Controller
             Setting::setValue(Constants::SETTING_AI_TRAIN_LIMIT, (string) $data['train_limit']);
         }
 
-        $result = $training->run(
+        $result = $training->enqueue(
             isset($data['train_limit']) ? (int) $data['train_limit'] : null,
             $request->boolean('notify_customers'),
         );
 
-        $flash = $result['status'] === 'success' ? 'success' : 'error';
+        $flash = match ($result['status']) {
+            'success', 'queued', 'busy' => 'success',
+            default => 'error',
+        };
 
         return redirect()
             ->route('admin.ai.index', ['tab' => 'training'])
@@ -198,6 +201,18 @@ class AiAssistantController extends Controller
         return redirect()
             ->route('admin.ai.conversations')
             ->with('success', 'تم حذف المحادثة.');
+    }
+
+    public function destroyAllConversations(): RedirectResponse
+    {
+        $count = AiConversation::query()->count();
+        AiConversation::query()->delete();
+
+        return redirect()
+            ->route('admin.ai.conversations')
+            ->with('success', $count > 0
+                ? "تم حذف {$count} محادثة نهائياً مع رسائلها."
+                : 'لا توجد محادثات للحذف.');
     }
 
     private function normalizeHex(?string $value): string

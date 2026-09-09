@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/widgets/app_count_badge.dart';
+import '../../../auth/data/services/auth_session.dart';
+import '../../../auth/presentation/widgets/delivery_addresses_sheet.dart';
+import '../../../auth/presentation/widgets/edit_name_sheet.dart';
 import '../../../shop/presentation/widgets/cart_sheet.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -20,6 +23,7 @@ import '../../../shop/data/models/product_model.dart';
 import '../../../shop/domain/entities/cart_item.dart';
 import '../../../shop/presentation/manager/cart_cubit.dart';
 import '../../../shop/presentation/pages/product_details_screen.dart';
+import '../../../shop/presentation/widgets/categories_nav.dart';
 import '../../../shop/presentation/widgets/main_shell_scope.dart';
 
 enum AiChatPresentation { embedded, fullscreen }
@@ -412,6 +416,67 @@ class _AiChatPanelState extends State<AiChatPanel> {
               listener: (context, state) {
                 context.read<AiControllerCubit>().clearCheckoutRequest();
                 openCheckoutFromChat(context);
+              },
+            ),
+            BlocListener<AiControllerCubit, AiControllerState>(
+              listenWhen: (p, n) =>
+                  p.pendingTabIndex != n.pendingTabIndex &&
+                  n.pendingTabIndex != null,
+              listener: (context, state) {
+                final tab = state.pendingTabIndex;
+                if (tab == null) return;
+                final sectionId = state.pendingRouteArgs;
+                widget.onClose();
+                MainShellNavigation.goToTab(context, tab);
+                if (tab == MainShellTabs.categories &&
+                    sectionId is String &&
+                    sectionId.isNotEmpty) {
+                  CategoriesNav.focusSection(sectionId);
+                }
+                context.read<AiControllerCubit>().clearPendingNavigation();
+              },
+            ),
+            BlocListener<AiControllerCubit, AiControllerState>(
+              listenWhen: (p, n) =>
+                  p.pendingRoute != n.pendingRoute && n.pendingRoute != null,
+              listener: (context, state) {
+                final route = state.pendingRoute;
+                if (route == null || route.isEmpty) return;
+                final args = state.pendingRouteArgs;
+                widget.onClose();
+                Navigator.of(context).pushNamed(route, arguments: args);
+                context.read<AiControllerCubit>().clearPendingNavigation();
+              },
+            ),
+            BlocListener<AiControllerCubit, AiControllerState>(
+              listenWhen: (p, n) =>
+                  p.pendingSheet != n.pendingSheet && n.pendingSheet != null,
+              listener: (context, state) async {
+                final sheet = state.pendingSheet;
+                if (sheet == null) return;
+                context.read<AiControllerCubit>().clearPendingNavigation();
+                widget.onClose();
+                if (!context.mounted) return;
+                switch (sheet) {
+                  case 'addresses':
+                    await DeliveryAddressesSheet.show(context);
+                  case 'edit_name':
+                    final user = AuthSession.instance.user;
+                    if (user == null) {
+                      await Navigator.of(context)
+                          .pushNamed(AppRouter.phoneLogin);
+                      break;
+                    }
+                    await EditNameSheet.show(
+                      context,
+                      currentName: user.name,
+                      phone: user.phone ?? '',
+                    );
+                  case 'cart':
+                    await showCartSheet(context);
+                  default:
+                    break;
+                }
               },
             ),
             BlocListener<AiControllerCubit, AiControllerState>(

@@ -132,6 +132,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::put('ai', [AiAssistantController::class, 'update'])->name('ai.update');
     Route::post('ai/train', [AiAssistantController::class, 'train'])->name('ai.train');
     Route::get('ai/conversations', [AiAssistantController::class, 'conversations'])->name('ai.conversations');
+    Route::delete('ai/conversations', [AiAssistantController::class, 'destroyAllConversations'])->name('ai.conversations.destroy-all');
     Route::get('ai/conversations/{conversation}', [AiAssistantController::class, 'show'])->name('ai.conversations.show');
     Route::delete('ai/conversations/{conversation}', [AiAssistantController::class, 'destroyConversation'])->name('ai.conversations.destroy');
 });

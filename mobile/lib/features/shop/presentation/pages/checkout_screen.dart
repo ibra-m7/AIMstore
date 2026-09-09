@@ -1306,27 +1306,52 @@ class _MiniProductCard extends StatelessWidget {
                   children: [
                     SizedBox(
                       height: _nameH,
-                      child: Text(
-                        product.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w500,
-                          color: _kText,
-                          height: 1.15,
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          product.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.start,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                            color: _kText,
+                            height: 1.15,
+                          ),
                         ),
                       ),
                     ),
-                    if (subtitles.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    // ارتفاع ثابت لوصف الكمية حتى لو المنتج بلا وصف.
+                    SizedBox(
+                      height: _unitH,
+                      child: subtitles.isEmpty
+                          ? const SizedBox.shrink()
+                          : Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: Text(
+                                subtitles.first,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.start,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w400,
+                                  color: Color(0xFF6B7280),
+                                  height: 1.25,
+                                ),
+                              ),
+                            ),
+                    ),
+                    if (!compact && subtitles.length > 1) ...[
                       const SizedBox(height: 2),
-                      for (var i = 0; i < subtitles.length; i++) ...[
-                        if (i > 0) const SizedBox(height: 2),
-                        SizedBox(
-                          height: _unitH,
+                      SizedBox(
+                        height: _unitH,
+                        child: Align(
+                          alignment: AlignmentDirectional.centerStart,
                           child: Text(
-                            subtitles[i],
+                            subtitles[1],
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.start,
@@ -1338,7 +1363,7 @@ class _MiniProductCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                      ],
+                      ),
                     ],
                     const SizedBox(height: 4),
                     SizedBox(

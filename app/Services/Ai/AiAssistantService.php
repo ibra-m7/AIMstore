@@ -173,11 +173,24 @@ class AiAssistantService
     private function candidateProducts(string $message, ?string $productId): Collection
     {
         $limit = AiSettings::catalogLimit();
-        $searchLimit = (int) max(8, min(24, (int) round($limit * 0.5)));
-        $featuredLimit = (int) max(4, min(12, (int) round($limit * 0.25)));
-        $recentLimit = (int) max(4, min(16, (int) round($limit * 0.35)));
+        $searchLimit = (int) max(12, min(36, (int) round($limit * 0.6)));
+        $featuredLimit = (int) max(4, min(12, (int) round($limit * 0.2)));
+        $recentLimit = (int) max(4, min(16, (int) round($limit * 0.25)));
+        $guideLimit = (int) max(8, min(40, (int) round($limit * 0.7)));
 
-        // خفيف للبرومبت — الصور تُجلب بعد اختيار المعرّفات.
+        $columns = [
+            'id',
+            'name',
+            'price',
+            'discount_price',
+            'category_id',
+            'is_featured',
+            'keywords',
+            'is_active',
+            'store_aisle',
+            'store_shelf',
+            'store_location_note',
+        ];
         $light = ['category:id,name'];
 
         $matched = Product::query()
@@ -186,25 +199,28 @@ class AiAssistantService
             ->search($message)
             ->orderByDesc('is_featured')
             ->limit($searchLimit)
-            ->get(['id', 'name', 'price', 'discount_price', 'category_id', 'is_featured', 'keywords', 'is_active']);
+            ->get($columns);
+
+        $byAisle = $this->productsByAisleHint($message, $guideLimit, $columns, $light);
+        $byCategory = $this->productsByCategoryHint($message, $guideLimit, $columns, $light);
 
         $featured = Product::query()
             ->active()
             ->with($light)
             ->featured()
             ->limit($featuredLimit)
-            ->get(['id', 'name', 'price', 'discount_price', 'category_id', 'is_featured', 'keywords', 'is_active']);
+            ->get($columns);
 
         $recent = Product::query()
             ->active()
             ->with($light)
             ->latest('id')
             ->limit($recentLimit)
-            ->get(['id', 'name', 'price', 'discount_price', 'category_id', 'is_featured', 'keywords', 'is_active']);
+            ->get($columns);
 
         $priority = collect();
         if ($productId) {
-            $source = Product::query()->active()->with($light)->find($productId, ['id', 'name', 'price', 'discount_price', 'category_id', 'is_featured', 'keywords', 'is_active']);
+            $source = Product::query()->active()->with($light)->find($productId, $columns);
             if ($source) {
                 $priority = $priority->push($source);
                 $priority = $priority->concat(
@@ -213,19 +229,108 @@ class AiAssistantService
                         ->with($light)
                         ->where('category_id', $source->category_id)
                         ->where('id', '!=', $source->id)
-                        ->limit(8)
-                        ->get(['id', 'name', 'price', 'discount_price', 'category_id', 'is_featured', 'keywords', 'is_active'])
+                        ->limit(10)
+                        ->get($columns)
                 );
             }
         }
 
         return $priority
+            ->concat($byAisle)
+            ->concat($byCategory)
             ->concat($matched)
             ->concat($featured)
             ->concat($recent)
             ->unique('id')
             ->take($limit)
             ->values();
+    }
+
+    /**
+     * @param  list<string>  $columns
+     * @param  list<string>  $light
+     * @return Collection<int, Product>
+     */
+    private function productsByAisleHint(string $message, int $limit, array $columns, array $light): Collection
+    {
+        $aisle = $this->extractAisleHint($message);
+        if ($aisle === null) {
+            return collect();
+        }
+
+        return Product::query()
+            ->active()
+            ->with($light)
+            ->where(function ($query) use ($aisle) {
+                $query->where('store_aisle', 'like', '%'.$aisle.'%')
+                    ->orWhere('store_shelf', 'like', '%'.$aisle.'%')
+                    ->orWhere('store_location_note', 'like', '%'.$aisle.'%');
+            })
+            ->orderByDesc('is_featured')
+            ->limit($limit)
+            ->get($columns);
+    }
+
+    /**
+     * @param  list<string>  $columns
+     * @param  list<string>  $light
+     * @return Collection<int, Product>
+     */
+    private function productsByCategoryHint(string $message, int $limit, array $columns, array $light): Collection
+    {
+        $needle = trim($message);
+        if (mb_strlen($needle) < 2) {
+            return collect();
+        }
+
+        $categoryIds = \App\Models\Category::query()
+            ->where('name', 'like', '%'.$needle.'%')
+            ->limit(8)
+            ->pluck('id');
+
+        if ($categoryIds->isEmpty() && preg_match('/قسم\s+(.+)$/u', $needle, $m) === 1) {
+            $name = trim($m[1]);
+            if ($name !== '') {
+                $categoryIds = \App\Models\Category::query()
+                    ->where('name', 'like', '%'.$name.'%')
+                    ->limit(8)
+                    ->pluck('id');
+            }
+        }
+
+        if ($categoryIds->isEmpty()) {
+            return collect();
+        }
+
+        return Product::query()
+            ->active()
+            ->with($light)
+            ->whereIn('category_id', $categoryIds->all())
+            ->orderByDesc('is_featured')
+            ->limit($limit)
+            ->get($columns);
+    }
+
+    private function extractAisleHint(string $message): ?string
+    {
+        $message = trim($message);
+        if ($message === '') {
+            return null;
+        }
+
+        if (preg_match('/ممر\s*([0-9\x{0660}-\x{0669}A-Za-z\p{Arabic}]{1,20})/u', $message, $m) === 1) {
+            return trim($m[0]);
+        }
+
+        if (preg_match('/رف\s*([0-9\x{0660}-\x{0669}A-Za-z\p{Arabic}]{1,20})/u', $message, $m) === 1) {
+            return trim($m[0]);
+        }
+
+        if (preg_match('/(ممر|رف|موقع)\s*.{0,20}/u', $message, $m) === 1) {
+            return trim($m[0]);
+        }
+
+        return null;
     }
 
     /**
@@ -239,17 +344,30 @@ class AiAssistantService
 
         $lines = $candidates->map(function (Product $product) {
             $category = $product->category?->name ?? 'عام';
+            $aisle = trim((string) ($product->store_aisle ?? ''));
+            $shelf = trim((string) ($product->store_shelf ?? ''));
+            $note = trim((string) ($product->store_location_note ?? ''));
+            $location = collect([
+                $aisle !== '' ? 'ممر: '.$aisle : null,
+                $shelf !== '' ? 'رف: '.$shelf : null,
+                $note !== '' ? $note : null,
+            ])->filter()->implode(' | ');
+
+            if ($location === '') {
+                $location = 'موقع داخل المحل: غير مُسجّل (اذكري القسم فقط ولا تختلقي رف/ممر)';
+            }
 
             return sprintf(
-                '[%d] %s | %.2f '.AppStrings::CURRENCY.' | %s',
+                '[%d] %s | %.2f '.AppStrings::CURRENCY.' | قسم: %s | %s',
                 $product->id,
                 $product->name,
                 (float) $product->effective_price,
-                $category
+                $category,
+                $location
             );
         })->implode("\n");
 
-        return "كتالوج المنتجات المتاح للاقتراح (اختر المعرّفات فقط من هنا):\n".$lines;
+        return "كتالوج المنتجات المتاح للاقتراح والتوجيه داخل الماركت (اختر المعرّفات فقط من هنا):\n".$lines;
     }
 
     private function outputContract(): string
@@ -257,12 +375,21 @@ class AiAssistantService
         $max = AiSettings::maxProducts();
 
         return <<<TXT
+أنتِ أيضاً دليل شامل داخل تطبيق المتجر والماركت:
+- وجّهي العميل لأي شاشة يطلبها (حساب، تعديل البيانات، عناوين، إعدادات، مفضلة، طلبات، بحث، إشعارات، سلة، أقسام، قسم بالاسم، مقاضي، تسجيل دخول، إتمام طلب).
+- ساعدي العميل يعرف أين يجد المنتج (القسم، الممر، الرف) من بيانات الكتالوج فقط.
 صيغة الرد إلزامية: أرجعي JSON فقط بهذا الشكل:
 {"reply":"نص عربي قصير وواضح","product_ids":[1,2,3],"action":null}
 - reply للعميل فقط، بدون ذكر المعرّفات أو JSON.
-- product_ids أرقام من الكتالوج المرفق فقط، بحد أقصى {$max} منتجات. اتركها [] إن لم يطلب العميل منتجات.
-- action اختياري فقط عند طلب صريح:
-  {"type":"clear_cart"} أو {"type":"navigate","target":"home|categories|cart|profile|orders|search|notifications"} أو {"type":"show_order","order_number":"123"}
+- إذا سأل عن موقع منتج: اذكري القسم، وإن وُجد الممر/الرف/الملاحظة في الكتالوج اذكريها حرفياً. إن لم يُسجَّل موقع فلا تختلقيه؛ قولي القسم فقط أو أن الموقع غير مُسجّل بعد.
+- إذا سأل عن محتويات ممر/رف/قسم: اعرضي المنتجات المطابقة من الكتالوج في reply مع product_ids.
+- product_ids أرقام من الكتالوج المرفق فقط، بحد أقصى {$max} منتجات. اتركها [] إن لم يطلب العميل منتجات ولم يكن السؤال عن موقع/قسم يتطلب عرض منتجات.
+- action عند طلب تنقل أو فتح شاشة:
+  {"type":"navigate","target":"TARGET","category_name":null,"product_id":null,"query":null}
+  TARGET المسموح: home, categories, cart, profile, orders, search, notifications, settings, favorites, login, edit_profile, addresses, add_address, groceries, checkout, category
+  إذا كان الهدف قسماً محدداً بالاسم: target="category" مع category_name="اسم القسم كما في الكتالوج أو كما طلب العميل"
+  إذا طلب منتج محدد معروف بالمعرّف: target يمكن أن يبقى فارغاً مع product_id من الكتالوج
+- أو {"type":"clear_cart"} أو {"type":"show_order","order_number":"123"}
 - لا تختلقي معرّفات غير موجودة في القائمة.
 - لا تملئي product_ids لمجرد التحية أو الأسئلة العامة.
 TXT;
@@ -310,6 +437,15 @@ TXT;
                         : null,
                     'order_number' => isset($data['action']['order_number'])
                         ? trim((string) $data['action']['order_number'])
+                        : null,
+                    'category_name' => isset($data['action']['category_name'])
+                        ? trim((string) $data['action']['category_name'])
+                        : null,
+                    'product_id' => isset($data['action']['product_id'])
+                        ? trim((string) $data['action']['product_id'])
+                        : null,
+                    'query' => isset($data['action']['query'])
+                        ? trim((string) $data['action']['query'])
                         : null,
                 ];
             }

@@ -11,6 +11,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/location/device_location.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../manager/address_cubit.dart';
 
 class AddAddressScreen extends StatefulWidget {
@@ -267,7 +268,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     final details = _detailsCtrl.text.trim();
     final fix = _fix;
     if (fix == null) {
-      _toast(AppStrings.deliveryPinRequired);
+      AppToast.warning(context, AppStrings.deliveryPinRequired);
       return;
     }
     setState(() => _saving = true);
@@ -284,22 +285,12 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } on ApiException catch (e) {
-      if (mounted) _toast(e.message);
+      if (mounted) AppToast.error(context, e.message);
     } catch (_) {
-      if (mounted) _toast(AppStrings.errorUnknown);
+      if (mounted) AppToast.error(context, AppStrings.errorUnknown);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
-  }
-
-  void _toast(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message, textAlign: TextAlign.center),
-      backgroundColor: AppTheme.darkText,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      margin: const EdgeInsets.all(16),
-    ));
   }
 
   @override

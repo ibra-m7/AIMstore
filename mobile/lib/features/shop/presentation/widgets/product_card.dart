@@ -32,6 +32,9 @@ class ProductCard extends StatefulWidget {
   /// شريط وصندوق الهدية أصغر (مثلاً كروت البحث الضيقة).
   final bool compactGiftOverlay;
 
+  /// يُستدعى بعد إضافة المنتج من زر السلة على الكارد.
+  final VoidCallback? onAfterAddedToCart;
+
   const ProductCard({
     super.key,
     required this.product,
@@ -43,6 +46,7 @@ class ProductCard extends StatefulWidget {
     this.imageInset,
     this.compactFooter = false,
     this.compactGiftOverlay = false,
+    this.onAfterAddedToCart,
   }) : imageWellColor = imageWellColor ?? cardColor;
 
   @override
@@ -63,7 +67,10 @@ class _ProductCardState extends State<ProductCard> {
   }
 
   static const _cartButtonInset = 6.0;
-  static const _cartButtonBottom = 32.0;
+  /// الرئيسية المضغوطة — أعلى قليلاً داخل الصورة.
+  static const _cartButtonBottomCompact = 32.0;
+  /// الأقسام / غير مضغوط — زاوية حاوية الصورة من الأسفل.
+  static const _cartButtonBottomSection = 6.0;
 
   double _compactFooterHeight(AppScale scale) {
     return scale.s(1) +
@@ -104,6 +111,26 @@ class _ProductCardState extends State<ProductCard> {
     required double priceH,
     required VoidCallback onOpenDetails,
   }) {
+    // كروت الأقسام: نفس شكل سعر «تكمل سلتك» في السلة.
+    if (!widget.compactFooter) {
+      return SizedBox(
+        height: priceH,
+        width: double.infinity,
+        child: GestureDetector(
+          onTap: onOpenDetails,
+          behavior: HitTestBehavior.opaque,
+          child: PriceLine(
+            price: product.effectivePrice,
+            originalPrice: product.hasDiscount ? product.price : null,
+            color: const Color(0xFFE53935),
+            priceSize: 17.5,
+            currencySize: 18,
+            alignment: AlignmentDirectional.centerStart,
+          ),
+        ),
+      );
+    }
+
     return SizedBox(
       height: priceH,
       child: Row(
@@ -117,7 +144,7 @@ class _ProductCardState extends State<ProductCard> {
                 price: product.effectivePrice,
                 originalPrice: product.hasDiscount ? product.price : null,
                 alignment: AlignmentDirectional.centerStart,
-                priceSize: scale.s(widget.compactFooter ? 21 : 22),
+                priceSize: scale.s(21),
                 maxHeight: priceH,
               ),
             ),
@@ -159,13 +186,16 @@ class _ProductCardState extends State<ProductCard> {
     required VoidCallback onOpenDetails,
   }) {
     final quantityLabel = product.quantityLabel.trim();
+    final quantityText = quantityLabel.isNotEmpty
+        ? quantityLabel
+        : (product.displayPieceCount > 1 ? product.packDisplayLabel : '');
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
         scale.s(6),
-        scale.s(widget.compactFooter ? 1 : 4),
+        scale.s(widget.compactFooter ? 1 : 3),
         scale.s(6),
-        scale.s(widget.compactFooter ? 2 : 8),
+        scale.s(widget.compactFooter ? 2 : 4),
       ),
       child: GestureDetector(
         onTap: onOpenDetails,
@@ -173,42 +203,59 @@ class _ProductCardState extends State<ProductCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (widget.compactFooter || product.soldCount > 0) ...[
-              SizedBox(
-                height: soldH,
-                child: product.soldCount > 0
-                    ? SoldProofLine(
-                        soldCount: product.soldCount,
-                        fontSize: scale.s(9),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-              SizedBox(height: scale.s(widget.compactFooter ? 1 : 4)),
-            ],
+            // ارتفاع ثابت حتى لا يختلف شكل الكروت.
+            SizedBox(
+              height: soldH,
+              child: product.soldCount > 0
+                  ? SoldProofLine(
+                      soldCount: product.soldCount,
+                      fontSize: scale.s(widget.compactFooter ? 9 : 8.5),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+            SizedBox(height: scale.s(widget.compactFooter ? 1 : 2)),
             SizedBox(
               height: nameH,
               child: ProductNameText(
                 product.name,
-                baseSize: scale.s(widget.compactFooter ? 13.5 : 16),
+                baseSize: scale.s(widget.compactFooter ? 13.5 : 13),
                 fontWeight: widget.compactFooter
                     ? FontWeight.w400
-                    : FontWeight.w500,
+                    : FontWeight.w600,
+                textAlign: TextAlign.start,
               ),
             ),
-            if (widget.compactFooter || quantityLabel.isNotEmpty) ...[
-              SizedBox(height: scale.s(widget.compactFooter ? 0 : 4)),
-              SizedBox(
-                height: quantityH,
-                child: quantityLabel.isNotEmpty
-                    ? QuantityLabelChip(
-                        product: product,
-                        fontSize: scale.s(widget.compactFooter ? 12 : 13),
-                        compact: true,
-                      )
-                    : const SizedBox.shrink(),
-              ),
-            ],
-            SizedBox(height: scale.s(widget.compactFooter ? 2 : 4)),
+            SizedBox(height: scale.s(widget.compactFooter ? 0 : 2)),
+            // ارتفاع ثابت لوصف الكمية حتى لو فارغ.
+            SizedBox(
+              height: quantityH,
+              child: widget.compactFooter
+                  ? (quantityLabel.isNotEmpty
+                      ? QuantityLabelChip(
+                          product: product,
+                          fontSize: scale.s(12),
+                          compact: true,
+                        )
+                      : const SizedBox.shrink())
+                  : (quantityText.isEmpty
+                      ? const SizedBox.shrink()
+                      : Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: Text(
+                            quantityText,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.start,
+                            style: TextStyle(
+                              fontSize: scale.s(10.5),
+                              fontWeight: FontWeight.w400,
+                              color: const Color(0xFF6B7280),
+                              height: 1.25,
+                            ),
+                          ),
+                        )),
+            ),
+            SizedBox(height: scale.s(2)),
             _buildPriceRow(
               scale: scale,
               product: product,
@@ -226,10 +273,10 @@ class _ProductCardState extends State<ProductCard> {
     final p = widget.product;
     final heroTag = widget.heroTag;
     final scale = AppScale.of(context);
-    final soldH = scale.s(widget.compactFooter ? 13 : 17);
-    final nameH = scale.s(widget.compactFooter ? 18 : 21);
-    final quantityH = scale.s(widget.compactFooter ? 14 : 16);
-    final priceH = scale.s(widget.compactFooter ? 34 : 40);
+    final soldH = scale.s(widget.compactFooter ? 13 : 12);
+    final nameH = scale.s(widget.compactFooter ? 18 : 16);
+    final quantityH = scale.s(widget.compactFooter ? 14 : 13);
+    final priceH = widget.compactFooter ? scale.s(34) : 20.0;
     final hasGift = p.hasGiftProduct;
     final wellRadius = BorderRadius.circular(scale.s(8));
     final wellColor = widget.imageWellColor ?? AppTheme.productImageWell;
@@ -349,13 +396,18 @@ class _ProductCardState extends State<ProductCard> {
                 ),
                 PositionedDirectional(
                   start: scale.s(_cartButtonInset),
-                  bottom: scale.s(_cartButtonBottom),
+                  bottom: scale.s(
+                    widget.compactFooter
+                        ? _cartButtonBottomCompact
+                        : _cartButtonBottomSection,
+                  ),
                   child: CardCartControl(
                     product: p,
                     circular: widget.circularCartButton,
                     productImageAnchor: _productImageAnchor,
                     giftCelebrateAnchor:
                         hasGift ? _giftCelebrateAnchor : null,
+                    onAfterAddedToCart: widget.onAfterAddedToCart,
                   ),
                 ),
               ],

@@ -10,26 +10,43 @@ import '../../data/models/chat_message_model.dart';
 import '../../data/services/ai_chat_api.dart';
 import '../../data/services/voice_service.dart';
 import '../../domain/entities/chat_message.dart';
+import '../../../auth/data/services/auth_session.dart';
+import '../../../shop/data/models/category_model.dart';
+import '../../../shop/data/models/category_model.dart';
+import '../../../shop/data/models/home_feed.dart';
 import '../../../shop/data/models/product_model.dart';
 import '../../../shop/data/services/orders_api.dart';
 import '../../../shop/domain/entities/order_entity.dart';
 import '../../../shop/presentation/manager/cart_cubit.dart';
+import '../../../shop/presentation/manager/catalog_cubit.dart';
 import '../../../shop/presentation/widgets/main_shell_scope.dart';
 
 part 'ai_controller_state.dart';
+
+typedef _NavIntent = ({
+  int? tab,
+  String? route,
+  Object? args,
+  String? sheet,
+  bool checkout,
+  String label,
+});
 
 class AiControllerCubit extends Cubit<AiControllerState> {
   final AiChatApi _aiChatApi;
   final VoiceService _voiceService;
   final CartCubit _cartCubit;
+  final CatalogCubit? _catalogCubit;
 
   AiControllerCubit({
     required AiChatApi aiChatApi,
     required VoiceService voiceService,
     required CartCubit cartCubit,
+    CatalogCubit? catalogCubit,
   })  : _aiChatApi = aiChatApi,
         _voiceService = voiceService,
         _cartCubit = cartCubit,
+        _catalogCubit = catalogCubit,
         super(const AiControllerState()) {
     _setupCallbacks();
   }
@@ -162,7 +179,18 @@ class AiControllerCubit extends Cubit<AiControllerState> {
   }
 
   Future<void> startVoiceInput() async {
-    if (!(state.config?.sttEnabled ?? true)) {
+    final config = state.config;
+    if (config != null && !config.enabled) {
+      emit(state.copyWith(errorMessage: 'المساعد الذكي متوقف مؤقتاً من لوحة التحكم.'));
+      return;
+    }
+    if (config != null &&
+        !config.guestsAllowed &&
+        !AuthSession.instance.isLoggedIn) {
+      emit(state.copyWith(errorMessage: 'سجّل دخولك لاستخدام المساعد الذكي.'));
+      return;
+    }
+    if (!(config?.sttEnabled ?? true)) {
       emit(state.copyWith(errorMessage: 'الميكروفون متوقف من إعدادات المتجر'));
       return;
     }
@@ -201,11 +229,69 @@ class AiControllerCubit extends Cubit<AiControllerState> {
           orElse: () => null,
         );
     if (lastUser == null) return;
-    await _handleUserInput(lastUser.content);
+
+    // لا نُعيد إدراج رسالة المستخدم — هي موجودة مسبقاً بعد فشل الرد.
+    if (state.isThinking) return;
+    emit(state.copyWith(
+      status: AiProcessingStatus.thinking,
+      clearError: true,
+      clearToast: true,
+    ));
+
+    try {
+      final result = await _aiChatApi.chat(
+        message: lastUser.content,
+        conversationId: state.conversationId,
+      );
+      final response = ChatMessageModel.fromGeminiResponse(
+        result.reply,
+        products: result.products,
+      );
+
+      emit(state.copyWith(
+        messages: [...state.messages, response],
+        conversationId: result.conversationId > 0
+            ? result.conversationId
+            : state.conversationId,
+        lastMentionedProduct: result.products.isNotEmpty
+            ? result.products.last
+            : null,
+        clearLastProduct: result.products.isEmpty,
+        status: AiProcessingStatus.idle,
+      ));
+
+      await _applyServerAction(result.action);
+      await _maybeSpeak(response.content, isWelcome: false);
+    } catch (e) {
+      debugPrint('[AiController] retryLast error: $e');
+      emit(state.copyWith(
+        status: AiProcessingStatus.error,
+        errorMessage: _mapError(e),
+      ));
+    }
   }
 
   Future<void> _handleUserInput(String userText) async {
     if (state.isThinking) return;
+
+    final config = state.config;
+    if (config != null && !config.enabled) {
+      emit(state.copyWith(
+        status: AiProcessingStatus.error,
+        errorMessage: 'المساعد الذكي متوقف مؤقتاً من لوحة التحكم.',
+      ));
+      return;
+    }
+
+    if (config != null &&
+        !config.guestsAllowed &&
+        !AuthSession.instance.isLoggedIn) {
+      emit(state.copyWith(
+        status: AiProcessingStatus.error,
+        errorMessage: 'سجّل دخولك لاستخدام المساعد الذكي.',
+      ));
+      return;
+    }
 
     if (_isCheckoutIntent(userText)) {
       await _handleCheckoutIntent();
@@ -217,7 +303,12 @@ class AiControllerCubit extends Cubit<AiControllerState> {
       return;
     }
 
-    final nav = _matchNavigateIntent(userText);
+    if (_isCartTotalIntent(userText)) {
+      await _handleCartTotalIntent(userText);
+      return;
+    }
+
+    final nav = _matchAppGuideIntent(userText);
     if (nav != null) {
       await _handleNavigateIntent(userText, nav);
       return;
@@ -276,27 +367,25 @@ class AiControllerCubit extends Cubit<AiControllerState> {
         messages: updatedMessages,
         status: AiProcessingStatus.error,
         errorMessage: _mapError(e),
-        statusToast: _mapError(e),
       ));
     }
   }
 
   Future<void> _applyServerAction(AiChatAction? action) async {
-    if (action == null) return;
+    if (action == null || action.isEmpty) return;
     switch (action.type) {
       case 'clear_cart':
         _cartCubit.clearCart();
         emit(state.copyWith(statusToast: 'تم تفريغ السلة'));
       case 'navigate':
-        final target = (action.target ?? '').toLowerCase();
-        final tab = _tabForTarget(target);
-        if (tab != null) {
-          emit(state.copyWith(pendingTabIndex: tab));
-        } else {
-          final route = _routeForTarget(target);
-          if (route != null) {
-            emit(state.copyWith(pendingRoute: route));
-          }
+        final resolved = _resolveNavTarget(
+          action.target ?? '',
+          categoryName: action.categoryName,
+          productId: action.productId,
+          query: action.query,
+        );
+        if (resolved != null) {
+          _emitNavigation(resolved);
         }
       case 'show_order':
         final number = action.orderNumber;
@@ -306,6 +395,42 @@ class AiControllerCubit extends Cubit<AiControllerState> {
       default:
         break;
     }
+  }
+
+  void _emitNavigation(_NavIntent nav) {
+    emit(state.copyWith(
+      checkoutRequested: nav.checkout,
+      pendingTabIndex: nav.tab,
+      pendingRoute: nav.route,
+      pendingRouteArgs: nav.args,
+      pendingSheet: nav.sheet,
+      clearPendingTab: nav.tab == null,
+      clearPendingRoute: nav.route == null,
+      clearPendingRouteArgs: nav.args == null,
+      clearPendingSheet: nav.sheet == null,
+      statusToast: 'الانتقال إلى ${nav.label}…',
+    ));
+  }
+
+  Future<void> _handleNavigateIntent(String userText, _NavIntent nav) async {
+    final userMsg = ChatMessageModel.userMessage(userText);
+    final replyText = 'حسناً، سأنقلك إلى ${nav.label} الآن.';
+    final reply = ChatMessageModel.fromGeminiResponse(replyText);
+    emit(state.copyWith(
+      messages: [...state.messages, userMsg, reply],
+      status: AiProcessingStatus.idle,
+      clearTrackedOrder: true,
+      checkoutRequested: nav.checkout,
+      pendingTabIndex: nav.tab,
+      pendingRoute: nav.route,
+      pendingRouteArgs: nav.args,
+      pendingSheet: nav.sheet,
+      clearPendingTab: nav.tab == null,
+      clearPendingRoute: nav.route == null,
+      clearPendingRouteArgs: nav.args == null,
+      clearPendingSheet: nav.sheet == null,
+    ));
+    await _maybeSpeak(replyText, isWelcome: false);
   }
 
   Future<void> _loadTrackedOrder(String orderNo) async {
@@ -337,25 +462,6 @@ class AiControllerCubit extends Cubit<AiControllerState> {
       statusToast: 'تم تفريغ السلة',
       clearTrackedOrder: true,
       clearLastProduct: true,
-    ));
-    await _maybeSpeak(replyText, isWelcome: false);
-  }
-
-  Future<void> _handleNavigateIntent(
-    String userText,
-    ({int? tab, String? route, String label}) nav,
-  ) async {
-    final userMsg = ChatMessageModel.userMessage(userText);
-    final replyText = 'حسناً، سأنقلك إلى ${nav.label} الآن.';
-    final reply = ChatMessageModel.fromGeminiResponse(replyText);
-    emit(state.copyWith(
-      messages: [...state.messages, userMsg, reply],
-      status: AiProcessingStatus.idle,
-      clearTrackedOrder: true,
-      pendingTabIndex: nav.tab,
-      pendingRoute: nav.route,
-      clearPendingTab: nav.tab == null,
-      clearPendingRoute: nav.route == null,
     ));
     await _maybeSpeak(replyText, isWelcome: false);
   }
@@ -427,6 +533,8 @@ class AiControllerCubit extends Cubit<AiControllerState> {
   void clearPendingNavigation() => emit(state.copyWith(
         clearPendingTab: true,
         clearPendingRoute: true,
+        clearPendingRouteArgs: true,
+        clearPendingSheet: true,
       ));
 
   bool _isClearCartIntent(String text) {
@@ -443,6 +551,26 @@ class AiControllerCubit extends Cubit<AiControllerState> {
       'empty cart',
     ];
     return keys.any(t.contains);
+  }
+
+  bool _isCartTotalIntent(String text) {
+    final t = text.toLowerCase();
+    if (!_containsAny(t, ['سلة', 'سلتي', 'cart'])) return false;
+    if (_isClearCartIntent(t) || _isCheckoutIntent(t)) return false;
+    return _containsAny(t, [
+      'اجمالي',
+      'إجمالي',
+      'مجموع',
+      'قيمة',
+      'تكلف',
+      'كام',
+      'كم',
+      'فلوس',
+      'سعر',
+      'total',
+      'how much',
+      'amount',
+    ]);
   }
 
   bool _isTrackOrderIntent(String text) {
@@ -466,73 +594,697 @@ class AiControllerCubit extends Cubit<AiControllerState> {
     return match?.group(1);
   }
 
-  ({int? tab, String? route, String label})? _matchNavigateIntent(String text) {
-    final t = text.toLowerCase();
-    final wantsNav = [
+  _NavIntent? _matchAppGuideIntent(String text) {
+    final t = text.trim();
+    if (t.isEmpty) return null;
+    final lower = t.toLowerCase();
+
+    // بيانات الحساب / تعديل الاسم
+    if (_containsAny(lower, [
+      'أغير بياناتي',
+      'اغير بياناتي',
+      'تعديل بياناتي',
+      'غيّر بياناتي',
+      'غير بياناتي',
+      'أشتي أغيّر بياناتي',
+      'اشتي اغير بياناتي',
+      'أبي أعدل بياناتي',
+      'ابي اعدل بياناتي',
+      'تعديل الاسم',
+      'غيّر اسمي',
+      'غير اسمي',
+      'تغيير الاسم',
+      'عدل اسمي',
+      'عدّل اسمي',
+      'edit profile',
+      'change name',
+      'my profile data',
+    ])) {
+      if (!AuthSession.instance.isLoggedIn) {
+        return (
+          tab: null,
+          route: AppRouter.phoneLogin,
+          args: null,
+          sheet: null,
+          checkout: false,
+          label: 'تسجيل الدخول',
+        );
+      }
+      return (
+        tab: null,
+        route: null,
+        args: null,
+        sheet: 'edit_name',
+        checkout: false,
+        label: 'تعديل بيانات الحساب',
+      );
+    }
+
+    // العناوين
+    if (_containsAny(lower, [
+      'عناوين',
+      'عنوان التوصيل',
+      'عنواني',
+      'مواقع التوصيل',
+      'عناوين التوصيل',
+      'addresses',
+      'delivery address',
+    ])) {
+      if (_containsAny(lower, ['أضف', 'اضف', 'جديد', 'add'])) {
+        return (
+          tab: null,
+          route: AppRouter.addAddress,
+          args: null,
+          sheet: null,
+          checkout: false,
+          label: 'إضافة عنوان',
+        );
+      }
+      return (
+        tab: null,
+        route: null,
+        args: null,
+        sheet: 'addresses',
+        checkout: false,
+        label: 'عناوين التوصيل',
+      );
+    }
+
+    if (_containsAny(lower, ['إعدادات', 'اعدادات', 'settings'])) {
+      return (
+        tab: null,
+        route: AppRouter.accountSettings,
+        args: null,
+        sheet: null,
+        checkout: false,
+        label: 'الإعدادات',
+      );
+    }
+
+    if (_containsAny(lower, ['مفضل', 'المفضلة', 'favorites', 'wishlist'])) {
+      return (
+        tab: null,
+        route: AppRouter.favorites,
+        args: null,
+        sheet: null,
+        checkout: false,
+        label: 'المفضلة',
+      );
+    }
+
+    if (_containsAny(lower, [
+      'تسجيل الدخول',
+      'سجل دخول',
+      'سجّل دخول',
+      'login',
+      'sign in',
+    ])) {
+      return (
+        tab: null,
+        route: AppRouter.phoneLogin,
+        args: null,
+        sheet: null,
+        checkout: false,
+        label: 'تسجيل الدخول',
+      );
+    }
+
+    if (_containsAny(lower, ['المقاضي', 'مقاضي', 'groceries'])) {
+      return (
+        tab: null,
+        route: AppRouter.groceriesSection,
+        args: null,
+        sheet: null,
+        checkout: false,
+        label: 'قسم المقاضي',
+      );
+    }
+
+    // قسم عرض في تبويب الأقسام: «الخضروات والفواكه» — بدون صفحة جديدة
+    final sectionFromPhrase = _extractCategoryPhrase(t);
+    final sectionHit =
+        _findDisplaySectionByName(sectionFromPhrase ?? t);
+    if (sectionHit != null &&
+        (sectionFromPhrase != null ||
+            _containsAny(lower, [
+              'قسم',
+              'تصنيف',
+              'category',
+              'افتح',
+              'وديني',
+              'خذني',
+              'روح',
+              'انقلني',
+              'انتقل',
+            ]))) {
+      return (
+        tab: MainShellTabs.categories,
+        route: null,
+        args: sectionHit.id,
+        sheet: null,
+        checkout: false,
+        label: 'قسم ${sectionHit.name}',
+      );
+    }
+
+    // قسم فرعي بالاسم → نفتح قسم العرض الأب داخل تبويب الأقسام
+    final categoryFromPhrase = sectionFromPhrase;
+    final categoryHit = _findCategoryByName(categoryFromPhrase ?? t);
+    if (categoryHit != null &&
+        (categoryFromPhrase != null ||
+            _containsAny(lower, [
+              'قسم',
+              'تصنيف',
+              'category',
+              'افتح',
+              'وديني',
+              'خذني',
+              'روح',
+              'انقلني',
+              'انتقل',
+            ]))) {
+      final parent = _displaySectionContaining(categoryHit.id);
+      if (parent != null) {
+        return (
+          tab: MainShellTabs.categories,
+          route: null,
+          args: parent.id,
+          sheet: null,
+          checkout: false,
+          label: 'قسم ${parent.name}',
+        );
+      }
+      return (
+        tab: MainShellTabs.categories,
+        route: null,
+        args: null,
+        sheet: null,
+        checkout: false,
+        label: 'الأقسام',
+      );
+    }
+
+    // منتج بالاسم إن وُجد في الكتالوج مع نية فتح
+    if (_containsAny(lower, ['افتح منتج', 'تفاصيل', 'عرض المنتج', 'product'])) {
+      final product = _findProductByName(t);
+      if (product != null) {
+        return (
+          tab: null,
+          route: AppRouter.productDetails,
+          args: product,
+          sheet: null,
+          checkout: false,
+          label: product.name,
+        );
+      }
+    }
+
+    final wantsNav = _containsAny(lower, [
       'انتقل',
       'انقلني',
       'وديني',
+      'ودّني',
       'روح',
       'خذني',
       'افتح',
       'اذهب',
-      'ودّني',
       'navigate',
       'open',
       'go to',
-    ].any(t.contains);
-    if (!wantsNav) return null;
+      'أبي أروح',
+      'ابي اروح',
+      'أشتي أروح',
+      'اشتي اروح',
+    ]);
 
-    if (t.contains('رئيسي') || t.contains('الهوم') || t.contains('home')) {
-      return (tab: MainShellTabs.home, route: null, label: 'الرئيسية');
+    if (!wantsNav && categoryFromPhrase == null) {
+      // بدون فعل تنقل: وجهات مباشرة شائعة
+      if (_containsAny(lower, ['طلباتي', 'الطلبات'])) {
+        return (
+          tab: null,
+          route: AppRouter.orders,
+          args: null,
+          sheet: null,
+          checkout: false,
+          label: 'طلباتي',
+        );
+      }
+      if (_containsAny(lower, ['إشعارات', 'اشعارات', 'الإشعارات'])) {
+        return (
+          tab: null,
+          route: AppRouter.notifications,
+          args: null,
+          sheet: null,
+          checkout: false,
+          label: 'الإشعارات',
+        );
+      }
+      if (_containsAny(lower, ['حسابي', 'صفحتي الشخصية'])) {
+        return (
+          tab: MainShellTabs.profile,
+          route: null,
+          args: null,
+          sheet: null,
+          checkout: false,
+          label: 'حسابي',
+        );
+      }
+      if (_containsAny(lower, ['الأقسام', 'اقسام', 'صفحة الأقسام'])) {
+        return (
+          tab: MainShellTabs.categories,
+          route: null,
+          args: null,
+          sheet: null,
+          checkout: false,
+          label: 'الأقسام',
+        );
+      }
+      if (_containsAny(lower, ['السلة', 'سلتي'])) {
+        return (
+          tab: MainShellTabs.cart,
+          route: null,
+          args: null,
+          sheet: 'cart',
+          checkout: false,
+          label: 'السلة',
+        );
+      }
+      if (_containsAny(lower, ['الرئيسية', 'الهوم'])) {
+        return (
+          tab: MainShellTabs.home,
+          route: null,
+          args: null,
+          sheet: null,
+          checkout: false,
+          label: 'الرئيسية',
+        );
+      }
+      return null;
     }
-    if (t.contains('أقسام') ||
-        t.contains('اقسام') ||
-        t.contains('التصنيف') ||
-        t.contains('categories')) {
-      return (tab: MainShellTabs.categories, route: null, label: 'الأقسام');
+
+    return _resolveNavTarget(lower);
+  }
+
+  _NavIntent? _resolveNavTarget(
+    String target, {
+    String? categoryName,
+    String? productId,
+    String? query,
+  }) {
+    final t = target.trim().toLowerCase();
+
+    if (categoryName != null && categoryName.trim().isNotEmpty) {
+      final section = _findDisplaySectionByName(categoryName);
+      if (section != null) {
+        return (
+          tab: MainShellTabs.categories,
+          route: null,
+          args: section.id,
+          sheet: null,
+          checkout: false,
+          label: 'قسم ${section.name}',
+        );
+      }
+      final cat = _findCategoryByName(categoryName);
+      if (cat != null) {
+        final parent = _displaySectionContaining(cat.id);
+        return (
+          tab: MainShellTabs.categories,
+          route: null,
+          args: parent?.id,
+          sheet: null,
+          checkout: false,
+          label: parent != null ? 'قسم ${parent.name}' : 'الأقسام',
+        );
+      }
     }
-    if (t.contains('سلة') || t.contains('cart')) {
-      return (tab: MainShellTabs.cart, route: null, label: 'السلة');
+
+    if (productId != null && productId.trim().isNotEmpty) {
+      final product = _catalogCubit?.state.productsById[productId.trim()];
+      if (product != null) {
+        return (
+          tab: null,
+          route: AppRouter.productDetails,
+          args: product,
+          sheet: null,
+          checkout: false,
+          label: product.name,
+        );
+      }
     }
-    if (t.contains('حساب') || t.contains('profile') || t.contains('بروفايل')) {
-      return (tab: MainShellTabs.profile, route: null, label: 'حسابي');
+
+    if (t.isEmpty) return null;
+
+    if (_containsAny(t, [
+          'edit_profile',
+          'profile_edit',
+          'complete_name',
+          'تعديل_الحساب',
+          'تعديل_الاسم',
+        ]) ||
+        t == 'name' ||
+        t == 'بيانات' ||
+        t == 'edit-name') {
+      if (!AuthSession.instance.isLoggedIn) {
+        return (
+          tab: null,
+          route: AppRouter.phoneLogin,
+          args: null,
+          sheet: null,
+          checkout: false,
+          label: 'تسجيل الدخول',
+        );
+      }
+      return (
+        tab: null,
+        route: null,
+        args: null,
+        sheet: 'edit_name',
+        checkout: false,
+        label: 'تعديل بيانات الحساب',
+      );
     }
-    if (t.contains('طلباتي') || t.contains('الطلبات') || t.contains('orders')) {
-      return (tab: null, route: AppRouter.orders, label: 'طلباتي');
+
+    if (_containsAny(t, ['addresses', 'عناوين', 'address'])) {
+      return (
+        tab: null,
+        route: null,
+        args: null,
+        sheet: 'addresses',
+        checkout: false,
+        label: 'عناوين التوصيل',
+      );
     }
-    if (t.contains('بحث') || t.contains('search')) {
-      return (tab: null, route: AppRouter.search, label: 'البحث');
+
+    if (_containsAny(t, ['add_address', 'إضافة_عنوان', 'اضف_عنوان'])) {
+      return (
+        tab: null,
+        route: AppRouter.addAddress,
+        args: null,
+        sheet: null,
+        checkout: false,
+        label: 'إضافة عنوان',
+      );
     }
-    if (t.contains('إشعار') ||
-        t.contains('اشعار') ||
-        t.contains('notifications')) {
-      return (tab: null, route: AppRouter.notifications, label: 'الإشعارات');
+
+    if (_containsAny(t, ['settings', 'إعدادات', 'اعدادات'])) {
+      return (
+        tab: null,
+        route: AppRouter.accountSettings,
+        args: null,
+        sheet: null,
+        checkout: false,
+        label: 'الإعدادات',
+      );
+    }
+
+    if (_containsAny(t, ['favorites', 'مفضلة', 'المفضلة'])) {
+      return (
+        tab: null,
+        route: AppRouter.favorites,
+        args: null,
+        sheet: null,
+        checkout: false,
+        label: 'المفضلة',
+      );
+    }
+
+    if (_containsAny(t, ['login', 'phone_login', 'تسجيل_الدخول'])) {
+      return (
+        tab: null,
+        route: AppRouter.phoneLogin,
+        args: null,
+        sheet: null,
+        checkout: false,
+        label: 'تسجيل الدخول',
+      );
+    }
+
+    if (_containsAny(t, ['groceries', 'المقاضي', 'مقاضي'])) {
+      return (
+        tab: null,
+        route: AppRouter.groceriesSection,
+        args: null,
+        sheet: null,
+        checkout: false,
+        label: 'قسم المقاضي',
+      );
+    }
+
+    if (_containsAny(t, ['checkout', 'إتمام_الطلب', 'اتمام_الطلب']) ||
+        t == 'دفع') {
+      return (
+        tab: null,
+        route: null,
+        args: null,
+        sheet: null,
+        checkout: true,
+        label: 'إتمام الطلب',
+      );
+    }
+
+    if (_containsAny(t, ['cart_sheet', 'سلة_منبثقة'])) {
+      return (
+        tab: null,
+        route: null,
+        args: null,
+        sheet: 'cart',
+        checkout: false,
+        label: 'السلة',
+      );
+    }
+
+    if (_containsAny(t, ['home', 'رئيسي', 'الرئيسية', 'الهوم'])) {
+      return (
+        tab: MainShellTabs.home,
+        route: null,
+        args: null,
+        sheet: null,
+        checkout: false,
+        label: 'الرئيسية',
+      );
+    }
+
+    if (_containsAny(t, ['categories', 'أقسام', 'اقسام', 'التصنيف'])) {
+      return (
+        tab: MainShellTabs.categories,
+        route: null,
+        args: null,
+        sheet: null,
+        checkout: false,
+        label: 'الأقسام',
+      );
+    }
+
+    if (_containsAny(t, ['cart', 'السلة', 'سلتي']) || t == 'سلة') {
+      return (
+        tab: MainShellTabs.cart,
+        route: null,
+        args: null,
+        sheet: 'cart',
+        checkout: false,
+        label: 'السلة',
+      );
+    }
+
+    if (_containsAny(t, ['profile', 'حسابي', 'الحساب', 'بروفايل'])) {
+      return (
+        tab: MainShellTabs.profile,
+        route: null,
+        args: null,
+        sheet: null,
+        checkout: false,
+        label: 'حسابي',
+      );
+    }
+
+    if (_containsAny(t, ['orders', 'طلباتي', 'الطلبات'])) {
+      return (
+        tab: null,
+        route: AppRouter.orders,
+        args: null,
+        sheet: null,
+        checkout: false,
+        label: 'طلباتي',
+      );
+    }
+
+    if (_containsAny(t, ['search', 'البحث']) || t == 'بحث') {
+      return (
+        tab: null,
+        route: AppRouter.search,
+        args: null,
+        sheet: null,
+        checkout: false,
+        label: query != null && query.isNotEmpty ? 'البحث عن $query' : 'البحث',
+      );
+    }
+
+    if (_containsAny(t, ['notifications', 'إشعار', 'اشعار', 'الإشعارات'])) {
+      return (
+        tab: null,
+        route: AppRouter.notifications,
+        args: null,
+        sheet: null,
+        checkout: false,
+        label: 'الإشعارات',
+      );
+    }
+
+    if (t == 'category' || t.startsWith('category:')) {
+      final name = categoryName ?? t.replaceFirst('category:', '').trim();
+      final section = _findDisplaySectionByName(name);
+      if (section != null) {
+        return (
+          tab: MainShellTabs.categories,
+          route: null,
+          args: section.id,
+          sheet: null,
+          checkout: false,
+          label: 'قسم ${section.name}',
+        );
+      }
+      final cat = _findCategoryByName(name);
+      if (cat != null) {
+        final parent = _displaySectionContaining(cat.id);
+        return (
+          tab: MainShellTabs.categories,
+          route: null,
+          args: parent?.id,
+          sheet: null,
+          checkout: false,
+          label: parent != null ? 'قسم ${parent.name}' : 'الأقسام',
+        );
+      }
+    }
+
+    return null;
+  }
+
+  String? _extractCategoryPhrase(String text) {
+    final patterns = [
+      RegExp(r'قسم\s+(.+)$'),
+      RegExp(r'تصنيف\s+(.+)$'),
+      RegExp(r'category\s+(.+)$', caseSensitive: false),
+    ];
+    for (final re in patterns) {
+      final m = re.firstMatch(text.trim());
+      if (m != null) {
+        final name = m.group(1)?.trim() ?? '';
+        if (name.isNotEmpty) return name;
+      }
     }
     return null;
   }
 
+  CategoryModel? _findCategoryByName(String raw) {
+    final needle = _normalizeNavText(raw);
+    if (needle.isEmpty) return null;
+    final cats = _catalogCubit?.state.allCategories ?? const <CategoryModel>[];
+    if (cats.isEmpty) return null;
+
+    CategoryModel? best;
+    var bestLen = 0;
+    for (final cat in cats) {
+      final name = _normalizeNavText(cat.name);
+      if (name.isEmpty) continue;
+      if (needle == name || needle.contains(name) || name.contains(needle)) {
+        if (name.length >= bestLen) {
+          best = cat;
+          bestLen = name.length;
+        }
+      }
+    }
+    return best;
+  }
+
+  DisplaySectionModel? _findDisplaySectionByName(String raw) {
+    final needle = _normalizeNavText(raw);
+    if (needle.isEmpty) return null;
+    final sections =
+        _catalogCubit?.state.displaySections ?? const <DisplaySectionModel>[];
+    if (sections.isEmpty) return null;
+
+    DisplaySectionModel? best;
+    var bestLen = 0;
+    for (final section in sections) {
+      final name = _normalizeNavText(section.name);
+      if (name.isEmpty) continue;
+      if (needle == name || needle.contains(name) || name.contains(needle)) {
+        if (name.length >= bestLen) {
+          best = section;
+          bestLen = name.length;
+        }
+      }
+    }
+    return best;
+  }
+
+  DisplaySectionModel? _displaySectionContaining(String categoryId) {
+    final sections =
+        _catalogCubit?.state.displaySections ?? const <DisplaySectionModel>[];
+    for (final section in sections) {
+      for (final cat in section.categories) {
+        if (cat.id == categoryId) return section;
+      }
+    }
+    return null;
+  }
+
+  static String _normalizeNavText(String raw) {
+    return raw
+        .trim()
+        .toLowerCase()
+        .replaceAll('أ', 'ا')
+        .replaceAll('إ', 'ا')
+        .replaceAll('آ', 'ا')
+        .replaceAll('ة', 'ه')
+        .replaceAll('ى', 'ي')
+        .replaceAll(RegExp(r'\s+'), ' ');
+  }
+
+  ProductModel? _findProductByName(String raw) {
+    final needle = raw.trim();
+    if (needle.isEmpty) return null;
+    final products = _catalogCubit?.state.productsById.values ?? const [];
+    ProductModel? best;
+    var bestLen = 0;
+    for (final p in products) {
+      final name = p.name.trim();
+      if (name.isEmpty) continue;
+      if (needle.contains(name) || name.contains(needle)) {
+        if (name.length >= bestLen) {
+          best = p;
+          bestLen = name.length;
+        }
+      }
+    }
+    return best;
+  }
+
+  static bool _containsAny(String haystack, List<String> needles) {
+    for (final n in needles) {
+      if (haystack.contains(n.toLowerCase())) return true;
+    }
+    return false;
+  }
+
   int? _tabForTarget(String target) {
-    return switch (target) {
-      'home' || 'الرئيسية' => MainShellTabs.home,
-      'categories' || 'الأقسام' || 'اقسام' => MainShellTabs.categories,
-      'cart' || 'السلة' => MainShellTabs.cart,
-      'profile' || 'حسابي' || 'الحساب' => MainShellTabs.profile,
-      _ => null,
-    };
+    return _resolveNavTarget(target)?.tab;
   }
 
   String? _routeForTarget(String target) {
-    return switch (target) {
-      'orders' || 'الطلبات' || 'طلباتي' => AppRouter.orders,
-      'search' || 'البحث' => AppRouter.search,
-      'notifications' || 'الإشعارات' => AppRouter.notifications,
-      _ => null,
-    };
+    return _resolveNavTarget(target)?.route;
   }
 
   Future<void> addToCart(ProductModel product) async {
     _cartCubit.addToCart(product);
+    emit(state.copyWith(statusToast: 'تمت إضافة «${product.name}» للسلة'));
+    await _suggestComplement(product);
+  }
+
+  /// بعد إضافة المنتج من كارد الواجهة مباشرة (بدون تكرار addToCart).
+  Future<void> suggestComplementFor(ProductModel product) async {
     emit(state.copyWith(statusToast: 'تمت إضافة «${product.name}» للسلة'));
     await _suggestComplement(product);
   }
@@ -543,6 +1295,28 @@ class AiControllerCubit extends Cubit<AiControllerState> {
 
   void clearCart() {
     _cartCubit.clearCart();
+  }
+
+  Future<void> _handleCartTotalIntent(String userText) async {
+    final userMsg = ChatMessageModel.userMessage(userText);
+    final cart = _cartCubit.state;
+    final String replyText;
+    if (cart.isEmpty) {
+      replyText = 'سلتك فارغة حالياً. أضف منتجات وسأحسب الإجمالي فوراً.';
+    } else {
+      final count = cart.totalQuantity;
+      final total = cart.total.toStringAsFixed(2);
+      replyText =
+          'إجمالي سلتك الآن $total ر.س، وفيها $count قطعة.';
+    }
+    final reply = ChatMessageModel.fromGeminiResponse(replyText);
+    emit(state.copyWith(
+      messages: [...state.messages, userMsg, reply],
+      status: AiProcessingStatus.idle,
+      clearTrackedOrder: true,
+      clearError: true,
+    ));
+    await _maybeSpeak(replyText, isWelcome: false);
   }
 
   Future<void> _handleCartIntent() async {

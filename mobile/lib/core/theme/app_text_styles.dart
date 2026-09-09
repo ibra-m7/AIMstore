@@ -212,8 +212,8 @@ abstract final class AppTextStyles {
       );
 
   static TextStyle get viewAll => _style(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
         color: const Color(0xFF88D498),
         height: 1.2,
       );
@@ -233,7 +233,7 @@ abstract final class AppTextStyles {
       );
 
   static TextStyle get searchHint => _style(
-        fontSize: 17,
+        fontSize: 13,
         fontWeight: FontWeight.w400,
         color: _mutedText,
         height: 1.35,

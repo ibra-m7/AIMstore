@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/widgets/brand_logo.dart';
 import '../../data/services/phone_auth_api.dart';
 import '../auth_flow.dart';
@@ -48,15 +49,7 @@ class _CompleteNameScreenState extends State<CompleteNameScreen> {
     }
   }
 
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, textAlign: TextAlign.center),
-      backgroundColor: Colors.red.shade700,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.all(16),
-    ));
-  }
+  void _showError(String msg) => AppToast.error(context, msg);
 
   @override
   Widget build(BuildContext context) {
