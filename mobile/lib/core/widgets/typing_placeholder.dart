@@ -121,7 +121,7 @@ class _TypingPlaceholderState extends State<TypingPlaceholder>
             width: 1.6,
             height: (widget.style?.fontSize ?? 14) + 4,
             margin: const EdgeInsetsDirectional.only(start: 2),
-            color: widget.style?.color ?? const Color(0xFF6B8A76),
+            color: widget.style?.color ?? const Color(0xFF6B7A99),
           ),
         ),
       ],

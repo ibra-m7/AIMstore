@@ -36,7 +36,7 @@ class AiControllerState extends Equatable {
     this.status = AiProcessingStatus.idle,
     this.inputMode = InputMode.voice,
     this.conversationId,
-    this.assistantName = 'روعة',
+    this.assistantName = 'AIM',
     this.partialSpeechText = '',
     this.lastMentionedProduct,
     this.checkoutRequested = false,

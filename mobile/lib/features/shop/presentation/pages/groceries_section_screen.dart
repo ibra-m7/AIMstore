@@ -196,7 +196,11 @@ class _CategorySubcategoriesBrowseScreenState
               centerTitle: true,
               title: Text(
                 title,
-                style: AppTextStyles.appBarTitle,
+                style: AppTextStyles.appBarTitle.copyWith(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0,
+                ),
               ),
               actions: [
                 IconButton(
@@ -223,13 +227,14 @@ class _CategorySubcategoriesBrowseScreenState
                   ),
                 if (heading != null && heading.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
                     child: Text(
                       heading,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
+                      style: AppTextStyles.sectionTitle.copyWith(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
                         color: _accent,
+                        height: 1.25,
                       ),
                     ),
                   ),
@@ -364,13 +369,13 @@ class _CategoryTabsState extends State<_CategoryTabs> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 46,
+      height: 42,
       child: ListView.separated(
         controller: widget.scrollController,
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         itemCount: widget.tabs.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 6),
+        separatorBuilder: (_, _) => const SizedBox(width: 4),
         itemBuilder: (context, i) {
           final tab = widget.tabs[i];
           final selected = tab.id == widget.selectedId;
@@ -388,18 +393,20 @@ class _CategoryTabsState extends State<_CategoryTabs> {
                       color: selected
                           ? const Color(0xFF2E9B57)
                           : Colors.transparent,
-                      width: 2.5,
+                      width: 2,
                     ),
                   ),
                 ),
                 child: Text(
                   tab.name,
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                    fontFamily: AppTextStyles.fontFamily,
+                    fontSize: 12,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                     color: selected
                         ? const Color(0xFF2E9B57)
                         : AppTheme.mutedText,
+                    height: 1.2,
                   ),
                 ),
               ),
@@ -429,12 +436,12 @@ class _SubcategoryChips extends StatelessWidget {
       ...chips.map((c) => (id: c.id, label: c.name)),
     ];
     return SizedBox(
-      height: 38,
+      height: 34,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+        padding: const EdgeInsets.fromLTRB(14, 2, 14, 2),
         itemCount: items.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 6),
         itemBuilder: (context, i) {
           final item = items[i];
           final selected = selectedId == item.id;
@@ -443,33 +450,32 @@ class _SubcategoryChips extends StatelessWidget {
             color: Colors.transparent,
             child: InkWell(
               onTap: () => onSelect(item.id),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(8),
               splashColor: green.withValues(alpha: 0.10),
               highlightColor: Colors.transparent,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 160),
                 alignment: Alignment.center,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
                 decoration: BoxDecoration(
                   color: selected ? null : Colors.white,
                   gradient: selected
                       ? LinearGradient(
-                          // أوضح من اليمين، وأخف + أبيض من اليسار
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                           colors: [
                             Colors.white,
                             green.withValues(alpha: 0.06),
-                            green.withValues(alpha: 0.22),
+                            green.withValues(alpha: 0.20),
                           ],
                           stops: const [0.0, 0.45, 1.0],
                         )
                       : null,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: selected
-                        ? green.withValues(alpha: 0.55)
+                        ? green.withValues(alpha: 0.50)
                         : const Color(0xFFE8F0EA),
                     width: 0.8,
                   ),
@@ -478,9 +484,10 @@ class _SubcategoryChips extends StatelessWidget {
                   item.label,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontFamily: AppTextStyles.fontFamily,
+                    fontSize: 11,
                     height: 1.15,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                     color: selected ? green : AppTheme.darkText,
                   ),
                 ),
@@ -516,21 +523,24 @@ class _MiniCartBar extends StatelessWidget {
                     children: [
                       Text(
                         '${cart.total.toStringAsFixed(2)} ${AppStrings.currency}',
-                        style: const TextStyle(
+                        style: TextStyle(
+                          fontFamily: AppTextStyles.fontFamily,
                           color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13.5,
                         ),
                       ),
                       const Spacer(),
                       const Icon(Icons.shopping_bag_outlined,
-                          color: Colors.white, size: 20),
+                          color: Colors.white, size: 18),
                       const SizedBox(width: 8),
-                      const Text(
+                      Text(
                         'عرض السلة',
                         style: TextStyle(
+                          fontFamily: AppTextStyles.fontFamily,
                           color: Colors.white,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 13,
                         ),
                       ),
                     ],

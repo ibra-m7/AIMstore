@@ -787,7 +787,7 @@ class _AiTipsSectionState extends State<_AiTipsSection>
                               ),
                             ),
                             Text(
-                              'روعة توصي بهذا المنتج لهذه الأسباب',
+                              'AIMstore توصي بهذا المنتج لهذه الأسباب',
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.7),
                                 fontSize: 13.5,
@@ -1978,7 +1978,7 @@ class _DetailsRecsRow extends StatelessWidget {
           colors: [
             _kGreen.withValues(alpha: 0.08),
             _kGreenBg,
-            const Color(0x00F0FAF3),
+            const Color(0x00F0F4FA),
           ],
           stops: const [0, 0.45, 1],
         ),

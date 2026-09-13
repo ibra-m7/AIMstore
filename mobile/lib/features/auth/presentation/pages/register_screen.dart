@@ -180,7 +180,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                       ),
                       const SizedBox(height: 5),
                       Text(
-                        'انضم إلى روعة الخمسة واستمتع بالتسوق الذكي',
+                        'انضم إلى AIMstore واستمتع بالتسوق الذكي',
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.white.withValues(alpha: 0.7),

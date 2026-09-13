@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_theme.dart';
+
 /// ══════════════════════════════════════════════════════════════════════════
-/// الهوية البصرية الفخمة لصفحات الحساب.
-/// شريطان منحنيان متقاطعان — نفس أسلوب المرجع — بلوحة أخضر زمرّدي.
+/// الهوية البصرية لصفحات الحساب.
+/// شريطان منحنيان متقاطعان — نفس الشكل — بألوان الشعار (أزرق + أحمر).
 /// ══════════════════════════════════════════════════════════════════════════
 
-const kLuxeDeepA = Color(0xFF14603C);
-const kLuxeDeepB = Color(0xFF2C8B55);
-const kLuxeDeepC = Color(0xFF1A7348);
+// شريط خلفي: أزرق الشعار
+const kLuxeDeepA = AppTheme.primaryDark; // #002266
+const kLuxeDeepB = AppTheme.primary; // #003399
+const kLuxeDeepC = Color(0xFF001A4D);
 
-const kLuxeVividA = Color(0xFF35A863);
-const kLuxeVividB = Color(0xFF8ADCA6);
-const kLuxeVividC = Color(0xFF5BC47E);
+// شريط أمامي: أحمر الشعار
+const kLuxeVividA = AppTheme.accent; // #E31E24
+const kLuxeVividB = Color(0xFFFF6B6F);
+const kLuxeVividC = Color(0xFFF03A40);
 
-const kLuxeBodyBg = Color(0xFFF6F8F7);
-const kLuxeRowTint = Color(0xFFEDF6F0);
-const kLuxeHairline = Color(0xFFE9EFEB);
-const kLuxeRowLabel = Color(0xFF4F6B5B);
-const kLuxeFooterText = Color(0xFF8C9E93);
-const kLuxeGold = Color(0xFFD9B45B);
+const kLuxeBodyBg = AppTheme.background; // #F0F4FA
+const kLuxeRowTint = AppTheme.primarySurface; // #E8EEF8
+const kLuxeHairline = Color(0xFFD9E1F0);
+const kLuxeRowLabel = AppTheme.mutedText;
+const kLuxeFooterText = Color(0xFF8A96B0);
+const kLuxeGold = AppTheme.accent;
 
 /// ارتفاع شريط الموجة في هيدر الحساب.
 const kLuxeProfileWaveHeight = 76.0;
@@ -184,7 +188,7 @@ class LuxeWavePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-/// خط ذهبي رقيق متلاشي الأطراف.
+/// خط أحمر رقيق متلاشي الأطراف (لون الشعار).
 class LuxeGoldRule extends StatelessWidget {
   final double width;
 
@@ -198,7 +202,7 @@ class LuxeGoldRule extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(2),
         gradient: const LinearGradient(
-          colors: [Color(0x00D9B45B), kLuxeGold, Color(0x00D9B45B)],
+          colors: [Color(0x00E31E24), kLuxeGold, Color(0x00E31E24)],
         ),
       ),
     );

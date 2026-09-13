@@ -3,9 +3,9 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/entities/chat_message.dart';
 import 'typing_indicator.dart';
 
-const _kMintBrand = Color(0xFF88D498);
+const _kMintBrand = Color(0xFF003399);
 const _kMintDark = Color(0xFF2D6A4F);
-const _kAssistBubbleBg = Color(0x1A88D498); // خلفية خضراء شديدة البهاء
+const _kAssistBubbleBg = Color(0x1A003399); // خلفية زرقاء شديدة البهاء
 
 TextStyle _cairo(double s,
         {FontWeight w = FontWeight.w500, Color? c, double? h}) =>

@@ -6,18 +6,37 @@ import '../../../../core/theme/app_theme.dart';
 import 'checkout_sheet.dart';
 
 class StcPaySheet {
-  static Future<String?> show(BuildContext context, {String? initialPhone}) {
+  static Future<String?> show(
+    BuildContext context, {
+    String? initialPhone,
+    String title = 'المحفظة الإلكترونية',
+    String? assetPath,
+    String? iconUrl,
+  }) {
     FocusManager.instance.primaryFocus?.unfocus();
     return showCheckoutSheet<String>(
       context: context,
-      builder: (_) => _StcPayBody(initialPhone: initialPhone),
+      builder: (_) => _StcPayBody(
+        initialPhone: initialPhone,
+        title: title,
+        assetPath: assetPath,
+        iconUrl: iconUrl,
+      ),
     );
   }
 }
 
 class _StcPayBody extends StatefulWidget {
   final String? initialPhone;
-  const _StcPayBody({this.initialPhone});
+  final String title;
+  final String? assetPath;
+  final String? iconUrl;
+  const _StcPayBody({
+    this.initialPhone,
+    required this.title,
+    this.assetPath,
+    this.iconUrl,
+  });
 
   @override
   State<_StcPayBody> createState() => _StcPayBodyState();
@@ -41,9 +60,11 @@ class _StcPayBodyState extends State<_StcPayBody> {
 
   String? _normalized(String raw) {
     var digits = raw.replaceAll(RegExp(r'\D'), '');
+    if (digits.startsWith('967')) digits = digits.substring(3);
     if (digits.startsWith('966')) digits = digits.substring(3);
     if (digits.startsWith('0')) digits = digits.substring(1);
-    if (digits.length == 9 && digits.startsWith('5')) {
+    if (digits.length == 9 &&
+        (digits.startsWith('7') || digits.startsWith('5'))) {
       return '0$digits';
     }
     return null;
@@ -52,46 +73,110 @@ class _StcPayBodyState extends State<_StcPayBody> {
   void _submit() {
     final phone = _normalized(_ctrl.text);
     if (phone == null) {
-      setState(() => _error = 'أدخل رقم جوال سعودي صحيح يبدأ بـ 05');
+      setState(() => _error = 'أدخل رقم جوال يمني صحيح يبدأ بـ 07');
       return;
     }
     Navigator.of(context).pop(phone);
   }
 
+  Widget _logo() {
+    final url = (widget.iconUrl ?? '').trim();
+    Widget child;
+    if (url.startsWith('http')) {
+      child = Image.network(
+        url,
+        width: 96,
+        height: 56,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => _assetLogo(),
+      );
+    } else {
+      child = _assetLogo();
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: child,
+    );
+  }
+
+  Widget _assetLogo() {
+    final asset = widget.assetPath;
+    if (asset == null || asset.isEmpty) {
+      return const Icon(
+        Icons.account_balance_wallet_rounded,
+        size: 40,
+        color: AppTheme.primary,
+      );
+    }
+    if (asset.toLowerCase().endsWith('.svg')) {
+      return SvgPicture.asset(asset, width: 96, height: 56);
+    }
+    return Image.asset(
+      asset,
+      width: 96,
+      height: 56,
+      fit: BoxFit.contain,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    const lightTitle = TextStyle(
+      fontSize: 18,
+      fontWeight: FontWeight.w600,
+      color: AppTheme.darkText,
+      height: 1.25,
+    );
+    const lightSubtitle = TextStyle(
+      fontSize: 13.5,
+      fontWeight: FontWeight.w400,
+      color: AppTheme.mutedText,
+      height: 1.35,
+    );
+
     return CheckoutSheetFrame(
-      title: 'STC Pay',
+      title: widget.title,
       subtitle: 'أدخل رقم الجوال المرتبط بمحفظتك',
+      titleStyle: lightTitle,
+      subtitleStyle: lightSubtitle,
       footer: CheckoutSheetButton(
         label: 'تحقق من الرقم',
-        background: const Color(0xFF4F008C),
+        background: AppTheme.primary,
+        height: 46,
+        textStyle: const TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: 15.5,
+          letterSpacing: 0.1,
+        ),
         onPressed: _submit,
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(22, 4, 22, 8),
+        padding: const EdgeInsets.fromLTRB(22, 2, 22, 6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 18),
+              padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
-                color: const Color(0xFFF6F0FB),
-                borderRadius: BorderRadius.circular(18),
+                color: AppTheme.primarySurface,
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: SvgPicture.asset(
-                'assets/images/payments/stc_pay.svg',
-                height: 48,
-              ),
+              child: Center(child: _logo()),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
             TextField(
               controller: _ctrl,
               keyboardType: TextInputType.phone,
               textDirection: TextDirection.ltr,
               textAlign: TextAlign.left,
               autofocus: false,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w400,
+                height: 1.2,
+                color: AppTheme.darkText,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
                 LengthLimitingTextInputFormatter(12),
@@ -99,41 +184,67 @@ class _StcPayBodyState extends State<_StcPayBody> {
               onSubmitted: (_) => _submit(),
               decoration: InputDecoration(
                 labelText: 'رقم الجوال',
-                hintText: '05xxxxxxxx',
+                hintText: '7xxxxxxxx',
                 hintTextDirection: TextDirection.ltr,
+                isDense: true,
                 filled: true,
                 fillColor: AppTheme.background,
+                labelStyle: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  color: AppTheme.mutedText,
+                ),
+                floatingLabelStyle: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppTheme.primary,
+                ),
+                hintStyle: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: AppTheme.mutedText.withValues(alpha: 0.7),
+                ),
                 prefixIcon: const Icon(
                   Icons.phone_iphone_rounded,
-                  color: Color(0xFF4F008C),
+                  size: 20,
+                  color: AppTheme.primary,
+                ),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 40,
+                  minHeight: 36,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(color: AppTheme.primaryLight),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(color: AppTheme.primaryLight),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(
-                    color: Color(0xFF4F008C),
-                    width: 1.6,
+                    color: AppTheme.primary,
+                    width: 1.2,
                   ),
                 ),
               ),
             ),
             if (_error != null) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerRight,
                 child: Text(
                   _error!,
                   style: const TextStyle(
                     color: Color(0xFFC62828),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 12.5,
+                    fontWeight: FontWeight.w400,
+                    fontSize: 12,
+                    height: 1.3,
                   ),
                 ),
               ),

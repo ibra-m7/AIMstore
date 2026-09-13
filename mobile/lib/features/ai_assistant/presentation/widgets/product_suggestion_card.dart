@@ -65,7 +65,7 @@ class _ProductSuggestionCardState extends State<ProductSuggestionCard>
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF88D498).withValues(alpha: 0.12),
+                    color: const Color(0xFF003399).withValues(alpha: 0.12),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -93,7 +93,7 @@ class _ProductSuggestionCardState extends State<ProductSuggestionCard>
                             child: const Center(
                               child: Icon(
                                 Icons.image_not_supported_outlined,
-                                color: Color(0xFF88D498),
+                                color: Color(0xFF003399),
                                 size: 40,
                               ),
                             ),
@@ -210,7 +210,7 @@ class _ProductSuggestionCardState extends State<ProductSuggestionCard>
                                   ),
                                   label: const Text('أضف للسلة'),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF88D498),
+                                    backgroundColor: const Color(0xFF003399),
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 14, vertical: 8),
@@ -232,7 +232,7 @@ class _ProductSuggestionCardState extends State<ProductSuggestionCard>
                               originalPrice: widget.product.hasDiscount
                                   ? widget.product.price
                                   : null,
-                              color: const Color(0xFF88D498),
+                              color: const Color(0xFF003399),
                               priceSize: 18,
                               currencySize: 22,
                             ),

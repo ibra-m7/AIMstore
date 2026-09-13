@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
-const _kMintBrand = Color(0xFF88D498);
-const _kAssistBubbleBg = Color(0x1A88D498);
+const _kMintBrand = Color(0xFF003399);
+const _kAssistBubbleBg = Color(0x1A003399);
 
 /// مؤشر "المساعد يكتب..." بثلاث نقاط تتحرك بنمط متسلسل
 ///
@@ -16,7 +16,7 @@ class TypingIndicator extends StatefulWidget {
 
   const TypingIndicator({
     super.key,
-    this.dotColor = const Color(0xFF88D498),
+    this.dotColor = const Color(0xFF003399),
     this.dotSize = 9.0,
     this.speed = const Duration(milliseconds: 1100),
   });
@@ -145,7 +145,7 @@ class _Dot extends StatelessWidget {
   }
 }
 
-/// غلاف جاهز يعرض "روعة يفكر..." داخل فقاعة المساعد
+/// غلاف جاهز يعرض "AIM يفكر..." داخل فقاعة المساعد
 class AssistantTypingBubble extends StatelessWidget {
   const AssistantTypingBubble({super.key});
 

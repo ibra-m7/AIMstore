@@ -13,8 +13,8 @@ import '../../../auth/data/services/auth_session.dart';
 import '../../presentation/manager/notifications_cubit.dart';
 import 'notifications_api.dart';
 
-const _kChannelId = 'raoah_default';
-const _kChannelName = 'تنبيهات روعة الخمسة';
+const _kChannelId = 'aimstore_default';
+const _kChannelName = 'تنبيهات AIMstore';
 
 Future<void> ensureFirebaseApp() async {
   if (Firebase.apps.isNotEmpty) return;
@@ -55,10 +55,10 @@ Future<void> _showBackgroundLocal(RemoteMessage message) async {
   );
   final title = message.notification?.title ??
       message.data['title']?.toString() ??
-      'روعة الخمسة';
+      'AIMstore';
   final body =
       message.notification?.body ?? message.data['body']?.toString() ?? '';
-  if (body.isEmpty && title == 'روعة الخمسة') return;
+  if (body.isEmpty && title == 'AIMstore') return;
   await plugin.show(
     DateTime.now().millisecondsSinceEpoch.remainder(1000000),
     title,
@@ -281,7 +281,7 @@ class PushService with WidgetsBindingObserver {
     final notification = message.notification;
     final title = notification?.title ??
         message.data['title']?.toString() ??
-        'روعة الخمسة';
+        'AIMstore';
     final body =
         notification?.body ?? message.data['body']?.toString() ?? '';
     await _showLocal(title, body, message.data);

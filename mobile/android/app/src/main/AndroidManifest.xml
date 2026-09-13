@@ -17,7 +17,7 @@
     <!-- ──────────────────────────────────────────────────────── -->
 
     <application
-        android:label="روعة الخمسة"
+        android:label="AIMstore"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"
@@ -59,7 +59,7 @@
             android:value="false" />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="raoah_default" />
+            android:value="aimstore_default" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

@@ -313,12 +313,16 @@ class OrderItemGroupRow extends StatelessWidget {
   final CartItem item;
   final CartItem? gift;
   final Widget Function(String url, double size) imageBuilder;
+  final double imageSize;
+  final double giftImageSize;
 
   const OrderItemGroupRow({
     super.key,
     required this.item,
     this.gift,
     required this.imageBuilder,
+    this.imageSize = 36,
+    this.giftImageSize = 28,
   });
 
   @override
@@ -328,10 +332,18 @@ class OrderItemGroupRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _OrderPaidRow(item: item, imageBuilder: imageBuilder),
+          _OrderPaidRow(
+            item: item,
+            imageBuilder: imageBuilder,
+            imageSize: imageSize,
+          ),
           if (gift != null) ...[
             const SizedBox(height: 4),
-            _OrderGiftRow(gift: gift!, imageBuilder: imageBuilder),
+            _OrderGiftRow(
+              gift: gift!,
+              imageBuilder: imageBuilder,
+              imageSize: giftImageSize,
+            ),
           ],
         ],
       ),
@@ -342,10 +354,12 @@ class OrderItemGroupRow extends StatelessWidget {
 class _OrderPaidRow extends StatelessWidget {
   final CartItem item;
   final Widget Function(String url, double size) imageBuilder;
+  final double imageSize;
 
   const _OrderPaidRow({
     required this.item,
     required this.imageBuilder,
+    required this.imageSize,
   });
 
   static const _text = Color(0xFF1A1A1A);
@@ -357,8 +371,8 @@ class _OrderPaidRow extends StatelessWidget {
     return Row(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: imageBuilder(item.product.imageUrl, 48),
+          borderRadius: BorderRadius.circular(8),
+          child: imageBuilder(item.product.displayImage, imageSize),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -368,8 +382,8 @@ class _OrderPaidRow extends StatelessWidget {
               Text(
                 item.product.name,
                 style: const TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w400,
                   color: _text,
                 ),
                 maxLines: 1,
@@ -379,7 +393,7 @@ class _OrderPaidRow extends StatelessWidget {
               Text(
                 '${item.product.effectivePrice.toStringAsFixed(2)} \u{20C1} × ${item.quantity}',
                 style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   color: _subtext,
                   fontWeight: FontWeight.w400,
                   height: 1.25,
@@ -391,8 +405,8 @@ class _OrderPaidRow extends StatelessWidget {
         Text(
           '${item.totalPrice.toStringAsFixed(2)} \u{20C1}',
           style: const TextStyle(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w800,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w400,
             color: _dark,
           ),
         ),
@@ -404,10 +418,12 @@ class _OrderPaidRow extends StatelessWidget {
 class _OrderGiftRow extends StatelessWidget {
   final CartItem gift;
   final Widget Function(String url, double size) imageBuilder;
+  final double imageSize;
 
   const _OrderGiftRow({
     required this.gift,
     required this.imageBuilder,
+    required this.imageSize,
   });
 
   static const _giftColor = Color(0xFFC77800);
@@ -430,8 +446,8 @@ class _OrderGiftRow extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: imageBuilder(gift.product.imageUrl, 36),
+            borderRadius: BorderRadius.circular(7),
+            child: imageBuilder(gift.product.displayImage, imageSize),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -441,8 +457,8 @@ class _OrderGiftRow extends StatelessWidget {
                 Text(
                   gift.product.name,
                   style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
                     color: _giftColor,
                   ),
                   maxLines: 1,
@@ -452,9 +468,9 @@ class _OrderGiftRow extends StatelessWidget {
                 Text(
                   'هدية × ${gift.quantity}',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     color: _giftColor.withValues(alpha: 0.85),
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],
@@ -463,8 +479,8 @@ class _OrderGiftRow extends StatelessWidget {
           Text(
             '0.00 \u{20C1}',
             style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w400,
               color: _giftColor.withValues(alpha: 0.85),
               decoration: TextDecoration.lineThrough,
             ),

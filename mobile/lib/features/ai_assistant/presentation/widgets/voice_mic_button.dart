@@ -80,7 +80,7 @@ class _VoiceMicButtonState extends State<VoiceMicButton>
       duration: const Duration(milliseconds: 350),
     );
     _buttonColorAnim = ColorTween(
-      begin: const Color(0xFF88D498),
+      begin: const Color(0xFF003399),
       end: const Color(0xFFFF4757),
     ).animate(CurvedAnimation(parent: _colorController, curve: Curves.easeOut));
   }
@@ -176,7 +176,7 @@ class _VoiceMicButtonState extends State<VoiceMicButton>
                       BoxShadow(
                         color: (isListening
                                 ? const Color(0xFFFF4757)
-                                : const Color(0xFF88D498))
+                                : const Color(0xFF003399))
                             .withValues(alpha: 0.2 + glow * 0.35),
                         blurRadius: 12 + glow * 26,
                         spreadRadius: glow * 5,
@@ -201,7 +201,7 @@ class _VoiceMicButtonState extends State<VoiceMicButton>
                 animation: _buttonColorAnim,
                 builder: (context, child) {
                   final baseColor = _buttonColorAnim.value ??
-                      const Color(0xFF88D498);
+                      const Color(0xFF003399);
                   final endColor = isListening
                       ? const Color(0xFFFF2D46)
                       : isThinking || isSpeaking

@@ -1,11 +1,13 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../constants/app_strings.dart';
 import '../theme/app_theme.dart';
+import 'app_network_image.dart';
 
-/// شعار روعة الخمسة الكامل من [assets/images/logo.png].
+/// شعار التطبيق العام من [assets/images/logo.png].
 class BrandLogoMark extends StatelessWidget {
-  /// عرض الشعار. الارتفاع يُحسب من أبعاد الملف (1536×1024).
+  /// عرض الشعار. الارتفاع يُحسب من أبعاد الملف.
   final double size;
 
   static const assetPath = 'assets/images/logo.png';
@@ -28,6 +30,61 @@ class BrandLogoMark extends StatelessWidget {
         Icons.shopping_basket_rounded,
         color: AppTheme.primary,
         size: size * 0.45,
+      ),
+    );
+  }
+}
+
+/// شعار شريط الرئيسية — يدعم رابط من إعدادات المتجر مع أصل محلي احتياطي.
+class HomeBrandLogo extends StatelessWidget {
+  final double height;
+  final String? networkUrl;
+
+  static const assetPath = 'assets/images/home_logo.png';
+
+  /// أبعاد homelogo بعد القص (~1713×631).
+  static const double aspect = 1713 / 631;
+
+  const HomeBrandLogo({
+    super.key,
+    this.height = 36,
+    this.networkUrl,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final width = height * aspect;
+    final url = AppNetworkImage.resolveUrl((networkUrl ?? '').trim());
+    if (url.isEmpty) {
+      return _asset(width, height);
+    }
+
+    return CachedNetworkImage(
+      imageUrl: url,
+      httpHeaders: AppNetworkImage.headersFor(url),
+      width: width,
+      height: height,
+      fit: BoxFit.contain,
+      alignment: Alignment.centerRight,
+      fadeInDuration: const Duration(milliseconds: 120),
+      filterQuality: FilterQuality.high,
+      placeholder: (_, _) => _asset(width, height),
+      errorWidget: (_, _, _) => _asset(width, height),
+    );
+  }
+
+  Widget _asset(double width, double height) {
+    return Image.asset(
+      assetPath,
+      width: width,
+      height: height,
+      fit: BoxFit.contain,
+      alignment: Alignment.centerRight,
+      filterQuality: FilterQuality.high,
+      errorBuilder: (_, _, _) => Icon(
+        Icons.storefront_rounded,
+        color: AppTheme.primary,
+        size: height * 0.9,
       ),
     );
   }

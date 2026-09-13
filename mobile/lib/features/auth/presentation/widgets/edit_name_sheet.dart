@@ -120,7 +120,7 @@ class _EditNameSheetBodyState extends State<_EditNameSheetBody> {
         child: Container(
           decoration: const BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
             boxShadow: [
               BoxShadow(
                 color: Color(0x33000000),
@@ -158,7 +158,7 @@ class _EditNameSheetBodyState extends State<_EditNameSheetBody> {
                     AppStrings.editNameTitle,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.w900,
                       color: AppTheme.darkText,
                     ),
@@ -189,7 +189,7 @@ class _EditNameSheetBodyState extends State<_EditNameSheetBody> {
                             },
                             onSubmitted: (_) => _save(),
                             style: const TextStyle(
-                              fontSize: 15.5,
+                              fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color: AppTheme.darkText,
                             ),
@@ -197,7 +197,7 @@ class _EditNameSheetBodyState extends State<_EditNameSheetBody> {
                               isDense: true,
                               hintText: AppStrings.fieldFullName,
                               hintStyle: TextStyle(
-                                fontSize: 14.5,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w500,
                                 color: AppTheme.mutedText.withValues(alpha: 0.55),
                               ),
@@ -210,7 +210,7 @@ class _EditNameSheetBodyState extends State<_EditNameSheetBody> {
                           color: Colors.transparent,
                           child: InkWell(
                             onTap: _saving ? null : _focusNameField,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(8),
                             child: Padding(
                               padding: const EdgeInsets.all(6),
                               child: Icon(
@@ -238,7 +238,7 @@ class _EditNameSheetBodyState extends State<_EditNameSheetBody> {
                       textDirection: TextDirection.ltr,
                       textAlign: TextAlign.right,
                       style: TextStyle(
-                        fontSize: 15.5,
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: AppTheme.mutedText.withValues(alpha: 0.85),
                       ),
@@ -263,7 +263,7 @@ class _EditNameSheetBodyState extends State<_EditNameSheetBody> {
                                   child: Text(
                                     _error!,
                                     style: const TextStyle(
-                                      fontSize: 12.5,
+                                      fontSize: 11.5,
                                       fontWeight: FontWeight.w600,
                                       color: Color(0xFFD9534F),
                                     ),
@@ -281,7 +281,7 @@ class _EditNameSheetBodyState extends State<_EditNameSheetBody> {
                         minWidth: 160,
                       ),
                       child: SizedBox(
-                        height: 44,
+                        height: 42,
                         width: double.infinity,
                         child: OutlinedButton(
                           onPressed: _saving ? null : _save,
@@ -293,10 +293,10 @@ class _EditNameSheetBodyState extends State<_EditNameSheetBody> {
                               width: 1.4,
                             ),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                             textStyle: const TextStyle(
-                              fontSize: 14.5,
+                              fontSize: 13.5,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
@@ -362,7 +362,7 @@ class _ProfileFieldRow extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 11.5,
+              fontSize: 10.5,
               fontWeight: FontWeight.w800,
               color: active
                   ? AppTheme.primaryDark
@@ -371,10 +371,10 @@ class _ProfileFieldRow extends StatelessWidget {
           ),
         ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: fillColor,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: borderColor,
               width: active ? 1.4 : 1.1,
@@ -384,7 +384,7 @@ class _ProfileFieldRow extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                size: 20,
+                size: 18,
                 color: active ? AppTheme.primaryDark : kLuxeDeepB,
               ),
               const SizedBox(width: 10),

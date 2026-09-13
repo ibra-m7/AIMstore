@@ -18,6 +18,7 @@ class AppNotification {
   });
 
   bool get isOrder => type == 'order';
+  bool get isPromo => type == 'promo';
   String? get orderId => data['order_id']?.toString();
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {

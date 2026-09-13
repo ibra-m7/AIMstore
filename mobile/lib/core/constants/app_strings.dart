@@ -11,9 +11,9 @@ abstract class AppStrings {
   AppStrings._();
 
   // ── عام ────────────────────────────────────────────────────────────────────
-  static const appName = 'روعة الخمسة';
-  static const appTagline = 'تسوق بذكاء — اشترِ بثقة';
-  static const appTaglineShort = 'تسوق بذكاء';
+  static const appName = 'AIMstore';
+  static const appTagline = 'ــــ كل احتياجاتك في مكان واحد ــــ';
+  static const appTaglineShort = 'كل احتياجاتك في مكان واحد';
   static const loading = 'جاري التحميل...';
   static const retry = 'إعادة المحاولة';
   static const cancel = 'إلغاء';
@@ -45,7 +45,7 @@ abstract class AppStrings {
   static const categoriesHomeCareSection = 'العناية بالمنزل';
 
   // ── Splash ─────────────────────────────────────────────────────────────────
-  static const splashTitle = 'روعة الخمسة';
+  static const splashTitle = 'AIMstore';
   static const splashSubtitle = 'متجرك الذكي المفضّل';
 
   // ── Onboarding ─────────────────────────────────────────────────────────────
@@ -87,7 +87,7 @@ abstract class AppStrings {
   static const guestProfileTitle = 'حسابك ينتظرك';
   static const guestProfileBody =
       'سجّل دخولك برقم جوالك لعرض طلباتك وعناوينك وإدارة حسابك.';
-  static const guestWelcomeSnack = 'أهلاً بك في روعة الخمسة';
+  static const guestWelcomeSnack = 'أهلاً بك في AIMstore';
   static const completeNameSkip = 'لاحقاً';
   static const completeLocationSkip = 'تخطي، سأضيف العنوان لاحقاً';
   static const companyWhatsapp = '967778396448';
@@ -129,7 +129,7 @@ abstract class AppStrings {
 
   // ── Register ───────────────────────────────────────────────────────────────
   static const registerTitle = 'إنشاء حساب';
-  static const registerSubtitle = 'انضم إلى عائلة روعة الخمسة';
+  static const registerSubtitle = 'انضم إلى عائلة AIMstore';
   static const registerButton = 'إنشاء الحساب';
   static const registerHaveAccount = 'لديك حساب بالفعل؟';
   static const registerSignIn = 'سجّل دخولك';
@@ -156,14 +156,14 @@ abstract class AppStrings {
   static const homeSearchHint = 'ابحث عن منتج...';
 
   /// تلميح شريط البحث العلوي (مرجع كيو)
-  static const homeSearchInApp = 'ابحث في روعة الخمسة';
+  static const homeSearchInApp = 'ابحث في AIMstore';
 
   /// اقتراحات الكتابة المتحركة في حقل البحث
   static const homeSearchHints = <String>[
     'ابحث عن عروض اليوم...',
-    'ابحث في روعة الخمسة',
-    'في روعة تحصل كل شي روعة... أنت ابحث فقط',
-    'ابحث عن كل شي روعة',
+    'ابحث في AIMstore',
+    'كل ما تحتاجه... ابحث فقط',
+    'ابحث عن منتجاتك بسهولة',
   ];
 
   /// عنوان موقع التوصيل الافتراضي في الرأس
@@ -206,7 +206,7 @@ abstract class AppStrings {
 
   /// قسم الأسعار الترويجي (محاذي لهيكل «الأكثر طلباً»)
   static const homeSectionPricesTitle = 'أسعار ما تلاقيها';
-  static const homeSectionPricesSubtitle = 'إلا في روعة الخمسة! 😉';
+  static const homeSectionPricesSubtitle = 'إلا في AIMstore! 😉';
   static const homeSearchResults = 'نتائج البحث';
   static const homeCategoryAll = 'الكل';
   static const homeNoProductsInCategory = 'لا توجد منتجات في هذا القسم';
@@ -215,7 +215,7 @@ abstract class AppStrings {
   static String homeNoResults(String query) => 'لا نتائج لـ "$query"';
 
   static const searchTitle = 'البحث';
-  static const searchHint = 'ابحث في روعة الخمسة';
+  static const searchHint = 'ابحث في AIMstore';
   static const searchRecent = 'عمليات البحث الأخيرة';
   static const searchTrending = 'الأكثر بحثاً حولك';
   static const searchSuggestions = 'اقتراحات ذكية';
@@ -323,7 +323,7 @@ abstract class AppStrings {
   static const aiSendButton = 'إرسال';
   static const aiThinking = 'المساعد يفكر...';
   static const aiWelcome =
-      'مرحباً! أنا مساعدك الذكي في روعة الخمسة. كيف يمكنني مساعدتك اليوم؟';
+      'مرحباً! أنا مساعدك الذكي في AIMstore. كيف يمكنني مساعدتك اليوم؟';
   static const aiErrorGeneral = 'حدث خطأ. يرجى المحاولة مرة أخرى.';
   static const micStartListening = 'ابدأ الاستماع';
   static const micStopListening = 'أوقف الاستماع';
@@ -360,9 +360,22 @@ abstract class AppStrings {
   static const profileDeleteAccountConfirmBody =
       'لحذف حسابك، يرجى التواصل مع خدمة العملاء. هل تريد تسجيل الخروج؟';
   static const profileNotificationsDesc =
-      'عروض وتنبيهات الطلبات والعروض الحصرية';
+      'عروض وتنبيهات الطلبات والإشعارات العامة';
   static const profileNotificationsSaveFailed =
       'تعذّر حفظ إعداد الإشعارات';
+  static const notificationPrefsTitle = 'إعدادات الإشعارات';
+  static const notificationPrefsMaster = 'تفعيل الإشعارات';
+  static const notificationPrefsMasterDesc =
+      'عند الإيقاف لن تصلك أي إشعارات دفع';
+  static const notificationPrefsOrders = 'إشعارات الطلبات';
+  static const notificationPrefsOrdersDesc =
+      'تحديثات حالة الطلب والتوصيل';
+  static const notificationPrefsOffers = 'إشعارات العروض';
+  static const notificationPrefsOffersDesc =
+      'العروض والخصومات والتنبيهات الترويجية';
+  static const notificationPrefsGeneral = 'إشعارات عامة';
+  static const notificationPrefsGeneralDesc =
+      'تنبيهات التطبيق والرسائل العامة';
   static const profilePrivacyAndTerms = 'سياسة الخصوصية والاستخدام';
 
   static String profileVersionLabel(String version) => 'رقم النسخة: $version';

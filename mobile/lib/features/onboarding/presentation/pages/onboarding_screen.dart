@@ -42,7 +42,7 @@ const _fallbackPages = [
     title: 'المساعد الصوتي',
     subtitle: 'Voice Assistant',
     description:
-        'تحدَّث مع "روعة" — مساعدتك الذكية المدعومة بالذكاء الاصطناعي. '
+        'تحدَّث مع "AIM" — مساعدتك الذكية المدعومة بالذكاء الاصطناعي. '
         'اسألها عن أي منتج، واحصل على توصيات شخصية، أو أضف للسلة بصوتك!',
     icon: Icons.mic_rounded,
     gradientColors: [Color(0xFF0D47A1), Color(0xFF1565C0), Color(0xFF42A5F5)],

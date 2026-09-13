@@ -70,7 +70,7 @@ class _ProductTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF88D498).withValues(alpha: 0.1),
+                color: const Color(0xFF003399).withValues(alpha: 0.1),
                 blurRadius: 12,
                 offset: const Offset(0, 3),
               ),
@@ -90,7 +90,7 @@ class _ProductTile extends StatelessWidget {
                         color: Color(0xFFE8F8ED),
                         child: Icon(
                           Icons.image_not_supported_outlined,
-                          color: Color(0xFF88D498),
+                          color: Color(0xFF003399),
                         ),
                       ),
                     ),
@@ -142,7 +142,7 @@ class _ProductTile extends StatelessWidget {
                       price: product.effectivePrice,
                       originalPrice:
                           product.hasDiscount ? product.price : null,
-                      color: const Color(0xFF88D498),
+                      color: const Color(0xFF003399),
                       priceSize: 14,
                       currencySize: 16,
                     ),
@@ -152,7 +152,7 @@ class _ProductTile extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: onAddToCart,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF88D498),
+                          backgroundColor: const Color(0xFF003399),
                           foregroundColor: Colors.white,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 6),

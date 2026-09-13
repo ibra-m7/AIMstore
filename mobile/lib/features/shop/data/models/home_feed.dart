@@ -329,6 +329,7 @@ class StoreConfig {
   final List<PaymentOption> paymentMethods;
   final DeliveryConfig delivery;
   final String fallbackProductImageUrl;
+  final String homeLogoUrl;
   final List<String> searchPlaceholders;
   final List<String> searchSmartSuggestions;
   final List<String> searchTrending;
@@ -340,9 +341,10 @@ class StoreConfig {
     this.shippingFee = 15,
     this.freeShippingThreshold = 150,
     this.bankIban = '',
-    this.bankName = 'البنك الأهلي السعودي',
+    this.bankName = 'بنك اليمن والكويت',
     this.delivery = const DeliveryConfig(),
     this.fallbackProductImageUrl = '',
+    this.homeLogoUrl = '',
     this.searchPlaceholders = const [],
     this.searchSmartSuggestions = const [],
     this.searchTrending = const [],
@@ -352,27 +354,52 @@ class StoreConfig {
       PaymentOption(
         id: 'cash',
         label: 'الدفع عند الاستلام',
-        hint: 'ادفع كاش لمندوب التوصيل في السعودية',
+        hint: 'ادفع كاش لمندوب التوصيل عند استلام الطلب',
       ),
       PaymentOption(
-        id: 'mada',
-        label: 'مدى',
-        hint: 'بطاقة مدى السعودية — يُؤكد المتجر العملية',
+        id: 'cash_wallet',
+        label: 'محفظة كاش',
+        hint: 'ادفع عبر محفظة كاش ثم أكّد التحويل مع المتجر',
       ),
       PaymentOption(
-        id: 'apple_pay',
-        label: 'Apple Pay',
-        hint: 'ادفع عبر Apple Pay — يُؤكد المتجر العملية',
+        id: 'jeeb',
+        label: 'محفظة جيب',
+        hint: 'ادفع عبر محفظة جيب ثم أكّد التحويل مع المتجر',
       ),
       PaymentOption(
-        id: 'stc_pay',
-        label: 'STC Pay',
-        hint: 'محفظة STC Pay — يُؤكد المتجر العملية',
+        id: 'floosak',
+        label: 'فلوسك',
+        hint: 'ادفع عبر محفظة فلوسك ثم أكّد التحويل مع المتجر',
       ),
       PaymentOption(
-        id: 'card',
-        label: 'فيزا / ماستركارد',
-        hint: 'ادفع ببطاقة فيزا أو ماستركارد — يُؤكد المتجر العملية',
+        id: 'onecash',
+        label: 'ون كاش',
+        hint: 'ادفع عبر محفظة ون كاش ثم أكّد التحويل مع المتجر',
+      ),
+      PaymentOption(
+        id: 'jawali',
+        label: 'جوالي',
+        hint: 'ادفع عبر محفظة جوالي ثم أكّد التحويل مع المتجر',
+      ),
+      PaymentOption(
+        id: 'banky',
+        label: 'بنكي (بنك اليمن والكويت)',
+        hint: 'ادفع عبر تطبيق بنكي ثم أكّد التحويل مع المتجر',
+      ),
+      PaymentOption(
+        id: 'easy',
+        label: 'محفظة إيزي',
+        hint: 'ادفع عبر محفظة إيزي ثم أكّد التحويل مع المتجر',
+      ),
+      PaymentOption(
+        id: 'mobile_money',
+        label: 'موبايل موني',
+        hint: 'ادفع عبر موبايل موني ثم أكّد التحويل مع المتجر',
+      ),
+      PaymentOption(
+        id: 'kuraimi',
+        label: 'حاسب كريمي',
+        hint: 'حوّل إلى حساب بنك الكريمي ثم أكّد التحويل مع المتجر',
       ),
     ],
   });
@@ -473,6 +500,7 @@ class StoreConfig {
           : const DeliveryConfig(),
       fallbackProductImageUrl:
           (json['fallback_product_image_url'] as String?) ?? '',
+      homeLogoUrl: (json['home_logo_url'] as String?) ?? '',
       searchPlaceholders: placeholders,
       searchSmartSuggestions: smart,
       searchTrending: trending,

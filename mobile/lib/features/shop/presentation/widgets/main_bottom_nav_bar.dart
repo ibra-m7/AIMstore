@@ -9,7 +9,7 @@ import '../manager/cart_cubit.dart';
 import 'celebrate_anchors.dart';
 
 const _kSurface = Color(0xFFFFFFFF);
-const _kSubtext = Color(0xFF6B8A76);
+const _kSubtext = Color(0xFF6B7A99);
 
 /// قصّة علوية مركزية + زوايا دائرية لشريط الملصق العائم.
 class _AiNavBarNotchClipper extends CustomClipper<Path> {

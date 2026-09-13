@@ -272,7 +272,7 @@ class _SearchTopBar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppTheme.surface,
                 borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: const Color(0x1A6B8A76), width: 0.7),
+                border: Border.all(color: const Color(0x1A6B7A99), width: 0.7),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.028),
@@ -1206,7 +1206,7 @@ class _SearchChip extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: const Color(0x1A6B8A76), width: 0.8),
+            border: Border.all(color: const Color(0x1A6B7A99), width: 0.8),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -1351,8 +1351,8 @@ class _LegendaryTile extends StatelessWidget {
                         fit: BoxFit.cover,
                         width: _imageSize,
                         height: _imageSize,
-                        placeholder: const ColoredBox(color: Color(0xFFE8F8EC)),
-                        error: const ColoredBox(color: Color(0xFFE8F8EC)),
+                        placeholder: const ColoredBox(color: Color(0xFFE8EEF8)),
+                        error: const ColoredBox(color: Color(0xFFE8EEF8)),
                       ),
                     ),
                   ),

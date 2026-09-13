@@ -30,11 +30,11 @@ enum AiChatPresentation { embedded, fullscreen }
 
 const kAiSheetCompactThreshold = 0.22;
 
-const kMintBrand = Color(0xFF88D498);
+const kMintBrand = Color(0xFF003399);
 const kMintDark = Color(0xFF2D6A4F);
 const kMintPaleBg = Color(0xFFE8F8ED);
 const kMintGradientA = Color(0xFFB8E8C8);
-const kMintGradientB = Color(0xFF88D498);
+const kMintGradientB = Color(0xFF003399);
 const kMintGradientC = Color(0xFF6BC489);
 const kChatSurface = Color(0xFFFAFDFB);
 
@@ -241,7 +241,7 @@ class _AiChatPanelState extends State<AiChatPanel> {
         children: [
           Expanded(
             child: Text(
-              'مساعد روعة الخمسة',
+              'مساعد AIMstore',
               textAlign: TextAlign.center,
               style: aiChatCairo(
                 15,
@@ -600,7 +600,7 @@ class AiChatEmbeddedHeader extends StatelessWidget {
         ),
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         border: Border(
-          top: BorderSide(color: Color(0x6688D498), width: 1),
+          top: BorderSide(color: Color(0x66003399), width: 1),
         ),
       ),
       child: SafeArea(
@@ -627,7 +627,7 @@ class AiChatEmbeddedHeader extends StatelessWidget {
                   ),
                   Expanded(
                     child: Text(
-                      'مساعد روعة الخمسة',
+                      'مساعد AIMstore',
                       textAlign: TextAlign.center,
                       style: aiChatCairo(16,
                           fontWeight: FontWeight.w800, color: Colors.white),
@@ -668,7 +668,7 @@ class ChatFullscreenAppBar extends StatelessWidget
       ),
       centerTitle: true,
       title: Text(
-        'مساعد روعة الخمسة',
+        'مساعد AIMstore',
         style: aiChatCairo(18, fontWeight: FontWeight.w800, color: Colors.white),
       ),
       actions: [
@@ -838,7 +838,7 @@ class ChatEmptyState extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          hasError ? 'تعذّر الاتصال بالمساعد' : 'مرحباً بك في روعة الخمسة!',
+          hasError ? 'تعذّر الاتصال بالمساعد' : 'مرحباً بك في AIMstore!',
           textAlign: TextAlign.center,
           style: aiChatCairo(18, fontWeight: FontWeight.bold, color: kMintDark),
         ),
@@ -1054,7 +1054,7 @@ class GeminiEmbeddedBar extends StatelessWidget {
                           borderRadius: BorderRadius.circular(22),
                         ),
                         child: Text(
-                          'اسأل مساعد روعة الخمسة',
+                          'اسأل مساعد AIMstore',
                           style: aiChatCairo(
                             14,
                             color: Colors.white.withValues(alpha: 0.55),

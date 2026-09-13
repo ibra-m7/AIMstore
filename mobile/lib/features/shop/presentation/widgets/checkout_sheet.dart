@@ -76,6 +76,8 @@ class CheckoutSheetFrame extends StatelessWidget {
   final bool compact;
   final bool showCloseButton;
   final double? maxHeightFactor;
+  final TextStyle? titleStyle;
+  final TextStyle? subtitleStyle;
 
   const CheckoutSheetFrame({
     super.key,
@@ -86,6 +88,8 @@ class CheckoutSheetFrame extends StatelessWidget {
     this.compact = true,
     this.showCloseButton = true,
     this.maxHeightFactor,
+    this.titleStyle,
+    this.subtitleStyle,
   });
 
   @override
@@ -121,21 +125,23 @@ class CheckoutSheetFrame extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
-                            fontSize: 21.5,
-                            fontWeight: FontWeight.w900,
-                            color: AppTheme.darkText,
-                          ),
+                          style: titleStyle ??
+                              const TextStyle(
+                                fontSize: 21.5,
+                                fontWeight: FontWeight.w900,
+                                color: AppTheme.darkText,
+                              ),
                         ),
                         if (subtitle != null) ...[
                           const SizedBox(height: 4),
                           Text(
                             subtitle!,
-                            style: const TextStyle(
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.w500,
-                              color: AppTheme.mutedText,
-                            ),
+                            style: subtitleStyle ??
+                                const TextStyle(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppTheme.mutedText,
+                                ),
                           ),
                         ],
                       ],
@@ -168,6 +174,8 @@ class CheckoutSheetButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool loading;
   final Color? background;
+  final double height;
+  final TextStyle? textStyle;
 
   const CheckoutSheetButton({
     super.key,
@@ -175,13 +183,15 @@ class CheckoutSheetButton extends StatelessWidget {
     this.onPressed,
     this.loading = false,
     this.background,
+    this.height = 52,
+    this.textStyle,
   });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 52,
+      height: height,
       child: ElevatedButton(
         onPressed: loading ? null : onPressed,
         style: ElevatedButton.styleFrom(
@@ -192,10 +202,11 @@ class CheckoutSheetButton extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          textStyle: const TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 17.5,
-          ),
+          textStyle: textStyle ??
+              const TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 17.5,
+              ),
         ),
         child: loading
             ? const SizedBox(

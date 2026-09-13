@@ -33,7 +33,14 @@ class FavoritesScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: AppTheme.background,
         appBar: AppBar(
-          title: const Text(AppStrings.favoritesTitle),
+          title: const Text(
+            AppStrings.favoritesTitle,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: AppTheme.darkText,
+            ),
+          ),
           centerTitle: true,
           backgroundColor: AppTheme.background,
           foregroundColor: AppTheme.darkText,
@@ -59,7 +66,8 @@ class FavoritesScreen extends StatelessWidget {
                         AppStrings.favoritesEmpty,
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 15,
                               color: AppTheme.darkText,
                             ),
                       ),
@@ -161,7 +169,8 @@ class _FavoriteTile extends StatelessWidget {
                   children: [
                     ProductNameText(
                       p.name,
-                      baseSize: 16,
+                      baseSize: 14,
+                      fontWeight: FontWeight.w400,
                     ),
                     if (p.soldCount > 0) ...[
                       const SizedBox(height: 6),

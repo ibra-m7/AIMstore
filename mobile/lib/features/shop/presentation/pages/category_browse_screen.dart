@@ -47,7 +47,7 @@ class CategoryBrowseScreen extends StatelessWidget {
             args.initial ?? catalog.categoryById(args.categoryId);
         final title = category?.name ?? '';
         final products = catalog.productsForCategory(args.categoryId);
-        final bgColor = _parseColor(category?.color) ?? const Color(0xFF1B3A2D);
+        final bgColor = _parseColor(category?.color) ?? const Color(0xFF0A1F4D);
         final heroImage = category?.backgroundImageUrl.isNotEmpty == true
             ? category!.backgroundImageUrl
             : (category?.displayImage.isNotEmpty == true
@@ -171,7 +171,7 @@ class _CategoryBrowseBody extends StatelessWidget {
                     ),
                     border: Border(
                       top: BorderSide(
-                        color: Color(0x6688D498),
+                        color: Color(0x66003399),
                         width: 1.4,
                       ),
                     ),
@@ -191,7 +191,7 @@ class _CategoryBrowseBody extends StatelessWidget {
                           width: 42,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: const Color(0x3388D498),
+                            color: const Color(0x33003399),
                             borderRadius: BorderRadius.circular(99),
                           ),
                         ),

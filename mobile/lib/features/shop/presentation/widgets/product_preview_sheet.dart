@@ -922,8 +922,8 @@ class _RecommendRow extends StatelessWidget {
           end: Alignment.bottomCenter,
           colors: [
             Color(0xFFD8F2E4),
-            Color(0xFFE8F8EC),
-            Color(0x00F0FAF3),
+            Color(0xFFE8EEF8),
+            Color(0x00F0F4FA),
           ],
           stops: [0, 0.45, 1],
         ),

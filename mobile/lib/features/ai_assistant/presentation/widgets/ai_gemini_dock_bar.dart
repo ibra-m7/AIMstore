@@ -91,7 +91,7 @@ class AiGeminiDockBar extends StatelessWidget {
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) => onSend(),
                   decoration: InputDecoration(
-                    hintText: 'اسأل مساعد روعة الخمسة',
+                    hintText: 'اسأل مساعد AIMstore',
                     hintTextDirection: TextDirection.rtl,
                     hintStyle: TextStyle(
                       fontFamily: AppTextStyles.fontFamily,

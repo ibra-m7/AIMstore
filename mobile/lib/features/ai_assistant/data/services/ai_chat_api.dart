@@ -62,10 +62,10 @@ class AiConfig {
       guestsAllowed: json['guests_allowed'] != false,
       name: (json['name'] as String?)?.trim().isNotEmpty == true
           ? json['name'] as String
-          : 'روعة',
+          : 'AIM',
       welcome: (json['welcome'] as String?)?.trim().isNotEmpty == true
           ? json['welcome'] as String
-          : 'أهلاً بك في روعة الخمسة! كيف يمكنني مساعدتك؟',
+          : 'أهلاً بك في AIMstore! كيف يمكنني مساعدتك؟',
       maxProducts: (json['max_products'] as num?)?.toInt() ?? 6,
       presentation: (json['presentation'] as String?) ?? 'floating',
       primaryColor: (json['primary_color'] as String?)?.trim() ?? '',
@@ -198,7 +198,7 @@ class AiChatApi {
           ? data['reply'] as String
           : 'تفضل هذه اختيارات من متجرنا.',
       products: jsonMapList(data['products'], ProductModel.fromJson),
-      name: (data['name'] as String?) ?? 'روعة',
+      name: (data['name'] as String?) ?? 'AIM',
       action: action,
     );
   }

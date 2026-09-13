@@ -9,13 +9,13 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get appName => 'روعة الخمسة';
+  String get appName => 'AIMstore';
 
   @override
-  String get appTagline => 'تسوق بذكاء — اشترِ بثقة';
+  String get appTagline => 'ــــ كل احتياجاتك في مكان واحد ــــ';
 
   @override
-  String get appTaglineShort => 'تسوق بذكاء';
+  String get appTaglineShort => 'كل احتياجاتك في مكان واحد';
 
   @override
   String get loading => 'جاري التحميل...';
@@ -78,7 +78,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get navProfile => 'حسابي';
 
   @override
-  String get splashTitle => 'روعة الخمسة';
+  String get splashTitle => 'AIMstore';
 
   @override
   String get splashSubtitle => 'متجرك الذكي المفضّل';
@@ -133,7 +133,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get registerTitle => 'إنشاء حساب';
 
   @override
-  String get registerSubtitle => 'انضم إلى عائلة روعة الخمسة';
+  String get registerSubtitle => 'انضم إلى عائلة AIMstore';
 
   @override
   String get registerButton => 'إنشاء الحساب';
@@ -199,7 +199,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get homeSearchHint => 'ابحث عن منتج...';
 
   @override
-  String get homeSearchInApp => 'ابحث في روعة الخمسة';
+  String get homeSearchInApp => 'ابحث في AIMstore';
 
   @override
   String get homeLocationHome => 'المنزل';
@@ -223,7 +223,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get homeSectionPricesTitle => 'أسعار ما تلاقيها';
 
   @override
-  String get homeSectionPricesSubtitle => 'إلا في روعة الخمسة! 😉';
+  String get homeSectionPricesSubtitle => 'إلا في AIMstore! 😉';
 
   @override
   String get homeSearchResults => 'نتائج البحث';
@@ -352,7 +352,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get aiWelcome =>
-      'مرحباً! أنا مساعدك الذكي في روعة الخمسة. كيف يمكنني مساعدتك اليوم؟';
+      'مرحباً! أنا مساعدك الذكي في AIMstore. كيف يمكنني مساعدتك اليوم؟';
 
   @override
   String get aiErrorGeneral => 'حدث خطأ. يرجى المحاولة مرة أخرى.';

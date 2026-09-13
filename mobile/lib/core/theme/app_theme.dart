@@ -1,29 +1,29 @@
 import 'package:flutter/material.dart';
 import 'app_text_styles.dart';
 
-/// الهوية البصرية الكاملة للتطبيق — روعة الخمسة
+/// الهوية البصرية الكاملة للتطبيق — AIMstore
 ///
-/// مستوحى من تطبيق "كيو" مع لون العلامة الأخضر الفاتح #88D498
-/// الخلفية: منت فاتح مريح للعين
+/// مستوحاة من شعار العميل الأول: أزرق ملكي #003399 + أحمر #E31E24 + أبيض
 /// الحواف: دائرية للغاية (pill-shaped) — 30.0 للبحث والأزرار، 25.0 للبطاقات
 abstract final class AppTheme {
-  // ── الألوان الأساسية (علامة روعة الخمسة) ──────────────────────────────────
-  static const Color primary        = Color(0xFF88D498);
-  static const Color primaryDark    = Color(0xFF5FAF72);
-  static const Color primaryLight   = Color(0xFFC8ECD3);
-  static const Color primarySurface = Color(0xFFE8F8EC);
+  // ── الألوان الأساسية (AIMstore) ───────────────────────────────────────────
+  static const Color primary        = Color(0xFF003399);
+  static const Color primaryDark    = Color(0xFF002266);
+  static const Color primaryLight   = Color(0xFFA8B8E0);
+  static const Color primarySurface = Color(0xFFE8EEF8);
+  static const Color accent         = Color(0xFFE31E24);
 
   /// خلفية حاوية صورة المنتج في الكارد (رمادي فاتح محايد)
   static const Color productImageWell = Color(0xFFF5F5F5);
 
   /// خلفية الـ Scaffold
-  static const Color background     = Color(0xFFF0FAF3);
+  static const Color background     = Color(0xFFF0F4FA);
   static const Color surface        = Color(0xFFFFFFFF); // سطح البطاقات أبيض نقي
 
-  static const Color darkText       = Color(0xFF1B3A2D); // نص داكن مائل للأخضر
-  static const Color bodyText       = Color(0xFF2D4A38); // نص المحتوى
-  static const Color mutedText      = Color(0xFF6B8A76); // نص خافت
-  static const Color badgeNumber    = Color(0xFF1A7A3C); // أرقام الـ Badge — أخضر غامق واضح
+  static const Color darkText       = Color(0xFF0A1F4D); // نص داكن مائل للأزرق
+  static const Color bodyText       = Color(0xFF1A2F5A); // نص المحتوى
+  static const Color mutedText      = Color(0xFF6B7A99); // نص خافت
+  static const Color badgeNumber    = Color(0xFF003399); // أرقام الـ Badge
   static const Color cardShadow     = Color(0x14000000); // ظل البطاقات (8% أسود)
 
   // ── ألوان Toast الموحّد (خلفيات ناعمة + نص داكن) ─────────────────────────
@@ -34,7 +34,7 @@ abstract final class AppTheme {
   static const Color toastWarningBg   = Color(0xFFFFF8E1);
   static const Color toastWarningText = Color(0xFFE65100);
   static const Color toastInfoBg      = Color(0xFFF5F7F6);
-  static const Color toastInfoText    = Color(0xFF1B3A2D);
+  static const Color toastInfoText    = Color(0xFF0A1F4D);
 
   // ── نصف قطر الحواف (Extra Rounded — pill-shaped) ─────────────────────────
   static const double radiusPill = 50.0; // شريط البحث — بيضاوي تماماً

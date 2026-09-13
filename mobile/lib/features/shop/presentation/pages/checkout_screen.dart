@@ -1295,7 +1295,7 @@ class _MiniProductCard extends StatelessWidget {
             DecoratedBox(
               decoration: BoxDecoration(
                 color: textBand
-                    ? const Color(0xB3E8F8EC)
+                    ? const Color(0xB3E8EEF8)
                     : const Color(0xF2F3FBF6),
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -1832,16 +1832,19 @@ class _OrderSuccessDialogState extends State<OrderSuccessDialog>
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppTheme.primaryLight.withValues(alpha: 0.75),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 30,
+              color: AppTheme.primaryDark.withValues(alpha: 0.10),
+              blurRadius: 28,
               offset: const Offset(0, 10),
             ),
           ],
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1850,80 +1853,80 @@ class _OrderSuccessDialogState extends State<OrderSuccessDialog>
               child: FadeTransition(
                 opacity: _checkFd,
                 child: Container(
-                  width: 110,
-                  height: 110,
+                  width: 96,
+                  height: 96,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF27AE60), Color(0xFF2ECC71)],
+                      colors: [AppTheme.primary, AppTheme.primaryDark],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: _kDark.withValues(alpha: 0.35),
-                        blurRadius: 28,
-                        spreadRadius: 4,
+                        color: AppTheme.primary.withValues(alpha: 0.32),
+                        blurRadius: 22,
+                        spreadRadius: 2,
                       ),
                     ],
                   ),
                   child: const Icon(
                     Icons.check_rounded,
                     color: Colors.white,
-                    size: 60,
+                    size: 52,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 22),
             FadeTransition(
               opacity: _textFd,
               child: Column(
                 children: [
                   const Text(
-                    'تم الطلب بنجاح! 🎉',
+                    'تم إرسال الطلب',
                     style: TextStyle(
-                      fontSize: 23.5,
-                      fontWeight: FontWeight.w900,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
                       color: _kText,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   const Text(
                     'سيتم تأكيد طلبك وتوصيله في أقرب وقت ممكن.',
                     style: TextStyle(
-                      fontSize: 15.5,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w400,
                       color: _kSubtext,
                       height: 1.5,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 24),
-                  Row(
+                  const SizedBox(height: 22),
+                  const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const _StepIcon(
+                      _StepIcon(
                         icon: Icons.check_circle_rounded,
-                        color: _kDark,
+                        color: AppTheme.primary,
                         label: 'مؤكد',
                       ),
                       _StepArrow(),
-                      const _StepIcon(
+                      _StepIcon(
                         icon: Icons.local_shipping_rounded,
-                        color: Colors.orange,
+                        color: AppTheme.primaryDark,
                         label: 'جاري التحضير',
                       ),
                       _StepArrow(),
-                      const _StepIcon(
+                      _StepIcon(
                         icon: Icons.home_rounded,
-                        color: Colors.blueAccent,
+                        color: AppTheme.accent,
                         label: 'التوصيل',
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  // زر تتبع الطلب
+                  const SizedBox(height: 22),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
@@ -1933,16 +1936,16 @@ class _OrderSuccessDialogState extends State<OrderSuccessDialog>
                       icon: const Icon(Icons.track_changes_rounded, size: 18),
                       label: const Text('تتبع الطلب'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _kDark,
+                        backgroundColor: AppTheme.primary,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(14),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
                         elevation: 0,
                         textStyle: const TextStyle(
-                          fontSize: 15.5,
-                          fontWeight: FontWeight.w900,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -1980,6 +1983,8 @@ class _StepIcon extends StatelessWidget {
 }
 
 class _StepArrow extends StatelessWidget {
+  const _StepArrow();
+
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

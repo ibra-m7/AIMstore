@@ -330,7 +330,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                       urlTemplate:
                           'https://mt{s}.google.com/vt/lyrs=m&hl=ar&x={x}&y={y}&z={z}',
                       subdomains: const ['0', '1', '2', '3'],
-                      userAgentPackageName: 'com.raoah.raoah_alkhamsa',
+                      userAgentPackageName: 'com.aim.aimstore',
                       maxNativeZoom: 20,
                     ),
                   ],

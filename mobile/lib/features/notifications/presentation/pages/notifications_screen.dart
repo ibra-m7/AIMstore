@@ -3,16 +3,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/router/app_router.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/circle_back_button.dart';
 import '../../../auth/data/services/auth_session.dart';
 import '../../../auth/presentation/auth_flow.dart';
 import '../../data/models/app_notification.dart';
 import '../manager/notifications_cubit.dart';
 
-const _kBg = Color(0xFFEDF9F2);
-const _kSurface = Color(0xFFFFFFFF);
-const _kDark = Color(0xFF27AE60);
-const _kText = Color(0xFF1B3A2D);
-const _kSubtext = Color(0xFF6B8A76);
+const _kBg = AppTheme.background;
+const _kSurface = AppTheme.surface;
+const _kDark = AppTheme.primary;
+const _kText = AppTheme.darkText;
+const _kSubtext = AppTheme.mutedText;
 
 class NotificationsScreen extends StatelessWidget {
   static const routeName = '/notifications';
@@ -30,12 +32,17 @@ class NotificationsScreen extends StatelessWidget {
           appBar: AppBar(
             backgroundColor: _kBg,
             elevation: 0,
+            scrolledUnderElevation: 0,
             foregroundColor: _kText,
+            centerTitle: true,
+            automaticallyImplyLeading: false,
+            leadingWidth: 56,
+            leading: CircleBackButton.appBarLeading(),
             title: const Text(
               'الإشعارات',
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w500,
                 color: _kText,
               ),
             ),
@@ -44,11 +51,12 @@ class NotificationsScreen extends StatelessWidget {
                 TextButton(
                   onPressed: () =>
                       context.read<NotificationsCubit>().markAllRead(),
-                  child: const Text(
+                  child: Text(
                     'قراءة الكل',
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w500,
+                      color: _kDark.withValues(alpha: 0.9),
                     ),
                   ),
                 ),
@@ -59,7 +67,9 @@ class NotificationsScreen extends StatelessWidget {
               : BlocBuilder<NotificationsCubit, NotificationsState>(
                   builder: (context, state) {
                     if (state.loading && state.items.isEmpty) {
-                      return const Center(child: CircularProgressIndicator());
+                      return const Center(
+                        child: CircularProgressIndicator(color: _kDark),
+                      );
                     }
                     if (state.error != null && state.items.isEmpty) {
                       return Center(
@@ -109,9 +119,9 @@ class _NotificationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: _kSurface,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         onTap: () async {
           await context.read<NotificationsCubit>().markRead(item);
           if (!context.mounted) return;
@@ -119,18 +129,27 @@ class _NotificationTile extends StatelessWidget {
             Navigator.of(context).pushNamed(AppRouter.orders);
           }
         },
-        child: Padding(
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: AppTheme.primaryLight.withValues(alpha: 0.75),
+            ),
+          ),
           padding: const EdgeInsets.all(14),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CircleAvatar(
-                backgroundColor: const Color(0xFFE8F8ED),
+                backgroundColor: AppTheme.primarySurface,
                 child: Icon(
                   item.isOrder
                       ? Icons.local_shipping_outlined
-                      : Icons.campaign_outlined,
-                  color: _kDark,
+                      : item.isPromo
+                          ? Icons.local_offer_outlined
+                          : Icons.campaign_outlined,
+                  color: item.isPromo ? AppTheme.accent : _kDark,
+                  size: 20,
                 ),
               ),
               const SizedBox(width: 12),
@@ -158,7 +177,7 @@ class _NotificationTile extends StatelessWidget {
                             width: 8,
                             height: 8,
                             decoration: const BoxDecoration(
-                              color: _kDark,
+                              color: AppTheme.accent,
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -217,7 +236,7 @@ class _EmptyView extends StatelessWidget {
             Text(
               'لا توجد إشعارات بعد',
               style: TextStyle(
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w500,
                 fontSize: 15,
                 color: _kText,
               ),
@@ -259,15 +278,20 @@ class _GuestView extends StatelessWidget {
               'سجّل دخولك لاستلام التنبيهات',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
                 color: _kText,
               ),
             ),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: onLogin,
-              style: FilledButton.styleFrom(backgroundColor: _kDark),
+              style: FilledButton.styleFrom(
+                backgroundColor: _kDark,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
               child: const Text('تسجيل الدخول'),
             ),
           ],

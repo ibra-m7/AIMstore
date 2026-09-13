@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// عدّاد بدون خلفية — رقم أخضر غامق واضح (سلة، إشعارات، …).
 abstract final class AppCountBadge {
-  static const Color numberColor = Color(0xFF1A7A3C);
+  static const Color numberColor = Color(0xFF003399);
 
   static TextStyle textStyle({double fontSize = 10, Color? color}) => TextStyle(
         color: color ?? numberColor,

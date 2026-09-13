@@ -1,0 +1,91 @@
+<?php
+
+namespace App\Services\Admin;
+
+use App\Models\Order;
+use App\Models\StorePaymentMethod;
+use App\Support\Constants;
+use App\Support\Media;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Validation\ValidationException;
+
+class StorePaymentMethodService
+{
+    public function paginate(array $filters = []): LengthAwarePaginator
+    {
+        return StorePaymentMethod::query()
+            ->when($filters['q'] ?? null, function ($query, $search) {
+                $query->where(function ($nested) use ($search) {
+                    $nested->where('label', 'like', '%'.$search.'%')
+                        ->orWhere('slug', 'like', '%'.$search.'%');
+                });
+            })
+            ->when(($filters['status'] ?? '') === 'active', fn ($query) => $query->where('is_active', true))
+            ->when(($filters['status'] ?? '') === 'inactive', fn ($query) => $query->where('is_active', false))
+            ->ordered()
+            ->paginate(Constants::DEFAULT_PAGE_SIZE)
+            ->withQueryString();
+    }
+
+    public function create(array $data, ?UploadedFile $iconFile = null): StorePaymentMethod
+    {
+        $payload = $this->payload($data);
+        $payload['icon_url'] = Media::store($iconFile, 'payments');
+
+        return StorePaymentMethod::query()->create($payload);
+    }
+
+    public function update(StorePaymentMethod $method, array $data, ?UploadedFile $iconFile = null): StorePaymentMethod
+    {
+        $payload = $this->payload($data, $method);
+        if ($iconFile !== null) {
+            $payload['icon_url'] = Media::store($iconFile, 'payments', $method->icon_url);
+        }
+        $method->update($payload);
+
+        return $method;
+    }
+
+    public function delete(StorePaymentMethod $method): void
+    {
+        if (Order::query()->where('payment_method', $method->slug)->exists()) {
+            throw ValidationException::withMessages([
+                'slug' => 'لا يمكن حذف طريقة دفع مستخدمة في طلبات سابقة. أخفِها من التطبيق بدلاً من الحذف.',
+            ]);
+        }
+
+        Media::delete($method->icon_url);
+        $method->delete();
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    public function iconOptions(): array
+    {
+        return [
+            ['value' => 'bi-cash-coin', 'label' => 'كاش عند الاستلام'],
+            ['value' => 'bi-wallet2', 'label' => 'محفظة إلكترونية'],
+            ['value' => 'bi-phone', 'label' => 'جوال / موبايل موني'],
+            ['value' => 'bi-bank', 'label' => 'بنكي / تحويل بنكي'],
+            ['value' => 'bi-qr-code', 'label' => 'رمز QR'],
+            ['value' => 'bi-credit-card', 'label' => 'بطاقة'],
+        ];
+    }
+
+    private function payload(array $data, ?StorePaymentMethod $method = null): array
+    {
+        $slug = strtolower(trim((string) ($data['slug'] ?? $method?->slug ?? '')));
+        $slug = preg_replace('/[^a-z0-9_]/', '_', $slug) ?: 'method';
+
+        return [
+            'slug' => $slug,
+            'label' => $data['label'],
+            'hint' => $data['hint'] ?? null,
+            'icon' => $data['icon'] ?? 'bi-credit-card',
+            'sort_order' => (int) ($data['sort_order'] ?? 0),
+            'is_active' => (bool) ($data['is_active'] ?? false),
+        ];
+    }
+}

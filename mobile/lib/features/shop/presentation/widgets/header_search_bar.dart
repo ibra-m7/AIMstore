@@ -106,7 +106,7 @@ class HeaderSearchBar extends StatelessWidget {
           )!;
     final borderColor = categoriesScroll
         ? Color.lerp(
-            const Color(0x1A6B8A76),
+            const Color(0x1A6B7A99),
             AppTheme.primary.withValues(alpha: 0.38),
             scrollT,
           )!

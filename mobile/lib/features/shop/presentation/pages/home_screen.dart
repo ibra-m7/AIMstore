@@ -15,6 +15,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_count_badge.dart';
 import '../../../../core/widgets/app_network_image.dart';
 import '../../../../core/widgets/brand_logo.dart';
+import '../../../../core/widgets/notification_bell_icon.dart';
 import '../../../../features/auth/data/services/auth_session.dart';
 import '../../../../features/auth/presentation/manager/address_cubit.dart';
 import '../../../../features/auth/presentation/pages/profile_screen.dart';
@@ -36,7 +37,6 @@ import '../manager/orders_cubit.dart';
 import '../widgets/header_search_bar.dart';
 import '../widgets/main_bottom_nav_bar.dart';
 import '../widgets/main_shell_scope.dart';
-import '../widgets/mint_to_white_blend.dart';
 import '../widgets/price_line.dart';
 import '../widgets/product_card.dart';
 import '../widgets/auto_scroll_horizontal_list.dart';
@@ -92,7 +92,10 @@ class _HomeBrandMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const BrandLogoMark(size: 78);
+    final logoUrl = context.select(
+      (CatalogCubit c) => c.state.store.homeLogoUrl,
+    );
+    return HomeBrandLogo(height: 34, networkUrl: logoUrl);
   }
 }
 
@@ -223,9 +226,9 @@ class _HomeNotificationsButton extends StatefulWidget {
 
 class _HomeNotificationsButtonState extends State<_HomeNotificationsButton>
     with SingleTickerProviderStateMixin {
-  static const _goldLight = Color(0xFFFFF1B8);
-  static const _goldMid = Color(0xFFE8C547);
-  static const _goldDeep = Color(0xFFB8860B);
+  static const _bellLight = Color(0xFF6B8FD9);
+  static const _bellMid = AppTheme.primary;
+  static const _bellDeep = AppTheme.primaryDark;
 
   late final AnimationController _ringCtrl;
   late final Animation<double> _ringTurns;
@@ -316,21 +319,22 @@ class _HomeNotificationsButtonState extends State<_HomeNotificationsButton>
           icon: AppCountBadge.wrap(
             count: state.unreadCount,
             child: Container(
-              width: 34,
-              height: 34,
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 boxShadow: hasUnread
                     ? [
                         BoxShadow(
-                          color: _goldMid.withValues(alpha: 0.42),
+                          color: AppTheme.accent.withValues(alpha: 0.28),
                           blurRadius: 14,
                           spreadRadius: 0.5,
                         ),
                       ]
                     : [
                         BoxShadow(
-                          color: _goldDeep.withValues(alpha: 0.18),
+                          color: _bellDeep.withValues(alpha: 0.18),
                           blurRadius: 8,
                         ),
                       ],
@@ -338,21 +342,12 @@ class _HomeNotificationsButtonState extends State<_HomeNotificationsButton>
               child: RotationTransition(
                 alignment: const Alignment(0, -0.55),
                 turns: _ringTurns,
-                child: ShaderMask(
-                  blendMode: BlendMode.srcIn,
-                  shaderCallback: (bounds) => const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [_goldLight, _goldMid, _goldDeep],
-                    stops: [0.0, 0.52, 1.0],
-                  ).createShader(bounds),
-                  child: Icon(
-                    hasUnread
-                        ? Icons.notifications_active_rounded
-                        : Icons.notifications_none_rounded,
-                    color: Colors.white,
-                    size: 26,
-                  ),
+                child: NotificationBellIcon(
+                  size: 27,
+                  active: hasUnread,
+                  light: _bellLight,
+                  mid: _bellMid,
+                  deep: _bellDeep,
                 ),
               ),
             ),
@@ -394,7 +389,7 @@ class _HomeMagicHeaderDelegate extends SliverPersistentHeaderDelegate {
       logoRow +
       10 +
       searchH +
-      (_hasBanner ? 14 + bannerH + bannerBlend : 12);
+      (_hasBanner ? 14 + bannerH + bannerBlend : 4);
 
   static double computeMaxExtent({
     required double topPad,
@@ -408,7 +403,7 @@ class _HomeMagicHeaderDelegate extends SliverPersistentHeaderDelegate {
         logoRow +
         10 +
         searchH +
-        (hasBanner ? 14 + bannerH + bannerBlend : 12);
+        (hasBanner ? 14 + bannerH + bannerBlend : 4);
     return topPad + expandedTail;
   }
 
@@ -416,7 +411,8 @@ class _HomeMagicHeaderDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => topPad + _expandedTail;
 
   @override
-  double get minExtent => _hasBanner ? bannerH + 2 : topPad + 8 + searchH + 10;
+  double get minExtent =>
+      _hasBanner ? bannerH + 2 : topPad + 22 + searchH;
 
   @override
   bool shouldRebuild(covariant _HomeMagicHeaderDelegate old) {
@@ -455,7 +451,11 @@ class _HomeMagicHeaderDelegate extends SliverPersistentHeaderDelegate {
         final bannerBottomRadius = lerpDouble(10, 6, p)!;
         final blendH = lerpDouble(bannerFadeHeight, 2, p)!;
         final blendOpacity = (1.0 - p).clamp(0.0, 1.0);
-        final searchTop = lerpDouble(topPad + 8 + logoRow + 6, topPad + 8, p)!;
+        final searchTop = lerpDouble(
+          topPad + 8 + logoRow + 6,
+          _hasBanner ? topPad + 8 : topPad + 22,
+          p,
+        )!;
         // مع بانر: تضييق من اليسار فوق الصورة. بدون بانر: عند التمرير مثل الأقسام (16).
         final searchLeft = _hasBanner
             ? lerpDouble(12, 56, p)!
@@ -557,24 +557,24 @@ class _HomeMagicHeaderDelegate extends SliverPersistentHeaderDelegate {
                                   _homeAppBarColor.withValues(alpha: 0),
                                 ]
                               : [
-                                  // بدون بانر: خلفية مثل الأقسام، تثبت مع التمرير.
+                                  // بدون بانر: لون العلامة للتطبيق في الـ AppBar.
                                   Color.lerp(
                                     _homeAppBarColor.withValues(
                                       alpha: barOpacity,
                                     ),
-                                    AppTheme.background,
+                                    AppTheme.primarySurface,
                                     p,
                                   )!,
                                   Color.lerp(
                                     _homeAppBarColor.withValues(
                                       alpha: barOpacity * 0.85,
                                     ),
-                                    AppTheme.background,
+                                    AppTheme.primarySurface,
                                     p,
                                   )!,
                                   Color.lerp(
                                     _homeAppBarColor.withValues(alpha: 0),
-                                    AppTheme.background.withValues(
+                                    AppTheme.primarySurface.withValues(
                                       alpha: 0,
                                     ),
                                     p,
@@ -585,34 +585,17 @@ class _HomeMagicHeaderDelegate extends SliverPersistentHeaderDelegate {
                     ),
                   ),
                 ),
-                // بدون بانر عند التمرير: طبقة خلفية أقسام كاملة.
+                // بدون بانر عند التمرير: خلفية AppBar بلون العلامة.
                 if (!_hasBanner && p > 0.02)
                   Positioned.fill(
                     child: IgnorePointer(
                       child: Opacity(
                         opacity: Curves.easeOut.transform(p),
-                        child: const ColoredBox(color: AppTheme.background),
+                        child: const ColoredBox(color: AppTheme.primarySurface),
                       ),
                     ),
                   ),
-                // تدرّج من الأسفل مثل صفحة الأقسام.
-                if (!_hasBanner && p > 0.12)
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    height: lerpDouble(0, 28, p)!,
-                    child: IgnorePointer(
-                      child: Opacity(
-                        opacity: Curves.easeOut.transform(
-                          ((p - 0.12) / 0.88).clamp(0.0, 1.0),
-                        ),
-                        child: MintToWhiteBlend(
-                          height: lerpDouble(0, 28, p)!,
-                        ),
-                      ),
-                    ),
-                  ),
+                // بدون بانر: لا تدرّج سفلي حتى تلتصق «استكشف الأقسام» بالـ AppBar.
                 Positioned(
                   top: topPad + 2,
                   left: 10,
@@ -630,7 +613,7 @@ class _HomeMagicHeaderDelegate extends SliverPersistentHeaderDelegate {
                             child: Transform.scale(
                               alignment: Alignment.centerRight,
                               scale: logoScale,
-                              child: const Align(
+                              child: Align(
                                 alignment: Alignment.centerRight,
                                 child: _HomeBrandMark(),
                               ),
@@ -901,8 +884,8 @@ class _HomeRestProductsDivider extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     Color(0x00000000),
-                    Color(0x3388D498),
-                    Color(0x6688D498),
+                    Color(0x33003399),
+                    Color(0x66003399),
                   ],
                 ),
               ),
@@ -925,8 +908,8 @@ class _HomeRestProductsDivider extends StatelessWidget {
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Color(0x6688D498),
-                    Color(0x3388D498),
+                    Color(0x66003399),
+                    Color(0x33003399),
                     Color(0x00000000),
                   ],
                 ),
@@ -981,7 +964,7 @@ class _HomeScrollToTopButton extends StatelessWidget {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0x295FAF72),
+                      color: Color(0x29002266),
                       blurRadius: 8,
                       offset: Offset(0, 2),
                     ),
@@ -1045,13 +1028,47 @@ class _ExploreCategoriesStrip extends StatelessWidget {
   final ValueChanged<String> onSelect;
   final List<CategoryModel> categories;
   final VoidCallback? onViewAll;
+  final bool compact;
 
   const _ExploreCategoriesStrip({
     required this.selectedId,
     required this.onSelect,
     required this.categories,
     this.onViewAll,
+    this.compact = false,
   });
+
+  static double _circleSelected(AppScale scale, {required bool compact}) =>
+      compact ? scale.s(38) : scale.categoryCircleSelected;
+
+  static double _circle(AppScale scale, {required bool compact}) =>
+      compact ? scale.s(32) : scale.categoryCircle;
+
+  static double _itemWidth(AppScale scale, {required bool compact}) =>
+      compact ? scale.s(60) : scale.categoryItemWidth;
+
+  static double _stripHeight(AppScale scale, {required bool compact}) {
+    final selected = _circleSelected(scale, compact: compact);
+    final ring = compact ? 1.5 : scale.categoryRing;
+    final labelBlock = compact ? scale.s(22) : (scale.s(12) * 2 + scale.s(6));
+    final gap = compact ? scale.s(4) : scale.s(8);
+    return selected + ring * 2 + gap + labelBlock;
+  }
+
+  /// ارتفاع الشريط المثبّت — يتضمن فراغاً فوقه يفصل عن الـ AppBar.
+  static double extentHeight(AppScale scale, {required bool compact}) {
+    final topGap = compact ? scale.s(12) : 0.0;
+    final titlePadTop = compact ? scale.s(2) : scale.s(6);
+    final titlePadBottom = compact ? scale.s(2) : scale.s(8);
+    final titleLine = compact ? 16.0 : 22.0;
+    final bottomGap = compact ? scale.s(2) : scale.s(6);
+    return topGap +
+        titlePadTop +
+        titleLine +
+        titlePadBottom +
+        _stripHeight(scale, compact: compact) +
+        bottomGap;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1064,93 +1081,118 @@ class _ExploreCategoriesStrip extends StatelessWidget {
       ),
       ...categories,
     ];
+    final topGap = compact ? scale.s(12) : 0.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            scale.pagePad,
-            scale.s(6),
-            scale.pagePad,
-            scale.s(8),
+        if (topGap > 0)
+          ColoredBox(
+            color: AppTheme.background,
+            child: SizedBox(height: topGap, width: double.infinity),
           ),
-          child: Row(
+        ColoredBox(
+          color: Colors.white,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: Text(
-                  AppStrings.homeExploreSections,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.sectionTitle.copyWith(
-                        fontSize: 19,
-                        color: AppTheme.darkText,
-                      ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  scale.pagePad,
+                  compact ? scale.s(2) : scale.s(6),
+                  scale.pagePad,
+                  compact ? scale.s(2) : scale.s(8),
                 ),
-              ),
-              TextButton(
-                onPressed: onViewAll,
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.primary,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        AppStrings.viewAll,
-                        style: AppTextStyles.viewAll.copyWith(
-                          color: AppTheme.primary,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        AppStrings.homeExploreSections,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.sectionTitle.copyWith(
+                          fontSize: compact ? 13.5 : 19,
+                          fontWeight:
+                              compact ? FontWeight.w600 : FontWeight.w700,
+                          height: 1.1,
+                          color: AppTheme.darkText,
                         ),
                       ),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        size: 15,
-                        color: AppTheme.primary,
+                    ),
+                    TextButton(
+                      onPressed: onViewAll,
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppTheme.primary,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: compact ? 4 : 8,
+                          vertical: compact ? 0 : 4,
+                        ),
                       ),
-                    ],
-                  ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              AppStrings.viewAll,
+                              style: AppTextStyles.viewAll.copyWith(
+                                color: AppTheme.primary,
+                                fontSize: compact ? 11 : 12.5,
+                              ),
+                            ),
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              size: compact ? 13 : 15,
+                              color: AppTheme.primary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              SizedBox(
+                height: _stripHeight(scale, compact: compact),
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  cacheExtent: 200,
+                  padding: EdgeInsets.symmetric(horizontal: scale.pagePad),
+                  itemCount: all.length,
+                  separatorBuilder: (_, _) =>
+                      SizedBox(width: compact ? scale.s(8) : scale.s(12)),
+                  itemBuilder: (_, i) {
+                    final cat = all[i];
+                    final isAll = cat.id == '__all__';
+                    final isSelected = isAll
+                        ? selectedId == null
+                        : selectedId == cat.id;
+                    return _ExploreCategoryTile(
+                      name: isAll
+                          ? AppStrings.homeCategoryAll
+                          : _shortCategoryLabel(cat.name),
+                      imageUrl: isAll
+                          ? ''
+                          : (cat.displayImage.isNotEmpty
+                                ? cat.displayImage
+                                : cat.iconUrl),
+                      isAll: isAll,
+                      isSelected: isSelected,
+                      compact: compact,
+                      onTap: () => onSelect(isAll ? '__all__' : cat.id),
+                    );
+                  },
+                ),
+              ),
+              SizedBox(height: compact ? scale.s(2) : scale.s(6)),
             ],
           ),
         ),
-        SizedBox(
-          height: scale.categoryStripHeight,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            cacheExtent: 200,
-            padding: EdgeInsets.symmetric(horizontal: scale.pagePad),
-            itemCount: all.length,
-            separatorBuilder: (_, _) => SizedBox(width: scale.s(12)),
-            itemBuilder: (_, i) {
-              final cat = all[i];
-              final isAll = cat.id == '__all__';
-              final isSelected = isAll
-                  ? selectedId == null
-                  : selectedId == cat.id;
-              return _ExploreCategoryTile(
-                name: isAll
-                    ? AppStrings.homeCategoryAll
-                    : _shortCategoryLabel(cat.name),
-                imageUrl: isAll
-                    ? ''
-                    : (cat.displayImage.isNotEmpty
-                          ? cat.displayImage
-                          : cat.iconUrl),
-                isAll: isAll,
-                isSelected: isSelected,
-                onTap: () => onSelect(isAll ? '__all__' : cat.id),
-              );
-            },
-          ),
-        ),
-        SizedBox(height: scale.s(6)),
       ],
     );
   }
@@ -1163,11 +1205,65 @@ class _ExploreCategoriesStrip extends StatelessWidget {
   }
 }
 
+class _ExploreCategoriesPinnedDelegate extends SliverPersistentHeaderDelegate {
+  final String? selectedId;
+  final ValueChanged<String> onSelect;
+  final List<CategoryModel> categories;
+  final VoidCallback? onViewAll;
+  final double height;
+
+  _ExploreCategoriesPinnedDelegate({
+    required this.selectedId,
+    required this.onSelect,
+    required this.categories,
+    required this.onViewAll,
+    required this.height,
+  });
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Material(
+      color: AppTheme.background,
+      elevation: 0,
+      child: SizedBox(
+        height: height,
+        child: _ExploreCategoriesStrip(
+          selectedId: selectedId,
+          onSelect: onSelect,
+          categories: categories,
+          onViewAll: onViewAll,
+          compact: true,
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _ExploreCategoriesPinnedDelegate old) {
+    return selectedId != old.selectedId ||
+        height != old.height ||
+        onSelect != old.onSelect ||
+        onViewAll != old.onViewAll ||
+        categories != old.categories;
+  }
+}
+
 class _ExploreCategoryTile extends StatelessWidget {
   final String name;
   final String imageUrl;
   final bool isAll;
   final bool isSelected;
+  final bool compact;
   final VoidCallback onTap;
 
   const _ExploreCategoryTile({
@@ -1176,20 +1272,25 @@ class _ExploreCategoryTile extends StatelessWidget {
     required this.isAll,
     required this.isSelected,
     required this.onTap,
+    this.compact = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final scale = AppScale.of(context);
-    final size =
-        isSelected ? scale.categoryCircleSelected : scale.categoryCircle;
-    final ring = scale.categoryRing;
+    final size = isSelected
+        ? _ExploreCategoriesStrip._circleSelected(scale, compact: compact)
+        : _ExploreCategoriesStrip._circle(scale, compact: compact);
+    final ring = compact ? 1.5 : scale.categoryRing;
+    final itemW = _ExploreCategoriesStrip._itemWidth(scale, compact: compact);
     final iconSize = size * (isAll ? 0.42 : 0.38);
+    final labelSize = compact ? scale.s(9.5) : scale.s(11);
+
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: scale.categoryItemWidth,
+        width: itemW,
         child: Column(
           children: [
             AnimatedContainer(
@@ -1204,54 +1305,37 @@ class _ExploreCategoryTile extends StatelessWidget {
                   color: isSelected
                       ? AppTheme.primary
                       : const Color(0x22000000),
-                  width: isSelected ? 2 : 1,
+                  width: isSelected ? 1.6 : 1,
                 ),
               ),
               child: ClipOval(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: AppTheme.primarySurface,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.07),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
+                child: ColoredBox(
+                  color: AppTheme.primarySurface,
                   child: isAll
                       ? Icon(
                           Icons.apps_rounded,
                           color: AppTheme.primaryDark,
                           size: iconSize,
                         )
-                      : ClipOval(
-                          child: SizedBox(
-                            width: size,
-                            height: size,
-                            child: Transform.scale(
-                              scale: scale.categoryImageZoom,
-                              child: AppNetworkImage(
-                                imageUrl,
-                                fit: BoxFit.cover,
-                                width: size,
-                                height: size,
-                                error: ColoredBox(
-                                  color: AppTheme.primarySurface,
-                                  child: Icon(
-                                    Icons.category_rounded,
-                                    color: AppTheme.mutedText,
-                                    size: iconSize,
-                                  ),
-                                ),
-                              ),
+                      : AppNetworkImage(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          alignment: Alignment.center,
+                          width: size,
+                          height: size,
+                          error: ColoredBox(
+                            color: AppTheme.primarySurface,
+                            child: Icon(
+                              Icons.category_rounded,
+                              color: AppTheme.mutedText,
+                              size: iconSize,
                             ),
                           ),
                         ),
                 ),
               ),
             ),
-            SizedBox(height: scale.s(6)),
+            SizedBox(height: compact ? scale.s(3) : scale.s(6)),
             Expanded(
               child: Text(
                 name,
@@ -1259,10 +1343,12 @@ class _ExploreCategoryTile extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      fontSize: scale.s(11),
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                      color: isSelected ? AppTheme.primaryDark : AppTheme.darkText,
-                      height: 1.15,
+                      fontSize: labelSize,
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color:
+                          isSelected ? AppTheme.primaryDark : AppTheme.darkText,
+                      height: 1.1,
                     ),
               ),
             ),
@@ -1621,6 +1707,7 @@ class _HomeTabState extends State<_HomeTab> {
           final showFullHomeLoading = isInitialLoad;
           final showRefreshShimmer = isRefreshing && browsingHome;
           final slides = _promoSlidesFor(catalog);
+          final noBannerHome = !showFullHomeLoading && slides.isEmpty;
 
           return Stack(
             children: [
@@ -1660,7 +1747,29 @@ class _HomeTabState extends State<_HomeTab> {
                           onClear: () => context.read<CatalogCubit>().load(),
                         ),
                       )
-                    else
+                    else ...[
+                      if (noBannerHome)
+                        SliverPersistentHeader(
+                          pinned: true,
+                          delegate: _ExploreCategoriesPinnedDelegate(
+                            selectedId: _selectedCategory,
+                            categories: catalog.categories,
+                            height: _ExploreCategoriesStrip.extentHeight(
+                              scale,
+                              compact: true,
+                            ),
+                            onViewAll: () =>
+                                MainShellScope.read(context).selectTab(1),
+                            onSelect: (id) => setState(() {
+                              if (id == '__all__') {
+                                _selectedCategory = null;
+                              } else {
+                                _selectedCategory =
+                                    _selectedCategory == id ? null : id;
+                              }
+                            }),
+                          ),
+                        ),
                       DecoratedSliver(
                         decoration: const BoxDecoration(color: Colors.white),
                         sliver: SliverMainAxisGroup(
@@ -1671,7 +1780,7 @@ class _HomeTabState extends State<_HomeTab> {
                               const SliverToBoxAdapter(
                                 child: _CategoriesShimmer(),
                               )
-                            else
+                            else if (!noBannerHome)
                               SliverToBoxAdapter(
                                 child: _ExploreCategoriesStrip(
                                   selectedId: _selectedCategory,
@@ -1835,6 +1944,7 @@ class _HomeTabState extends State<_HomeTab> {
                           ],
                         ),
                       ),
+                    ],
                   ],
                 ),
                 ),
@@ -1882,13 +1992,24 @@ class _HomePromoSlider extends StatefulWidget {
 }
 
 class _HomePromoSliderState extends State<_HomePromoSlider> {
-  final _controller = PageController();
+  /// مضاعف كبير لإبقاء PageView في حلقة سلسة يميناً ويساراً.
+  static const int _loopCopies = 1000;
+
+  PageController? _controller;
   int _current = 0;
   Timer? _timer;
+
+  int get _count => widget.slides.length;
+
+  int get _middlePage =>
+      _count < 2 ? 0 : (_count * (_loopCopies ~/ 2));
+
+  int _realIndex(int page) => _count == 0 ? 0 : page % _count;
 
   @override
   void initState() {
     super.initState();
+    _setupController();
     _startAutoScroll();
   }
 
@@ -1896,16 +2017,29 @@ class _HomePromoSliderState extends State<_HomePromoSlider> {
   void didUpdateWidget(covariant _HomePromoSlider oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.slides.length != widget.slides.length) {
+      _timer?.cancel();
+      _controller?.dispose();
       _current = 0;
+      _setupController();
+      _startAutoScroll();
     }
   }
 
+  void _setupController() {
+    final initial = _middlePage;
+    _controller = PageController(initialPage: initial);
+    _current = _realIndex(initial);
+  }
+
   void _startAutoScroll() {
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (!mounted || widget.slides.length < 2) return;
-      final next = (_current + 1) % widget.slides.length;
-      _controller.animateToPage(
-        next,
+      if (!mounted || _count < 2) return;
+      final controller = _controller;
+      if (controller == null || !controller.hasClients) return;
+      final currentPage = controller.page?.round() ?? _middlePage;
+      controller.animateToPage(
+        currentPage + 1,
         duration: const Duration(milliseconds: 620),
         curve: Curves.easeInOutCubic,
       );
@@ -1915,7 +2049,7 @@ class _HomePromoSliderState extends State<_HomePromoSlider> {
   @override
   void dispose() {
     _timer?.cancel();
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -1924,15 +2058,32 @@ class _HomePromoSliderState extends State<_HomePromoSlider> {
     final slides = widget.slides;
     if (slides.isEmpty) return const SizedBox.shrink();
 
+    final loop = slides.length > 1;
+    final controller = _controller;
+    if (controller == null) return const SizedBox.shrink();
+
     return Stack(
       fit: StackFit.expand,
       children: [
-        PageView.builder(
-          controller: _controller,
-          allowImplicitScrolling: true,
-          itemCount: slides.length,
-          onPageChanged: (i) => setState(() => _current = i),
-          itemBuilder: (_, i) => _PromoBannerCard(slide: slides[i]),
+        NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            // أثناء السحب اليدوي نوقف المؤقت ثم نعيد تشغيله بعده.
+            if (notification is ScrollStartNotification &&
+                notification.dragDetails != null) {
+              _timer?.cancel();
+            } else if (notification is ScrollEndNotification) {
+              _startAutoScroll();
+            }
+            return false;
+          },
+          child: PageView.builder(
+            controller: controller,
+            allowImplicitScrolling: true,
+            itemCount: loop ? slides.length * _loopCopies : slides.length,
+            onPageChanged: (i) => setState(() => _current = _realIndex(i)),
+            itemBuilder: (_, i) =>
+                _PromoBannerCard(slide: slides[_realIndex(i)]),
+          ),
         ),
         if (widget.contentOpacity > 0.02)
           Positioned(
@@ -2012,9 +2163,9 @@ class _PromoBannerCard extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color(0x5988D498),
-                  Color(0x2488D498),
-                  Color(0x0088D498),
+                  Color(0x59003399),
+                  Color(0x24003399),
+                  Color(0x00003399),
                 ],
                 stops: [0.0, 0.16, 0.4],
               ),
@@ -2026,7 +2177,7 @@ class _PromoBannerCard extends StatelessWidget {
                 begin: Alignment.bottomCenter,
                 end: Alignment.topCenter,
                 colors: [
-                  Color(0x661B3A2D),
+                  Color(0x660A1F4D),
                   Color(0x29000000),
                   Color(0x00000000),
                 ],

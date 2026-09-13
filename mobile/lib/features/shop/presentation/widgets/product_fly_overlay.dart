@@ -186,7 +186,7 @@ class _ProductFlyOverlayState extends State<_ProductFlyOverlay>
       AppTheme.primary,
       AppTheme.primaryLight,
       Colors.white,
-      Color(0xFF6B8A76),
+      Color(0xFF6B7A99),
     ];
     return List.generate(8, (_) {
       final angle = rnd.nextDouble() * math.pi * 2;

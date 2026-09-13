@@ -97,19 +97,19 @@ abstract class AppLocalizations {
   /// اسم التطبيق
   ///
   /// In ar, this message translates to:
-  /// **'روعة الخمسة'**
+  /// **'AIMstore'**
   String get appName;
 
   /// الشعار الفرعي للتطبيق
   ///
   /// In ar, this message translates to:
-  /// **'تسوق بذكاء — اشترِ بثقة'**
+  /// **'ــــ كل احتياجاتك في مكان واحد ــــ'**
   String get appTagline;
 
   /// شعار مختصر
   ///
   /// In ar, this message translates to:
-  /// **'تسوق بذكاء'**
+  /// **'كل احتياجاتك في مكان واحد'**
   String get appTaglineShort;
 
   /// نص أثناء التحميل
@@ -235,7 +235,7 @@ abstract class AppLocalizations {
   /// عنوان شاشة Splash
   ///
   /// In ar, this message translates to:
-  /// **'روعة الخمسة'**
+  /// **'AIMstore'**
   String get splashTitle;
 
   /// وصف شاشة Splash
@@ -337,7 +337,7 @@ abstract class AppLocalizations {
   /// وصف شاشة التسجيل
   ///
   /// In ar, this message translates to:
-  /// **'انضم إلى عائلة روعة الخمسة'**
+  /// **'انضم إلى عائلة AIMstore'**
   String get registerSubtitle;
 
   /// زر إنشاء الحساب
@@ -469,7 +469,7 @@ abstract class AppLocalizations {
   /// تلميح شريط البحث في الصفحة الرئيسية
   ///
   /// In ar, this message translates to:
-  /// **'ابحث في روعة الخمسة'**
+  /// **'ابحث في AIMstore'**
   String get homeSearchInApp;
 
   /// تسمية عنوان التوصيل في الرأس
@@ -517,7 +517,7 @@ abstract class AppLocalizations {
   /// سطر تحت عنوان قسم الأسعار الترويجي
   ///
   /// In ar, this message translates to:
-  /// **'إلا في روعة الخمسة! 😉'**
+  /// **'إلا في AIMstore! 😉'**
   String get homeSectionPricesSubtitle;
 
   /// عنوان نتائج البحث
@@ -757,7 +757,7 @@ abstract class AppLocalizations {
   /// رسالة ترحيب المساعد الذكي
   ///
   /// In ar, this message translates to:
-  /// **'مرحباً! أنا مساعدك الذكي في روعة الخمسة. كيف يمكنني مساعدتك اليوم؟'**
+  /// **'مرحباً! أنا مساعدك الذكي في AIMstore. كيف يمكنني مساعدتك اليوم؟'**
   String get aiWelcome;
 
   /// خطأ عام في المساعد

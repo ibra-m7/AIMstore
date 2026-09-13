@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../features/ai_assistant/presentation/pages/chat_screen.dart';
 import '../../features/auth/presentation/pages/add_address_screen.dart';
@@ -10,6 +11,7 @@ import '../../features/auth/presentation/pages/profile_screen.dart';
 import '../../features/auth/presentation/pages/register_screen.dart';
 import '../../features/auth/presentation/pages/settings_screen.dart';
 import '../../features/content_pages/presentation/pages/content_page_screen.dart';
+import '../../features/notifications/presentation/pages/notification_preferences_screen.dart';
 import '../../features/notifications/presentation/pages/notifications_screen.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../../features/onboarding/presentation/pages/splash_screen.dart';
@@ -64,6 +66,8 @@ abstract class AppRouter {
   static const main           = MainScreen.routeName;          // '/main'
   static const profile        = ProfileScreen.routeName;       // '/profile'
   static const accountSettings  = SettingsScreen.routeName;      // '/settings'
+  static const notificationPreferences =
+      NotificationPreferencesScreen.routeName; // '/notification-preferences'
   static const contentPage      = ContentPageScreen.routeName;   // '/content-page'
   static const productDetails = ProductDetailsScreen.routeName;// '/product-details'
   static const checkout       = CheckoutScreen.routeName;      // '/checkout'
@@ -172,6 +176,13 @@ abstract class AppRouter {
       case AppRouter.accountSettings:
         return _slide(
           const SettingsScreen(),
+          settings,
+          direction: _SlideDir.right,
+        );
+
+      case AppRouter.notificationPreferences:
+        return _slide(
+          const NotificationPreferencesScreen(),
           settings,
           direction: _SlideDir.right,
         );
@@ -388,12 +399,20 @@ abstract class AppRouter {
   }
 
   /// Slide transition — للصفحات التفاعلية
-  static PageRouteBuilder<T> _slide<T>(
+  /// الاتجاه من اليمين يدعم السحب للرجوع (مثل صفحات حسابي).
+  static Route<T> _slide<T>(
     Widget page,
     RouteSettings settings, {
     _SlideDir direction = _SlideDir.right,
     Duration duration = const Duration(milliseconds: 240),
   }) {
+    if (direction == _SlideDir.right) {
+      return CupertinoPageRoute<T>(
+        builder: (_) => page,
+        settings: settings,
+      );
+    }
+
     return PageRouteBuilder<T>(
       settings: settings,
       transitionDuration: duration,

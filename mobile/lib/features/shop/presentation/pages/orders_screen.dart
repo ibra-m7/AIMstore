@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../auth/data/services/auth_session.dart';
 import '../../../auth/presentation/auth_flow.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_network_image.dart';
 import '../../../../core/widgets/circle_back_button.dart';
 import '../../domain/entities/cart_item.dart';
@@ -13,12 +14,12 @@ import '../widgets/cart_item_groups.dart';
 import '../widgets/cart_summary_group.dart';
 import '../widgets/main_shell_scope.dart';
 
-const _kBg = Color(0xFFEDF9F2);
-const _kSurface = Color(0xFFFFFFFF);
-const _kDark = Color(0xFF27AE60);
-const _kText = Color(0xFF1B3A2D);
-const _kSubtext = Color(0xFF6B8A76);
-const _kBorder = Color(0xFFB8F0D0);
+const _kBg = AppTheme.background;
+const _kSurface = AppTheme.surface;
+const _kDark = AppTheme.primary;
+const _kText = AppTheme.darkText;
+const _kSubtext = AppTheme.mutedText;
+const _kBorder = AppTheme.primaryLight;
 
 const _kTrackSteps = [
   OrderStatus.pending,
@@ -68,7 +69,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
             'طلباتي',
             style: TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w500,
               color: _kText,
             ),
           ),
@@ -530,7 +531,7 @@ class _OrderCardState extends State<_OrderCard>
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,
                         height: 1.35,
-                        color: Colors.redAccent,
+                        color: AppTheme.accent,
                       ),
                     ),
                   ],
@@ -587,11 +588,11 @@ class _OrderCardState extends State<_OrderCard>
   }
 
   static Color _statusColor(OrderStatus s) => switch (s) {
-    OrderStatus.pending   => const Color(0xFFF59E0B),
-    OrderStatus.preparing => const Color(0xFF3B82F6),
-    OrderStatus.onTheWay  => const Color(0xFF8B5CF6),
-    OrderStatus.delivered => const Color(0xFF10B981),
-    OrderStatus.cancelled => Colors.redAccent,
+    OrderStatus.pending   => const Color(0xFFE6A817),
+    OrderStatus.preparing => AppTheme.primary,
+    OrderStatus.onTheWay  => AppTheme.primaryDark,
+    OrderStatus.delivered => AppTheme.primary,
+    OrderStatus.cancelled => AppTheme.accent,
   };
 
   static String _itemsSummary(OrderEntity order) {
@@ -620,18 +621,18 @@ class _ProductThumbs extends StatelessWidget {
     final thumbs = paidCartItems(items).take(3).toList();
     if (thumbs.isEmpty) {
       return Container(
-        width: 46,
-        height: 46,
+        width: 36,
+        height: 36,
         decoration: BoxDecoration(
           color: _kBg,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(10),
         ),
-        child: const Icon(Icons.shopping_bag_outlined, color: _kSubtext, size: 20),
+        child: const Icon(Icons.shopping_bag_outlined, color: _kSubtext, size: 16),
       );
     }
-    const size = 46.0;
+    const size = 36.0;
     final extra = items.length - thumbs.length;
-    final width = size + (thumbs.length - 1) * 16.0;
+    final width = size + (thumbs.length - 1) * 14.0;
 
     return SizedBox(
       width: width,
@@ -640,17 +641,17 @@ class _ProductThumbs extends StatelessWidget {
         children: [
           for (var i = 0; i < thumbs.length; i++)
             Positioned(
-              right: i * 16.0,
+              right: i * 14.0,
               child: Container(
                 width: size,
                 height: size,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.white, width: 2),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white, width: 1.5),
                   color: _kBg,
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: _thumbImage(thumbs[i].product.imageUrl),
+                child: _thumbImage(thumbs[i].product.displayImage),
               ),
             ),
           if (extra > 0)
@@ -678,30 +679,43 @@ class _ProductThumbs extends StatelessWidget {
     );
   }
 
-  Widget _thumbImage(String url) => _productImage(url, 46);
+  Widget _thumbImage(String url) => _orderProductImage(url, 36);
 }
 
-Widget _productImage(String url, double size) {
-  if (url.isEmpty) {
+Widget _orderProductImage(String url, double size) {
+  final resolved = url.trim();
+  if (resolved.isEmpty) {
     return Container(
       width: size,
       height: size,
-      color: _kBg,
+      decoration: BoxDecoration(
+        color: AppTheme.primarySurface,
+        borderRadius: BorderRadius.circular(8),
+      ),
       alignment: Alignment.center,
-      child: const Icon(Icons.shopping_bag_outlined, color: _kSubtext, size: 20),
+      child: Icon(
+        Icons.image_outlined,
+        color: _kSubtext,
+        size: size * 0.42,
+      ),
     );
   }
+
   return AppNetworkImage(
-    url,
+    resolved,
     width: size,
     height: size,
     fit: BoxFit.cover,
     error: Container(
       width: size,
       height: size,
-      color: _kBg,
+      color: AppTheme.primarySurface,
       alignment: Alignment.center,
-      child: const Icon(Icons.shopping_bag_outlined, color: _kSubtext, size: 20),
+      child: Icon(
+        Icons.image_outlined,
+        color: _kSubtext,
+        size: size * 0.42,
+      ),
     ),
   );
 }
@@ -778,8 +792,8 @@ class _OrderDetails extends StatelessWidget {
           const Text(
             'المنتجات',
             style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
               color: _kText,
             ),
           ),
@@ -788,7 +802,9 @@ class _OrderDetails extends StatelessWidget {
             (group) => OrderItemGroupRow(
               item: group.paid,
               gift: group.gift,
-              imageBuilder: _productImage,
+              imageBuilder: _orderProductImage,
+              imageSize: 36,
+              giftImageSize: 28,
             ),
           ),
 
@@ -844,23 +860,30 @@ class _OrderDetails extends StatelessWidget {
             ),
           ],
           if (order.canCancel) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
+              height: 34,
               child: OutlinedButton.icon(
                 onPressed: () => _confirmCancel(context, order),
-                icon: const Icon(Icons.cancel_outlined, size: 18),
+                icon: const Icon(Icons.cancel_outlined, size: 15),
                 label: const Text('إلغاء الطلب'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.redAccent,
-                  side: const BorderSide(color: Colors.redAccent),
-                  minimumSize: const Size(0, 40),
+                  foregroundColor: AppTheme.accent,
+                  side: BorderSide(
+                    color: AppTheme.accent.withValues(alpha: 0.75),
+                    width: 0.9,
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  minimumSize: const Size(0, 34),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   textStyle: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w400,
+                    height: 1.2,
                   ),
                 ),
               ),
@@ -875,24 +898,67 @@ class _OrderDetails extends StatelessWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('إلغاء الطلب', textAlign: TextAlign.center),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+        contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+        actionsPadding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+        title: const Text(
+          'إلغاء الطلب',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: Color(0xFF1A1A1A),
+          ),
+        ),
         content: const Text(
           'يمكن إلغاء الطلب قبل خروجه للتوصيل. سيُعاد المخزون والكوبون إن وُجد.',
           textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
+            height: 1.45,
+            color: Color(0xFF6B7280),
+          ),
         ),
+        actionsAlignment: MainAxisAlignment.spaceBetween,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF6B7280),
+              minimumSize: const Size(0, 32),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              textStyle: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
             child: const Text('تراجع'),
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
+          SizedBox(
+            height: 32,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.accent,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                minimumSize: const Size(0, 32),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              child: const Text('تأكيد الإلغاء'),
             ),
-            child: const Text('تأكيد الإلغاء'),
           ),
         ],
       ),
@@ -918,6 +984,14 @@ class _TrackingTimeline extends StatelessWidget {
   final OrderStatus status;
   const _TrackingTimeline({required this.status});
 
+  static IconData _trackIcon(OrderStatus s) => switch (s) {
+        OrderStatus.pending => Icons.receipt_long_rounded,
+        OrderStatus.preparing => Icons.inventory_2_rounded,
+        OrderStatus.onTheWay => Icons.delivery_dining_rounded,
+        OrderStatus.delivered => Icons.home_rounded,
+        OrderStatus.cancelled => Icons.cancel_rounded,
+      };
+
   @override
   Widget build(BuildContext context) {
     final current = _kTrackSteps.indexOf(status);
@@ -928,8 +1002,8 @@ class _TrackingTimeline extends StatelessWidget {
         const Text(
           'تتبع الطلب',
           style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
             color: _kText,
           ),
         ),
@@ -954,7 +1028,7 @@ class _TrackingTimeline extends StatelessWidget {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: isDone ? _kDark : const Color(0xFFE8F8F0),
+                          color: isDone ? _kDark : AppTheme.primarySurface,
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: isDone ? _kDark : _kBorder,
@@ -972,15 +1046,12 @@ class _TrackingTimeline extends StatelessWidget {
                         ),
                         child: AnimatedSwitcher(
                           duration: const Duration(milliseconds: 300),
-                          child: isDone
-                              ? const Icon(Icons.check_rounded,
-                                  color: Colors.white, size: 18,
-                                  key: ValueKey('done'))
-                              : Text(
-                                  s.emoji,
-                                  key: ValueKey('pending_$i'),
-                                  style: const TextStyle(fontSize: 17.5),
-                                ),
+                          child: Icon(
+                            _trackIcon(s),
+                            key: ValueKey('track_${s.name}_$isDone'),
+                            color: isDone ? Colors.white : _kSubtext,
+                            size: 18,
+                          ),
                         ),
                       ),
                       if (!isLast)
@@ -1012,10 +1083,8 @@ class _TrackingTimeline extends StatelessWidget {
                         Text(
                           s.label,
                           style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: isDone
-                                ? FontWeight.w600
-                                : FontWeight.w500,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w400,
                             color: isDone ? _kText : _kSubtext,
                           ),
                         ),
@@ -1025,9 +1094,9 @@ class _TrackingTimeline extends StatelessWidget {
                             child: Text(
                               'الحالة الحالية',
                               style: TextStyle(
-                                fontSize: 10.5,
+                                fontSize: 10,
                                 color: _kDark,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                           ),
@@ -1066,16 +1135,16 @@ class _SummaryRow extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: isBold ? 13 : 12,
-            fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
+            fontSize: isBold ? 12 : 11,
+            fontWeight: FontWeight.w400,
             color: isBold ? _kText : _kSubtext,
           ),
         ),
         Text(
           value,
           style: TextStyle(
-            fontSize: isBold ? 13.5 : 12,
-            fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
+            fontSize: isBold ? 12.5 : 11,
+            fontWeight: FontWeight.w400,
             color: valueColor ?? (isBold ? _kDark : _kText),
           ),
         ),

@@ -2,13 +2,13 @@
   "@@locale": "ar",
   "@@last_modified": "2026-04-30",
 
-  "appName": "روعة الخمسة",
+  "appName": "AIMstore",
   "@appName": { "description": "اسم التطبيق" },
 
-  "appTagline": "تسوق بذكاء — اشترِ بثقة",
+  "appTagline": "ــــ كل احتياجاتك في مكان واحد ــــ",
   "@appTagline": { "description": "الشعار الفرعي للتطبيق" },
 
-  "appTaglineShort": "تسوق بذكاء",
+  "appTaglineShort": "كل احتياجاتك في مكان واحد",
   "@appTaglineShort": { "description": "شعار مختصر" },
 
   "loading": "جاري التحميل...",
@@ -71,7 +71,7 @@
   "navProfile": "حسابي",
   "@navProfile": { "description": "تاب الملف الشخصي" },
 
-  "splashTitle": "روعة الخمسة",
+  "splashTitle": "AIMstore",
   "@splashTitle": { "description": "عنوان شاشة Splash" },
 
   "splashSubtitle": "متجرك الذكي المفضّل",
@@ -122,7 +122,7 @@
   "registerTitle": "إنشاء حساب",
   "@registerTitle": { "description": "عنوان شاشة التسجيل" },
 
-  "registerSubtitle": "انضم إلى عائلة روعة الخمسة",
+  "registerSubtitle": "انضم إلى عائلة AIMstore",
   "@registerSubtitle": { "description": "وصف شاشة التسجيل" },
 
   "registerButton": "إنشاء الحساب",
@@ -188,7 +188,7 @@
   "homeSearchHint": "ابحث عن منتج...",
   "@homeSearchHint": { "description": "تلميح حقل البحث" },
 
-  "homeSearchInApp": "ابحث في روعة الخمسة",
+  "homeSearchInApp": "ابحث في AIMstore",
   "@homeSearchInApp": { "description": "تلميح شريط البحث في الصفحة الرئيسية" },
 
   "homeLocationHome": "المنزل",
@@ -212,7 +212,7 @@
   "homeSectionPricesTitle": "أسعار ما تلاقيها",
   "@homeSectionPricesTitle": { "description": "عنوان قسم الأسعار الترويجي" },
 
-  "homeSectionPricesSubtitle": "إلا في روعة الخمسة! 😉",
+  "homeSectionPricesSubtitle": "إلا في AIMstore! 😉",
   "@homeSectionPricesSubtitle": { "description": "سطر تحت عنوان قسم الأسعار الترويجي" },
 
   "homeSearchResults": "نتائج البحث",
@@ -344,7 +344,7 @@
   "aiThinking": "المساعد يفكر...",
   "@aiThinking": { "description": "حالة تفكير المساعد" },
 
-  "aiWelcome": "مرحباً! أنا مساعدك الذكي في روعة الخمسة. كيف يمكنني مساعدتك اليوم؟",
+  "aiWelcome": "مرحباً! أنا مساعدك الذكي في AIMstore. كيف يمكنني مساعدتك اليوم؟",
   "@aiWelcome": { "description": "رسالة ترحيب المساعد الذكي" },
 
   "aiErrorGeneral": "حدث خطأ. يرجى المحاولة مرة أخرى.",

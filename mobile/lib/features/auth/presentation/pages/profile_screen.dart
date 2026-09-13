@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -36,7 +37,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _openMyOrders() async {
     final tab = await Navigator.of(context, rootNavigator: true).push<int>(
-      MaterialPageRoute<int>(
+      CupertinoPageRoute<int>(
         settings: const RouteSettings(name: OrdersScreen.routeName),
         builder: (_) => const OrdersScreen(),
       ),
@@ -306,7 +307,6 @@ class _LoggedInProfileViewState extends State<_LoggedInProfileView>
                     _LuxeMenuRow(
                       icon: Icons.headset_mic_outlined,
                       label: AppStrings.profileCustomerService,
-                      labelSize: 13.5,
                       entrance: _entrance,
                       order: 4,
                       onTap: () => openCustomerService(context),
@@ -314,7 +314,6 @@ class _LoggedInProfileViewState extends State<_LoggedInProfileView>
                     _LuxeMenuRow(
                       icon: Icons.settings_outlined,
                       label: AppStrings.profileSettings,
-                      labelSize: 13.5,
                       entrance: _entrance,
                       order: 5,
                       onTap: () => Navigator.of(context, rootNavigator: true)
@@ -324,7 +323,6 @@ class _LoggedInProfileViewState extends State<_LoggedInProfileView>
                       _LuxeMenuRow(
                         icon: Icons.description_outlined,
                         label: _menuPages[i].buttonLabel,
-                        labelSize: 13.5,
                         entrance: _entrance,
                         order: 6 + i,
                         onTap: () => openContentPage(context, _menuPages[i]),
@@ -354,7 +352,6 @@ class _LuxeMenuRow extends StatelessWidget {
   final IconData? icon;
   final Widget? leading;
   final String label;
-  final double labelSize;
   final int count;
   final VoidCallback? onTap;
   final Animation<double> entrance;
@@ -366,7 +363,6 @@ class _LuxeMenuRow extends StatelessWidget {
     required this.label,
     required this.entrance,
     required this.order,
-    this.labelSize = 15,
     this.count = 0,
     this.onTap,
   }) : assert(icon != null || leading != null);
@@ -399,29 +395,49 @@ class _LuxeMenuRow extends StatelessWidget {
           splashColor: kLuxeRowTint,
           highlightColor: kLuxeRowTint.withValues(alpha: 0.7),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 13),
-            child: Row(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
               children: [
-                SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: Center(
-                    child: leading ??
-                        Icon(icon, size: 20, color: kLuxeRowLabel),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: Center(
+                          child: leading ??
+                              Icon(icon, size: 20, color: kLuxeRowLabel),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          label,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color: kLuxeRowLabel,
+                          ),
+                        ),
+                      ),
+                      if (count > 0) ...[
+                        _LuxeCountBadge(count: count),
+                        const SizedBox(width: 6),
+                      ],
+                      Icon(
+                        Icons.chevron_left_rounded,
+                        size: 20,
+                        color: kLuxeFooterText.withValues(alpha: 0.7),
+                        textDirection: TextDirection.ltr,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: labelSize,
-                      fontWeight: FontWeight.w600,
-                      color: kLuxeRowLabel,
-                    ),
-                  ),
+                Container(
+                  height: 1,
+                  color: kLuxeHairline.withValues(alpha: 0.55),
                 ),
-                if (count > 0) _LuxeCountBadge(count: count),
               ],
             ),
           ),
@@ -497,19 +513,29 @@ class _ProfileFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: kLuxeHairline)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 17),
-              child: Align(
-                alignment: Alignment.center,
-                child: InkWell(
+    return SafeArea(
+      top: false,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 12),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Color(0x00A8B0C0),
+                          Color(0x88A8B0C0),
+                          Color(0xE0A8B0C0),
+                        ],
+                      ),
+                    ),
+                    child: SizedBox(height: 1.4),
+                  ),
+                ),
+                InkWell(
                   onTap: onSignOut,
                   borderRadius: BorderRadius.circular(8),
                   child: const Padding(
@@ -519,72 +545,84 @@ class _ProfileFooter extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.logout_rounded,
-                          size: 20,
-                          color: kLuxeFooterText,
+                          size: 18,
+                          color: AppTheme.accent,
                           textDirection: TextDirection.ltr,
                         ),
-                        SizedBox(width: 12),
                         Text(
                           AppStrings.profileSignOut,
                           style: TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.2,
-                            color: kLuxeFooterText,
+                            fontWeight: FontWeight.w400,
+                            color: AppTheme.accent,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-              ),
+                const Expanded(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Color(0xE0A8B0C0),
+                          Color(0x88A8B0C0),
+                          Color(0x00A8B0C0),
+                        ],
+                      ),
+                    ),
+                    child: SizedBox(height: 1.4),
+                  ),
+                ),
+              ],
             ),
-            Text(
-              AppStrings.profileVersionLabel(version),
-              style: TextStyle(
-                fontSize: 11,
-                color: kLuxeFooterText.withValues(alpha: 0.7),
-              ),
+          ),
+          Text(
+            AppStrings.profileVersionLabel(version),
+            style: TextStyle(
+              fontSize: 11,
+              color: kLuxeFooterText.withValues(alpha: 0.7),
             ),
-            if (contentPages.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10, top: 4),
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: [
-                    for (var i = 0; i < contentPages.length; i++) ...[
-                      if (i > 0)
-                        Text(
-                          '·',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: kLuxeFooterText.withValues(alpha: 0.45),
-                          ),
-                        ),
-                      InkWell(
-                        onTap: () => openContentPage(context, contentPages[i]),
-                        child: Text(
-                          contentPages[i].buttonLabel,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: kLuxeFooterText.withValues(alpha: 0.7),
-                            decoration: TextDecoration.underline,
-                            decorationColor:
-                                kLuxeFooterText.withValues(alpha: 0.4),
-                          ),
+          ),
+          if (contentPages.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10, top: 4),
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  for (var i = 0; i < contentPages.length; i++) ...[
+                    if (i > 0)
+                      Text(
+                        '·',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: kLuxeFooterText.withValues(alpha: 0.45),
                         ),
                       ),
-                    ],
+                    InkWell(
+                      onTap: () => openContentPage(context, contentPages[i]),
+                      child: Text(
+                        contentPages[i].buttonLabel,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: kLuxeFooterText.withValues(alpha: 0.7),
+                          decoration: TextDecoration.underline,
+                          decorationColor:
+                              kLuxeFooterText.withValues(alpha: 0.4),
+                        ),
+                      ),
+                    ),
                   ],
-                ),
-              )
-            else
-              const SizedBox(height: 10),
-          ],
-        ),
+                ],
+              ),
+            )
+          else
+            const SizedBox(height: 10),
+        ],
       ),
     );
   }

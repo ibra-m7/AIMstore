@@ -101,11 +101,11 @@ class _ProductBrowseSheetScreenState extends State<ProductBrowseSheetScreen> {
             header,
             fit: BoxFit.cover,
             width: 900,
-            placeholder: const ColoredBox(color: Color(0xFF1B3A2D)),
-            error: const ColoredBox(color: Color(0xFF1B3A2D)),
+            placeholder: const ColoredBox(color: Color(0xFF0A1F4D)),
+            error: const ColoredBox(color: Color(0xFF0A1F4D)),
           )
         else
-          const ColoredBox(color: Color(0xFF1B3A2D)),
+          const ColoredBox(color: Color(0xFF0A1F4D)),
         const DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(

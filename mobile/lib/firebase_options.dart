@@ -1,10 +1,6 @@
-// ملف يُنشأ تلقائياً بواسطة: flutterfire configure
-// لا تعدّله يدوياً — شغّل الأمر التالي لتوليده:
-//
-//   flutterfire configure
-//
-// تأكد من تثبيت FlutterFire CLI أولاً:
-//   dart pub global activate flutterfire_cli
+// إعدادات Firebase لمشروع AIMstore (aimstore-d17a3)
+// Android: من google-services.json
+// iOS: سجّل تطبيق iOS في Firebase ثم حدّث القيم من GoogleService-Info.plist
 
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
@@ -26,28 +22,29 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyACI8rDcs0idoqH66_Wl6QeQYPE6T0FNSw',
-    appId: '1:496398916684:android:cf5cc1d252350d180ca8e9',
-    messagingSenderId: '496398916684',
-    projectId: 'raoahalkhamsa',
-    storageBucket: 'raoahalkhamsa.firebasestorage.app',
+    apiKey: 'AIzaSyAGATqhDidV5DQItQ0VuCYFNh-F-WDOj2c',
+    appId: '1:474286441573:android:59c4dc8d2e489be0c5f28c',
+    messagingSenderId: '474286441573',
+    projectId: 'aimstore-d17a3',
+    storageBucket: 'aimstore-d17a3.firebasestorage.app',
   );
 
+  /// يحتاج تسجيل تطبيق iOS في Firebase وتنزيل GoogleService-Info.plist
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBWbbxUwCKn_M1qzjGc5dw2iGJdDHLVjNQ',
-    appId: '1:496398916684:ios:495692fa11f5bb750ca8e9',
-    messagingSenderId: '496398916684',
-    projectId: 'raoahalkhamsa',
-    storageBucket: 'raoahalkhamsa.firebasestorage.app',
-    iosBundleId: 'com.raoah.raoahAlkhamsa',
+    apiKey: 'AIzaSyAGATqhDidV5DQItQ0VuCYFNh-F-WDOj2c',
+    appId: 'REPLACE_WITH_IOS_APP_ID',
+    messagingSenderId: '474286441573',
+    projectId: 'aimstore-d17a3',
+    storageBucket: 'aimstore-d17a3.firebasestorage.app',
+    iosBundleId: 'com.aim.aimstore',
   );
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyACI8rDcs0idoqH66_Wl6QeQYPE6T0FNSw',
-    appId: '1:496398916684:web:pending',
-    messagingSenderId: '496398916684',
-    projectId: 'raoahalkhamsa',
-    storageBucket: 'raoahalkhamsa.firebasestorage.app',
-    authDomain: 'raoahalkhamsa.firebaseapp.com',
+    apiKey: 'AIzaSyAGATqhDidV5DQItQ0VuCYFNh-F-WDOj2c',
+    appId: 'REPLACE_WITH_WEB_APP_ID',
+    messagingSenderId: '474286441573',
+    projectId: 'aimstore-d17a3',
+    storageBucket: 'aimstore-d17a3.firebasestorage.app',
+    authDomain: 'aimstore-d17a3.firebaseapp.com',
   );
 }

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">172.20.2.32</domain>
+        <domain includeSubdomains="true">172.20.2.192</domain>
+        <domain includeSubdomains="true">172.20.2.240</domain>
+        <domain includeSubdomains="true">172.20.2.63</domain>
+        <domain includeSubdomains="true">172.20.2.95</domain>
+        <domain includeSubdomains="true">192.168.134.27</domain>
+        <domain includeSubdomains="true">192.168.134.66</domain>
+        <domain includeSubdomains="true">192.168.8.122</domain>
+        <domain includeSubdomains="true">bloodfinder.website</domain>
+        <domain includeSubdomains="true">16.171.249.18</domain>
+        <domain includeSubdomains="true">ec2-16-171-249-18.eu-north-1.compute.amazonaws.com</domain>
+        <domain includeSubdomains="true">16.16.172.215</domain>
+        <domain includeSubdomains="true">ec2-16-16-172-215.eu-north-1.compute.amazonaws.com</domain>
+    </domain-config>
+</network-security-config>

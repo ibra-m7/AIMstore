@@ -131,7 +131,7 @@ class AiControllerCubit extends Cubit<AiControllerState> {
     } catch (e) {
       debugPrint('[AiController] initConversation error: $e');
       final offlineWelcome = ChatMessageModel.fromGeminiResponse(
-        'أهلاً بك في روعة الخمسة! كيف يمكنني مساعدتك اليوم؟',
+        'أهلاً بك في AIMstore! كيف يمكنني مساعدتك اليوم؟',
       );
       emit(state.copyWith(
         messages: [offlineWelcome],
@@ -1411,7 +1411,7 @@ class AiControllerCubit extends Cubit<AiControllerState> {
     'إتمام الطلب',
     'أتمام الشراء',
     'أنهِ الطلب',
-    'روعة للدفع',
+    'AIM للدفع',
     'checkout',
     'pay now',
   ];

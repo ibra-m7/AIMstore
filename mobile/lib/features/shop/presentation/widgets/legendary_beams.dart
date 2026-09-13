@@ -105,8 +105,8 @@ class LegendaryBeamsPainter extends CustomPainter {
           begin: Alignment.bottomCenter,
           end: Alignment.topCenter,
           colors: i.isEven
-              ? const [Color(0x6688D498), Color(0x24F6C177), Color(0x0088D498)]
-              : const [Color(0x4DF6C177), Color(0x1A88D498), Color(0x00FFFFFF)],
+              ? const [Color(0x66003399), Color(0x24F6C177), Color(0x00003399)]
+              : const [Color(0x4DF6C177), Color(0x1A003399), Color(0x00FFFFFF)],
         ).createShader(Rect.fromLTWH(-half, -reach, half * 2, reach + 8));
       canvas.drawPath(path, paint);
       canvas.restore();
@@ -115,7 +115,7 @@ class LegendaryBeamsPainter extends CustomPainter {
 
     final glow = Paint()
       ..shader = RadialGradient(
-        colors: const [Color(0x7388D498), Color(0x28F6C177), Color(0x00000000)],
+        colors: const [Color(0x73003399), Color(0x28F6C177), Color(0x00000000)],
         stops: const [0, 0.45, 1],
       ).createShader(Rect.fromCircle(center: hub, radius: 92));
     canvas.drawCircle(hub, 92, glow);

@@ -9,6 +9,9 @@ class AuthUser {
   final bool needsName;
   final bool needsLocation;
   final bool notificationsEnabled;
+  final bool notificationsOrdersEnabled;
+  final bool notificationsOffersEnabled;
+  final bool notificationsGeneralEnabled;
   final List<DeliveryAddress> addresses;
 
   const AuthUser({
@@ -20,6 +23,9 @@ class AuthUser {
     this.needsName = false,
     this.needsLocation = false,
     this.notificationsEnabled = true,
+    this.notificationsOrdersEnabled = true,
+    this.notificationsOffersEnabled = true,
+    this.notificationsGeneralEnabled = true,
     this.addresses = const [],
   });
 
@@ -61,6 +67,12 @@ class AuthUser {
       needsName: json['needs_name'] as bool? ?? _isPlaceholderName(name),
       needsLocation: json['needs_location'] as bool? ?? addresses.isEmpty,
       notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
+      notificationsOrdersEnabled:
+          json['notifications_orders_enabled'] as bool? ?? true,
+      notificationsOffersEnabled:
+          json['notifications_offers_enabled'] as bool? ?? true,
+      notificationsGeneralEnabled:
+          json['notifications_general_enabled'] as bool? ?? true,
       addresses: addresses,
     );
   }
@@ -73,6 +85,9 @@ class AuthUser {
     bool? needsName,
     bool? needsLocation,
     bool? notificationsEnabled,
+    bool? notificationsOrdersEnabled,
+    bool? notificationsOffersEnabled,
+    bool? notificationsGeneralEnabled,
     List<DeliveryAddress>? addresses,
   }) {
     return AuthUser(
@@ -85,6 +100,12 @@ class AuthUser {
       needsLocation: needsLocation ?? this.needsLocation,
       notificationsEnabled:
           notificationsEnabled ?? this.notificationsEnabled,
+      notificationsOrdersEnabled:
+          notificationsOrdersEnabled ?? this.notificationsOrdersEnabled,
+      notificationsOffersEnabled:
+          notificationsOffersEnabled ?? this.notificationsOffersEnabled,
+      notificationsGeneralEnabled:
+          notificationsGeneralEnabled ?? this.notificationsGeneralEnabled,
       addresses: addresses ?? this.addresses,
     );
   }
@@ -98,6 +119,9 @@ class AuthUser {
         'needs_name': needsName,
         'needs_location': needsLocation,
         'notifications_enabled': notificationsEnabled,
+        'notifications_orders_enabled': notificationsOrdersEnabled,
+        'notifications_offers_enabled': notificationsOffersEnabled,
+        'notifications_general_enabled': notificationsGeneralEnabled,
         'addresses': addresses.map((item) => item.toJson()).toList(),
       };
 }

@@ -1,19 +1,15 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/widgets/circle_back_button.dart';
 import '../../../content_pages/data/services/content_pages_api.dart';
 import '../../../content_pages/presentation/content_page_nav.dart';
-import '../../../notifications/data/services/notifications_api.dart';
 import '../../../notifications/data/services/push_service.dart';
 import '../../../notifications/presentation/manager/notifications_cubit.dart';
-import '../../data/services/auth_session.dart';
 import '../../data/services/phone_auth_api.dart';
 import '../../../shop/presentation/manager/orders_cubit.dart';
 import '../manager/address_cubit.dart';
@@ -44,30 +40,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _legalPages = pages);
   }
 
-  Future<void> _toggleNotifications(bool enabled) async {
-    final user = AuthSession.instance.user;
-    if (user == null) return;
-
-    final previous = user.notificationsEnabled;
-    await AuthSession.instance.updateUser(
-      user.copyWith(notificationsEnabled: enabled),
-    );
-
-    try {
-      await NotificationsApi.instance.setEnabled(enabled);
-      unawaited(PushService.instance.applyPreference(enabled));
-      if (!mounted) return;
-      try {
-        context.read<NotificationsCubit>().load(silent: true);
-      } catch (_) {}
-    } catch (_) {
-      await AuthSession.instance.updateUser(
-        user.copyWith(notificationsEnabled: previous),
-      );
-      if (mounted) {
-        AppToast.error(context, AppStrings.profileNotificationsSaveFailed);
-      }
-    }
+  void _openNotificationPreferences() {
+    Navigator.of(context).pushNamed(AppRouter.notificationPreferences);
   }
 
   void _confirmDeleteAccount() {
@@ -145,41 +119,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text(
               AppStrings.profileSettings,
               style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
                 color: AppTheme.darkText,
               ),
             ),
           ),
-          body: ListenableBuilder(
-            listenable: AuthSession.instance,
-            builder: (context, _) {
-              final notificationsEnabled =
-                  AuthSession.instance.user?.notificationsEnabled ?? true;
-
-              return ListView(
-                padding: const EdgeInsets.fromLTRB(18, 6, 18, 24),
-                children: [
-                  _SettingsSectionLabel(AppStrings.settingsSectionGeneral),
-                  const SizedBox(height: 8),
-                  _SettingsCard(
+          body: ListView(
+            padding: const EdgeInsets.fromLTRB(18, 6, 18, 24),
+            children: [
+              _SettingsSectionLabel(AppStrings.settingsSectionGeneral),
+              const SizedBox(height: 8),
+              _SettingsCard(
+                dense: true,
+                child: InkWell(
+                  onTap: _openNotificationPreferences,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: AppTheme.primarySurface,
-                            borderRadius: BorderRadius.circular(11),
-                          ),
-                          child: Icon(
-                            Icons.notifications_outlined,
-                            size: 18,
-                            color: AppTheme.primaryDark.withValues(alpha: 0.9),
-                          ),
+                        Icon(
+                          Icons.notifications_outlined,
+                          size: 20,
+                          color: AppTheme.primaryDark.withValues(alpha: 0.9),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,17 +152,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               const Text(
                                 AppStrings.profileNotifications,
                                 style: TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
                                   color: AppTheme.darkText,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 1),
                               Text(
                                 AppStrings.profileNotificationsDesc,
                                 style: TextStyle(
-                                  fontSize: 11,
-                                  height: 1.45,
+                                  fontSize: 10.5,
+                                  height: 1.3,
+                                  fontWeight: FontWeight.w400,
                                   color: AppTheme.mutedText.withValues(
                                     alpha: 0.95,
                                   ),
@@ -206,141 +172,123 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ],
                           ),
                         ),
-                        Switch(
-                          value: notificationsEnabled,
-                          onChanged: _toggleNotifications,
-                          thumbColor: WidgetStateProperty.resolveWith(
-                            (states) => states.contains(WidgetState.selected)
-                                ? Colors.white
-                                : const Color(0xFFF5F5F5),
-                          ),
-                          trackColor: WidgetStateProperty.resolveWith(
-                            (states) {
-                              if (states.contains(WidgetState.selected)) {
-                                return AppTheme.primary;
-                              }
-                              return const Color(0xFFD0D8D3);
-                            },
-                          ),
-                          trackOutlineColor: WidgetStateProperty.all(
-                            Colors.transparent,
-                          ),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 18,
+                          color: AppTheme.mutedText.withValues(alpha: 0.6),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 18),
-                  if (_legalPages.isNotEmpty) ...[
-                    const _SettingsSectionLabel('المعلومات القانونية'),
-                    const SizedBox(height: 8),
-                    _SettingsCard(
-                      child: Column(
-                        children: [
-                          for (var i = 0; i < _legalPages.length; i++) ...[
-                            if (i > 0)
-                              Divider(
-                                height: 18,
-                                color: AppTheme.primaryLight
-                                    .withValues(alpha: 0.7),
-                              ),
-                            InkWell(
-                              onTap: () =>
-                                  openContentPage(context, _legalPages[i]),
-                              borderRadius: BorderRadius.circular(12),
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 2),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 34,
-                                      height: 34,
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.primarySurface,
-                                        borderRadius:
-                                            BorderRadius.circular(11),
-                                      ),
-                                      child: Icon(
-                                        Icons.description_outlined,
-                                        size: 18,
-                                        color: AppTheme.primaryDark
-                                            .withValues(alpha: 0.9),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        _legalPages[i].buttonLabel,
-                                        style: const TextStyle(
-                                          fontSize: 13.5,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppTheme.darkText,
-                                        ),
-                                      ),
-                                    ),
-                                    Icon(
-                                      Icons.chevron_right_rounded,
-                                      size: 18,
-                                      color: AppTheme.mutedText
-                                          .withValues(alpha: 0.6),
-                                    ),
-                                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              if (_legalPages.isNotEmpty) ...[
+                const _SettingsSectionLabel('المعلومات القانونية'),
+                const SizedBox(height: 8),
+                _SettingsCard(
+                  child: Column(
+                    children: [
+                      for (var i = 0; i < _legalPages.length; i++) ...[
+                        if (i > 0)
+                          Divider(
+                            height: 18,
+                            color: AppTheme.primaryLight
+                                .withValues(alpha: 0.7),
+                          ),
+                        InkWell(
+                          onTap: () =>
+                              openContentPage(context, _legalPages[i]),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 2),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 34,
+                                  height: 34,
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primarySurface,
+                                    borderRadius:
+                                        BorderRadius.circular(11),
+                                  ),
+                                  child: Icon(
+                                    Icons.description_outlined,
+                                    size: 18,
+                                    color: AppTheme.primaryDark
+                                        .withValues(alpha: 0.9),
+                                  ),
                                 ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    _legalPages[i].buttonLabel,
+                                    style: const TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w400,
+                                      color: AppTheme.darkText,
+                                    ),
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.chevron_right_rounded,
+                                  size: 18,
+                                  color: AppTheme.mutedText
+                                      .withValues(alpha: 0.6),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 18),
+              ],
+              _SettingsSectionLabel(AppStrings.settingsSectionAccount),
+              const SizedBox(height: 8),
+              _SettingsCard(
+                dense: true,
+                child: InkWell(
+                  onTap: _confirmDeleteAccount,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: SizedBox(
+                      height: 28,
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.logout_rounded,
+                            size: 20,
+                            color: Color(0xFFE57373),
+                          ),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text(
+                              AppStrings.profileDeleteAccount,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFFE57373),
+                                height: 1.2,
                               ),
                             ),
-                          ],
+                          ),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 18,
+                            color: AppTheme.mutedText.withValues(alpha: 0.6),
+                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 18),
-                  ],
-                  _SettingsSectionLabel(AppStrings.settingsSectionAccount),
-                  const SizedBox(height: 8),
-                  _SettingsCard(
-                    child: InkWell(
-                      onTap: _confirmDeleteAccount,
-                      borderRadius: BorderRadius.circular(16),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 2),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 34,
-                              height: 34,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFEBEE),
-                                borderRadius: BorderRadius.circular(11),
-                              ),
-                              child: const Icon(
-                                Icons.logout_rounded,
-                                size: 18,
-                                color: Color(0xFFE57373),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Text(
-                                AppStrings.profileDeleteAccount,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFFE57373),
-                                ),
-                              ),
-                            ),
-                            Icon(
-                              Icons.chevron_right_rounded,
-                              size: 18,
-                              color: AppTheme.mutedText.withValues(alpha: 0.6),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                   ),
-                ],
-              );
-            },
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -360,8 +308,8 @@ class _SettingsSectionLabel extends StatelessWidget {
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 11.5,
-          fontWeight: FontWeight.w800,
+          fontSize: 12.5,
+          fontWeight: FontWeight.w700,
           letterSpacing: 0.2,
           color: AppTheme.mutedText.withValues(alpha: 0.95),
         ),
@@ -372,15 +320,16 @@ class _SettingsSectionLabel extends StatelessWidget {
 
 class _SettingsCard extends StatelessWidget {
   final Widget child;
+  final bool dense;
 
-  const _SettingsCard({required this.child});
+  const _SettingsCard({required this.child, this.dense = false});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.75)),
         boxShadow: [
           BoxShadow(
@@ -390,7 +339,10 @@ class _SettingsCard extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: dense ? 6 : 8,
+      ),
       child: child,
     );
   }

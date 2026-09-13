@@ -17,9 +17,9 @@ import 'package:flutter/material.dart';
 abstract final class AppTextStyles {
   static const String fontFamily = 'GraphikArabic';
 
-  static const Color _darkText = Color(0xFF1B3A2D);
-  static const Color _bodyText = Color(0xFF2D4A38);
-  static const Color _mutedText = Color(0xFF6B8A76);
+  static const Color _darkText = Color(0xFF0A1F4D);
+  static const Color _bodyText = Color(0xFF1A2F5A);
+  static const Color _mutedText = Color(0xFF6B7A99);
 
   static TextStyle _style({
     required double fontSize,
@@ -214,7 +214,7 @@ abstract final class AppTextStyles {
   static TextStyle get viewAll => _style(
         fontSize: 12,
         fontWeight: FontWeight.w400,
-        color: const Color(0xFF88D498),
+        color: const Color(0xFF003399),
         height: 1.2,
       );
 
@@ -276,7 +276,7 @@ abstract final class AppTextStyles {
   static TextStyle get buttonSecondary => _style(
         fontSize: 18,
         fontWeight: FontWeight.w600,
-        color: const Color(0xFF5FAF72),
+        color: const Color(0xFF002266),
       );
 
   static TextStyle get appBarTitle => _style(

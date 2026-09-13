@@ -1,5 +1,5 @@
-name: raoah_alkhamsa
-description: "تطبيق روعة الخمسة - متجر إلكتروني مع مساعد ذكاء اصطناعي"
+name: aimstore
+description: "تطبيق AIMstore - متجر إلكتروني مع مساعد ذكاء اصطناعي"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

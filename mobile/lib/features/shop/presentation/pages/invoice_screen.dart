@@ -149,9 +149,12 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
 
   Future<void> _selectPayment(PaymentOption method) async {
     final kind = paymentKindFor(method.id);
-    if (kind == PaymentKind.stcPay) {
+    if (kind == PaymentKind.wallet) {
       final phone = await StcPaySheet.show(
         context,
+        title: method.label,
+        assetPath: PaymentMethodLogo.bundledAsset(method.id),
+        iconUrl: method.iconUrl,
         initialPhone: _stcPhone,
       );
       if (!mounted || phone == null) return;
@@ -214,11 +217,18 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
 
     setState(() => _paying = true);
     final cartState = context.read<CartCubit>().state;
+    final storeMethods =
+        context.read<CatalogCubit>().state.store.paymentMethods;
     var notes = _notesCtrl.text.trim();
     if (_stcPhone != null &&
-        paymentKindFor(_method!) == PaymentKind.stcPay) {
-      final stcLine = 'STC Pay: $_stcPhone';
-      notes = notes.isEmpty ? stcLine : '$notes\n$stcLine';
+        paymentKindFor(_method!) == PaymentKind.wallet) {
+      final walletLabel = storeMethods
+          .where((m) => m.id == _method)
+          .map((m) => m.label)
+          .followedBy([_method!])
+          .first;
+      final walletLine = '$walletLabel: $_stcPhone';
+      notes = notes.isEmpty ? walletLine : '$notes\n$walletLine';
     }
     try {
       await context.read<OrdersCubit>().placeOrder(
@@ -836,15 +846,16 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
                               gridDelegate:
                                   const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 3,
-                                mainAxisSpacing: 8,
-                                crossAxisSpacing: 8,
-                                childAspectRatio: 1.32,
+                                mainAxisSpacing: 10,
+                                crossAxisSpacing: 10,
+                                childAspectRatio: 1.22,
                               ),
                               itemBuilder: (context, index) {
                                 final method = paymentMethods[index];
                                 final selected =
                                     _paymentChosen && _method == method.id;
-                                final subtitle = method.id == 'stc_pay' &&
+                                final subtitle = paymentKindFor(method.id) ==
+                                            PaymentKind.wallet &&
                                         selected &&
                                         (_stcPhone?.isNotEmpty ?? false)
                                     ? 'الجوال: $_stcPhone'
@@ -1328,8 +1339,8 @@ class _PaymentTile extends StatelessWidget {
   Widget build(BuildContext context) {
     const radius = BorderRadius.all(Radius.circular(10));
     final isCash = method.id == 'cash';
-    final logoWidth = isCash ? 54.0 : 46.0;
-    final logoHeight = isCash ? 30.0 : 24.0;
+    final logoWidth = isCash ? 48.0 : 52.0;
+    final logoHeight = isCash ? 36.0 : 38.0;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
@@ -1348,17 +1359,17 @@ class _PaymentTile extends StatelessWidget {
           onTap: onTap,
           borderRadius: radius,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(4, 3, 4, 7),
+            padding: const EdgeInsets.fromLTRB(3, 3, 3, 5),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(7),
+                        borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: selected
                               ? AppTheme.primaryLight
@@ -1367,7 +1378,7 @@ class _PaymentTile extends StatelessWidget {
                       ),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 4,
-                        vertical: 3,
+                        vertical: 4,
                       ),
                       child: Stack(
                         children: [
@@ -1377,6 +1388,7 @@ class _PaymentTile extends StatelessWidget {
                               width: logoWidth,
                               height: logoHeight,
                               fit: BoxFit.contain,
+                              borderRadius: BorderRadius.circular(7),
                             ),
                           ),
                           if (selected)
@@ -1385,7 +1397,7 @@ class _PaymentTile extends StatelessWidget {
                               end: 0,
                               child: Icon(
                                 Icons.check_circle_rounded,
-                                size: 11,
+                                size: 10,
                                 color: AppTheme.primaryDark,
                               ),
                             ),
@@ -1394,7 +1406,7 @@ class _PaymentTile extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 7),
+                const SizedBox(height: 5),
                 Text(
                   method.label,
                   textAlign: TextAlign.center,
@@ -1402,7 +1414,7 @@ class _PaymentTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
-                    fontSize: 10,
+                    fontSize: 9.5,
                     height: 1,
                     color: selected ? AppTheme.primaryDark : AppTheme.darkText,
                   ),
@@ -1415,13 +1427,13 @@ class _PaymentTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 8.5,
+                      fontSize: 8,
                       color: AppTheme.mutedText,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
-                const SizedBox(height: 5),
+                const SizedBox(height: 3),
               ],
             ),
           ),

@@ -55,12 +55,30 @@ class NotificationsApi {
   }
 
   Future<void> setEnabled(bool enabled) async {
-    final json = await _client.patch('/auth/notifications', {'enabled': enabled});
+    await updatePreferences(enabled: enabled);
+  }
+
+  Future<AuthUser?> updatePreferences({
+    bool? enabled,
+    bool? orders,
+    bool? offers,
+    bool? general,
+  }) async {
+    final body = <String, dynamic>{
+      if (enabled != null) 'enabled': enabled,
+      if (orders != null) 'orders': orders,
+      if (offers != null) 'offers': offers,
+      if (general != null) 'general': general,
+    };
+    if (body.isEmpty) return AuthSession.instance.user;
+
+    final json = await _client.patch('/auth/notifications', body);
     final data = (json['data'] as Map?)?.cast<String, dynamic>() ?? {};
     final userMap = (data['user'] as Map?)?.cast<String, dynamic>();
-    if (userMap != null) {
-      await AuthSession.instance.updateUser(AuthUser.fromJson(userMap));
-    }
+    if (userMap == null) return null;
+    final user = AuthUser.fromJson(userMap);
+    await AuthSession.instance.updateUser(user);
+    return user;
   }
 
   Future<void> registerToken(String token, String platform) async {

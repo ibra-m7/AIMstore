@@ -14,7 +14,7 @@ extension OrderStatusX on OrderStatus {
   String get label => switch (this) {
     OrderStatus.pending   => 'في انتظار التأكيد',
     OrderStatus.preparing => 'جاري التحضير',
-    OrderStatus.onTheWay  => 'في الطريق',
+    OrderStatus.onTheWay  => 'في الطريق إليك',
     OrderStatus.delivered => 'تم التسليم',
     OrderStatus.cancelled => 'ملغي',
   };
