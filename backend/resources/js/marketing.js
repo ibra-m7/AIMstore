@@ -1,30 +1,30 @@
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "../css/marketing.css";
 
-const animateCount = (el) => {
-    const target = Number(el.dataset.count || 0);
-    const start = performance.now();
-    const duration = 1200;
-
-    const tick = (now) => {
-        const progress = Math.min((now - start) / duration, 1);
-        el.textContent = Math.round(target * progress).toLocaleString("en-US");
-        if (progress < 1) {
-            requestAnimationFrame(tick);
-        }
-    };
-
-    requestAnimationFrame(tick);
-};
-
-const io = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-        if (!entry.isIntersecting) {
+document.querySelectorAll('.mkt-faq-item').forEach((item) => {
+    item.addEventListener('toggle', () => {
+        if (!item.open) {
             return;
         }
-        animateCount(entry.target);
-        io.unobserve(entry.target);
+        document.querySelectorAll('.mkt-faq-item').forEach((other) => {
+            if (other !== item) {
+                other.open = false;
+            }
+        });
     });
-}, { threshold: 0.4 });
+});
 
-document.querySelectorAll("[data-count]").forEach((el) => io.observe(el));
+document.querySelectorAll('a[href^="#"]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+        const id = link.getAttribute('href');
+        if (!id || id === '#') {
+            return;
+        }
+        const target = document.querySelector(id);
+        if (!target) {
+            return;
+        }
+        event.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+});

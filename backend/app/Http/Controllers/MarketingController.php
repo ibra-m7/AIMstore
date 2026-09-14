@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Support\AppStrings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -15,7 +14,7 @@ class MarketingController extends Controller
         }
 
         return view('marketing.home', [
-            'title' => AppStrings::APP_NAME,
+            'title' => 'سيتي مارت',
         ]);
     }
 }

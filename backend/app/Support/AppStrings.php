@@ -9,7 +9,7 @@ final class AppStrings
 {
     public const APP_NAME = 'AIMstore';
 
-    public const APP_TAGLINE = 'تسوق بذكاء — اشترِ بثقة';
+    public const APP_TAGLINE = 'خلي تسوّقك أسهل… وعروضك أكثر';
 
     public const CURRENCY = "\u{20C1}";
 
@@ -75,15 +75,15 @@ final class AppStrings
 
     public const NAV_PRODUCT_DISCOUNTS = 'خصومات المنتجات';
 
-    public const LANDING_KICKER = 'منصة التجارة الذكية';
+    public const LANDING_KICKER = 'سيتي مارت';
 
-    public const LANDING_HERO_TITLE = 'أدر متجرك بفخامة ووضوح';
+    public const LANDING_HERO_TITLE = 'خلي تسوّقك أسهل… وعروضك أكثر!';
 
-    public const LANDING_HERO_BODY = 'لوحة تحكم واحدة لإدارة المنتجات والطلبات والعروض والعملاء — بتجربة سريعة على الجوال والكمبيوتر.';
+    public const LANDING_HERO_BODY = 'مع سيتي مارت تحصل على أقل الأسعار، تشكيلات مختارة، وعروض يومية واضحة — كل هذا بتجربة بسيطة بدون أي تعقيد.';
 
     public const LANDING_CTA = 'دخول لوحة التحكم';
 
-    public const LANDING_CTA_SECONDARY = 'اكتشف المميزات';
+    public const LANDING_CTA_SECONDARY = 'اكتشف المزايا';
 
     public const BACK_TO_SITE = 'العودة للصفحة التعريفية';
 

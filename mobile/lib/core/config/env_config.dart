@@ -34,7 +34,7 @@ class EnvConfig {
   }
 
   /// الشبكة المحلية (نفس الواي فاي) — للتطوير فقط.
-  static const localApi = 'http://172.20.2.32:8088/api';
+  static const localApi = 'http://172.20.2.66:8088/api';
 
   /// الإنتاج على الدومين.
   static const remoteApi = 'https://$productionHost/api';
