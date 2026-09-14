@@ -1,13 +1,20 @@
 <x-layouts.admin :title="$title">
-    <div class="page-card p-4 p-md-5" style="max-width: 720px">
+    <x-admin.page-head :title="$title" />
+
+    <div class="page-card p-4 p-md-5">
         <form method="POST" action="{{ route('admin.offers.update', $product) }}" id="promo-edit-form">
             @csrf
             @method('PUT')
             <input type="hidden" name="product_id" value="{{ $product->id }}">
 
-            <div class="locked-product mb-3">
-                <strong>{{ $product->name }}</strong>
-                <span class="text-muted">السعر الأصلي {{ number_format((float) $product->price, 2) }} {{ $strings::CURRENCY }}</span>
+            <div class="locked-product mb-4">
+                @if ($product->primaryImage?->url)
+                    <img src="{{ \App\Support\Media::url($product->primaryImage->url) }}" alt="" class="table-thumb">
+                @endif
+                <div>
+                    <strong>{{ $product->name }}</strong>
+                    <span class="text-muted d-block">السعر الأصلي {{ number_format((float) $product->price, 2) }} {{ $strings::CURRENCY }}</span>
+                </div>
             </div>
 
             <div class="mb-3">
@@ -57,6 +64,7 @@
     <script>
         (() => {
             const form = document.getElementById('promo-edit-form');
+            if (!form) return;
             const sync = () => {
                 const mode = form.querySelector('input[name="mode"]:checked')?.value;
                 document.getElementById('promo-percent-wrap').hidden = mode !== 'percent';

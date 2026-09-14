@@ -135,6 +135,8 @@ final class AppStrings
 
     public const NAV_REVIEWS = 'التقييمات';
 
+    public const NAV_REPORTS = 'التقارير';
+
     public const NAV_PAGES = 'الصفحات';
 
     public const ADD_PAGE = 'إضافة صفحة';
@@ -229,6 +231,14 @@ final class AppStrings
 
     public const NAV_SETTINGS = 'الإعدادات';
 
+    public const NAV_SETTINGS_APP = 'التطبيق';
+
+    public const NAV_SETTINGS_STORE = 'المتجر';
+
+    public const NAV_SETTINGS_MARKETING = 'العروض والتسويق';
+
+    public const NAV_SETTINGS_PRIVACY = 'الخصوصية';
+
     public const NAV_PROFILE = 'الملف الشخصي';
 
     public const PROFILE_UPDATED = 'تم تحديث الملف الشخصي بنجاح.';
@@ -280,6 +290,8 @@ final class AppStrings
     public const NAV_AI = 'المساعد الذكي';
 
     public const AI_SAVED = 'تم حفظ إعدادات المساعد الذكي.';
+
+    public const AI_PROMPTS_RESTORED = 'تم استعادة برومبتات سيتي مارت الاحترافية.';
 
     public const AI_CONVERSATIONS = 'محادثات المساعد';
 

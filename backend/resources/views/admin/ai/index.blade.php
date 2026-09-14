@@ -93,7 +93,7 @@
                         <label class="form-label">تعليمات الأسلوب (System Prompt)</label>
                         <textarea name="system_prompt" rows="12" class="form-control @error('system_prompt') is-invalid @enderror" required maxlength="4000">{{ $val('system_prompt') }}</textarea>
                         @error('system_prompt') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        <div class="form-hint">للذكاء الاصطناعي فقط. لا يظهر للعميل.</div>
+                        <div class="form-hint">للذكاء الاصطناعي فقط. لا يظهر للعميل. لهجة تسوق يمنية مهنية لسيتي مارت.</div>
                     </div>
                 </div>
 
@@ -293,6 +293,21 @@
             <div class="d-flex flex-wrap gap-2 mt-3">
                 <button class="btn btn-brand">{{ $strings::SAVE }}</button>
             </div>
+        </form>
+
+        <form
+            method="POST"
+            action="{{ route('admin.ai.restore-prompts') }}"
+            class="mt-3 p-3 border rounded-4 bg-light d-flex flex-wrap align-items-center justify-content-between gap-2"
+            onsubmit="return confirm('استعادة برومبتات سيتي مارت؟ سيتم استبدال الاسم والترحيب والبرومبت وبرومبت التدريب والاقتراحات السريعة.');"
+        >
+            @csrf
+            <input type="hidden" name="active_tab" value="prompt">
+            <div class="text-muted small mb-0">استبدل القيم الحالية بنسخة سيتي مارت الاحترافية (لهجة يمنية رجالية + تدريب توصيات).</div>
+            <button type="submit" class="btn btn-outline-success rounded-pill">
+                <i class="bi bi-arrow-counterclockwise ms-1"></i>
+                استعادة برومبت سيتي مارت
+            </button>
         </form>
 
         <form method="POST" action="{{ route('admin.ai.train') }}" class="mt-3 p-3 border rounded-4 bg-light" onsubmit="return confirm('تشغيل تدريب التوصيات الآن؟ قد يستغرق وقتاً.');">

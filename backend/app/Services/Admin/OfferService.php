@@ -37,6 +37,7 @@ class OfferService
             ->active()
             ->with('primaryImage')
             ->withoutPromo($exceptId)
+            ->whereDoesntHave('giftProducts')
             ->when($search, fn ($query, $term) => $query->search($term))
             ->orderBy('name')
             ->limit($limit)
@@ -66,6 +67,12 @@ class OfferService
             $product = Product::query()->find($productId);
             if (! $product) {
                 continue;
+            }
+
+            if ($product->hasAttachedGift()) {
+                throw ValidationException::withMessages([
+                    'product_ids' => 'لا يمكن إضافة خصم على المنتج «'.$product->name.'» لأن معه هدية.',
+                ]);
             }
 
             if ($product->has_discount && $product->promo_type && $product->promo_type !== $type) {
@@ -107,6 +114,34 @@ class OfferService
             'discount_price' => null,
             'promo_type' => null,
         ]);
+    }
+
+    /**
+     * @param  list<int>|null  $productIds  null = كل منتجات هذا النوع
+     */
+    public function clearMany(PromoType $type, ?array $productIds = null): int
+    {
+        $query = Product::query()->onPromo($type);
+
+        if ($productIds !== null) {
+            $ids = array_values(array_unique(array_filter(array_map('intval', $productIds))));
+            if ($ids === []) {
+                return 0;
+            }
+            $query->whereIn('id', $ids);
+        }
+
+        $ids = $query->pluck('id');
+        if ($ids->isEmpty()) {
+            return 0;
+        }
+
+        Product::query()->whereIn('id', $ids)->update([
+            'discount_price' => null,
+            'promo_type' => null,
+        ]);
+
+        return $ids->count();
     }
 
     private function resolveDiscount(Product $product, string $mode, array $data): float

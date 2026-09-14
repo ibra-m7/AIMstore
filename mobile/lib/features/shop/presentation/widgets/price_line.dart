@@ -65,7 +65,7 @@ class PriceLine extends StatelessWidget {
         integer: integer,
         decimal: integer * 0.62,
         currency: currencySize > 0 ? currencySize : integer * 0.72,
-        original: integer * 0.48,
+        original: integer * 0.74,
         numberGap: 1,
         currencyGap: 4,
         originalGap: 8,
@@ -78,7 +78,7 @@ class PriceLine extends StatelessWidget {
       integer: integer,
       decimal: base * 0.72,
       currency: currencySize > 0 ? currencySize : integer * 0.72,
-      original: base * 0.64,
+      original: base * 0.82,
       numberGap: 1,
       currencyGap: 4,
       originalGap: 8,
@@ -87,7 +87,7 @@ class PriceLine extends StatelessWidget {
 
   TextStyle _priceStyle({
     required double size,
-    FontWeight weight = FontWeight.w700,
+    FontWeight weight = FontWeight.w500,
     double letterSpacing = 0,
   }) {
     return TextStyle(
@@ -106,12 +106,12 @@ class PriceLine extends StatelessWidget {
     final sizes = _sizes;
     final integerStyle = _priceStyle(
       size: sizes.integer,
-      weight: FontWeight.w700,
+      weight: FontWeight.w500,
       letterSpacing: -0.8,
     );
     final decimalStyle = _priceStyle(
       size: sizes.decimal,
-      weight: FontWeight.w600,
+      weight: FontWeight.w400,
     );
 
     return Text.rich(
@@ -172,7 +172,7 @@ class PriceLine extends StatelessWidget {
             color: _originalColor,
             decoration: TextDecoration.lineThrough,
             decorationColor: _originalColor,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
             height: 1,
             letterSpacing: -0.6,
           ),
@@ -191,7 +191,7 @@ class PriceLine extends StatelessWidget {
       textDirection: TextDirection.ltr,
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           currency,
           SizedBox(width: sizes.currencyGap),
@@ -202,6 +202,7 @@ class PriceLine extends StatelessWidget {
 
     if (original == null) return current;
 
+    // نفس الصف: السعر الأصلي يساراً ثم السعر بعد الخصم (مثل السابق).
     final leading = swapPrices ? current : original;
     final trailing = swapPrices ? original : current;
 
@@ -209,7 +210,7 @@ class PriceLine extends StatelessWidget {
       textDirection: TextDirection.ltr,
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           leading,
           SizedBox(width: sizes.originalGap),

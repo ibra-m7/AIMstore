@@ -14,6 +14,45 @@
         </p>
     </div>
 
+    <div class="page-card p-3 mb-3">
+        @php
+            $bannerEnabled = $type === \App\Enums\PromoType::Offer
+                ? ($showOffersAsBanner ?? true)
+                : ($showDiscountsAsBanner ?? true);
+            $bannerTitle = $type === \App\Enums\PromoType::Offer
+                ? 'إظهار العروض كبنر في الرئيسية'
+                : 'إظهار الخصومات كبنر في الرئيسية';
+            $bannerHint = $type === \App\Enums\PromoType::Offer
+                ? 'عند التفعيل تظهر منتجات العروض في بنر الرئيسية وشريط «عروض خاصة». عند الإيقاف تُخفى من البنر فقط وتبقى أسعارها المخفّضة على المنتج.'
+                : 'عند التفعيل تظهر منتجات الخصم في بنر الرئيسية وشريط «خصومات اليوم». عند الإيقاف تُخفى من البنر فقط وتبقى أسعارها المخفّضة على المنتج.';
+            $bannerInputId = $type === \App\Enums\PromoType::Offer
+                ? 'show_offers_as_banner'
+                : 'show_discounts_as_banner';
+        @endphp
+        <form method="POST" action="{{ route('admin.offers.banner-visibility') }}" class="promo-banner-toggle">
+            @csrf
+            @method('PUT')
+            <input type="hidden" name="type" value="{{ $type->value }}">
+            <input type="hidden" name="enabled" value="0">
+            <div class="form-check form-switch mb-0">
+                <input
+                    class="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    id="{{ $bannerInputId }}"
+                    name="enabled"
+                    value="1"
+                    @checked($bannerEnabled)
+                    onchange="this.form.requestSubmit()"
+                >
+                <label class="form-check-label" for="{{ $bannerInputId }}">
+                    <strong>{{ $bannerTitle }}</strong>
+                    <span class="d-block small text-muted">{{ $bannerHint }}</span>
+                </label>
+            </div>
+        </form>
+    </div>
+
     <div class="promo-tabs">
         @foreach (\App\Enums\PromoType::cases() as $tab)
             <a href="{{ route('admin.offers.index', ['type' => $tab->value]) }}" class="promo-tab {{ $type === $tab ? 'is-active' : '' }}">
@@ -30,14 +69,52 @@
         <button class="btn btn-outline-success rounded-pill">{{ $strings::FILTER }}</button>
     </form>
 
-    <div class="page-card p-4">
+    <div class="page-card p-4" data-promo-bulk>
         @if ($offers->isEmpty())
             <x-admin.empty-state icon="bi-percent" :action="route('admin.offers.create', ['type' => $type->value])" :action-label="$type->addLabel()" />
         @else
+            <div class="promo-bulk-bar mb-3">
+                <div class="promo-bulk-bar__hint text-muted small">
+                    حدّد منتجات ثم ألغِ {{ $type->label() }}، أو ألغِ الكل دفعة واحدة.
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <form method="POST" action="{{ route('admin.offers.bulk-clear') }}" id="promo-selected-form" class="d-inline">
+                        @csrf
+                        <input type="hidden" name="type" value="{{ $type->value }}">
+                        <input type="hidden" name="scope" value="selected">
+                        <button
+                            type="submit"
+                            class="btn btn-sm btn-outline-danger rounded-pill"
+                            data-promo-bulk-selected
+                            disabled
+                            onclick="return confirm('سيتم إلغاء {{ $type->label() }} عن المنتجات المحددة فقط. هل أنت متأكد؟')"
+                        >
+                            إلغاء المحدد
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ route('admin.offers.bulk-clear') }}" class="d-inline" onsubmit="return confirm('سيتم إلغاء {{ $type->label() }} عن كل {{ $type->plural() }} ({{ $counts[$type->value] ?? 0 }}). هل أنت متأكد؟')">
+                        @csrf
+                        <input type="hidden" name="type" value="{{ $type->value }}">
+                        <input type="hidden" name="scope" value="all">
+                        <button type="submit" class="btn btn-sm btn-danger rounded-pill">
+                            إلغاء كل {{ $type->plural() }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table class="table">
                     <thead>
                         <tr>
+                            <th style="width: 2.5rem">
+                                <input
+                                    type="checkbox"
+                                    class="form-check-input"
+                                    data-promo-select-all
+                                    aria-label="تحديد الكل في هذه الصفحة"
+                                >
+                            </th>
                             <th></th>
                             <th>النوع</th>
                             <th>المنتج</th>
@@ -50,6 +127,17 @@
                     <tbody>
                         @foreach ($offers as $product)
                             <tr>
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        class="form-check-input"
+                                        name="product_ids[]"
+                                        value="{{ $product->id }}"
+                                        form="promo-selected-form"
+                                        data-promo-select
+                                        aria-label="تحديد {{ $product->name }}"
+                                    >
+                                </td>
                                 <td>
                                     @if ($product->primaryImage?->url)
                                         <img src="{{ \App\Support\Media::url($product->primaryImage->url) }}" alt="" class="table-thumb">

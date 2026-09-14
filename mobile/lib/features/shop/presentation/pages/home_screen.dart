@@ -199,11 +199,13 @@ List<_PromoSlide> _promoSlidesFor(CatalogState catalog) {
     );
   }
   if (slides.isNotEmpty) return slides;
+
   final promoProducts = <ProductModel>[
-    ...catalog.offers,
-    ...catalog.discounts.where(
-      (product) => !catalog.offers.any((offer) => offer.id == product.id),
-    ),
+    if (catalog.store.showOffersAsBanner) ...catalog.offers,
+    if (catalog.store.showDiscountsAsBanner)
+      ...catalog.discounts.where(
+        (product) => !catalog.offers.any((offer) => offer.id == product.id),
+      ),
   ];
   return [
     for (final product in promoProducts.take(4))
@@ -646,8 +648,8 @@ class _HomeMagicHeaderDelegate extends SliverPersistentHeaderDelegate {
                         ? 0
                         : Curves.easeOut.transform(p),
                     searchBorderRadius: _hasBanner
-                        ? lerpDouble(14, 10, p)!
-                        : 14,
+                        ? lerpDouble(10, 8, p)!
+                        : 10,
                     glassMode: HeaderSearchGlassMode.home,
                   ),
                 ),
@@ -699,6 +701,13 @@ class _CurvedProductCarouselSection extends StatelessWidget {
   final bool curveBottom;
   final bool ticker;
   final VoidCallback? onViewAll;
+  final double titleFontSize;
+  final double subtitleFontSize;
+  final double? cardWidth;
+  final double? rowHeight;
+  final double itemSpacing;
+  final double paddingTop;
+  final double paddingBottom;
 
   const _CurvedProductCarouselSection({
     required this.title,
@@ -714,12 +723,26 @@ class _CurvedProductCarouselSection extends StatelessWidget {
     this.curveBottom = true,
     this.ticker = false,
     this.onViewAll,
+    this.titleFontSize = HomeSectionModel.defaultTitleFontSize,
+    this.subtitleFontSize = HomeSectionModel.defaultSubtitleFontSize,
+    this.cardWidth,
+    this.rowHeight,
+    this.itemSpacing = HomeSectionModel.defaultItemSpacing,
+    this.paddingTop = HomeSectionModel.defaultPaddingTop,
+    this.paddingBottom = HomeSectionModel.defaultPaddingBottom,
   });
 
   @override
   Widget build(BuildContext context) {
     if (products.isEmpty) return const SizedBox.shrink();
     final scale = AppScale.of(context);
+    final cardW = scale.s(cardWidth ?? HomeSectionModel.defaultCardWidth);
+    final listH = rowHeight != null
+        ? scale.s(rowHeight!)
+        : cardW / AppScale.productCardAspect;
+    final gap = scale.s(itemSpacing);
+    final titleSize = scale.s(titleFontSize);
+    final subtitleSize = scale.s(subtitleFontSize);
 
     return HomeSectionShell(
       gradientColors: gradientColors,
@@ -727,7 +750,10 @@ class _CurvedProductCarouselSection extends StatelessWidget {
       curveTop: curveTop,
       curveBottom: curveBottom,
       child: Padding(
-        padding: EdgeInsets.only(top: scale.s(20), bottom: scale.s(18)),
+        padding: EdgeInsets.only(
+          top: scale.s(paddingTop),
+          bottom: scale.s(paddingBottom),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -754,7 +780,7 @@ class _CurvedProductCarouselSection extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: AppTextStyles.sectionTitle.copyWith(
-                                      fontSize: scale.s(22),
+                                      fontSize: titleSize,
                                       color: titleColor ?? AppTheme.primaryDark,
                                       height: 1.15,
                                     ),
@@ -772,11 +798,13 @@ class _CurvedProductCarouselSection extends StatelessWidget {
                               subtitle!,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: subtitleStyle ??
+                              style: subtitleStyle?.copyWith(
+                                    fontSize: subtitleSize,
+                                  ) ??
                                   Theme.of(
                                     context,
                                   ).textTheme.labelSmall?.copyWith(
-                                    fontSize: 11,
+                                    fontSize: subtitleSize,
                                     color: subtitleColor ?? AppTheme.mutedText,
                                     fontWeight: FontWeight.w600,
                                     height: 1.25,
@@ -818,20 +846,30 @@ class _CurvedProductCarouselSection extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(height: scale.s(16)),
+            SizedBox(height: scale.s(12)),
             SizedBox(
-              height: scale.productCardHeight,
+              height: listH,
               child: ticker
                   ? AutoScrollHorizontalList(
-                      height: scale.productCardHeight,
-                      itemWidth: scale.productCardWidth,
-                      gap: scale.s(10),
+                      height: listH,
+                      itemWidth: cardW,
+                      gap: gap,
                       padding: EdgeInsets.symmetric(horizontal: scale.pagePad),
                       itemCount: products.length,
                       itemBuilder: (_, i) => ProductCard(
                         product: products[i],
                         heroTag: 'home_carousel_${title}_${i}_${products[i].id}',
                         compactFooter: true,
+                        tightFooterTop: true,
+                        densePriceArea: true,
+                        imageAlignment: Alignment.center,
+                        imageInset: 4,
+                        imageInsetTop: 4,
+                        imageInsetBottom: 4,
+                        imageScale: 1.22,
+                        cartButtonSize: 24,
+                        cartButtonStartInset: 10,
+                        cartButtonBottomInset: 16,
                       ),
                     )
                   : ListView.separated(
@@ -842,15 +880,24 @@ class _CurvedProductCarouselSection extends StatelessWidget {
                         horizontal: scale.pagePad,
                       ),
                       itemCount: products.length,
-                      separatorBuilder: (_, _) =>
-                          SizedBox(width: scale.s(10)),
+                      separatorBuilder: (_, _) => SizedBox(width: gap),
                       itemBuilder: (_, i) => SizedBox(
-                        width: scale.productCardWidth,
+                        width: cardW,
                         child: ProductCard(
                           product: products[i],
                           heroTag:
                               'home_carousel_${title}_${i}_${products[i].id}',
                           compactFooter: true,
+                          tightFooterTop: true,
+                          densePriceArea: true,
+                          imageAlignment: Alignment.center,
+                          imageInset: 4,
+                          imageInsetTop: 4,
+                          imageInsetBottom: 4,
+                          imageScale: 1.22,
+                          cartButtonSize: 24,
+                          cartButtonStartInset: 10,
+                          cartButtonBottomInset: 16,
                         ),
                       ),
                     ),
@@ -1058,10 +1105,10 @@ class _ExploreCategoriesStrip extends StatelessWidget {
   /// ارتفاع الشريط المثبّت — يتضمن فراغاً فوقه يفصل عن الـ AppBar.
   static double extentHeight(AppScale scale, {required bool compact}) {
     final topGap = compact ? scale.s(12) : 0.0;
-    final titlePadTop = compact ? scale.s(2) : scale.s(6);
-    final titlePadBottom = compact ? scale.s(2) : scale.s(8);
+    final titlePadTop = compact ? scale.s(10) : scale.s(6);
+    final titlePadBottom = compact ? scale.s(10) : scale.s(8);
     final titleLine = compact ? 16.0 : 22.0;
-    final bottomGap = compact ? scale.s(2) : scale.s(6);
+    final bottomGap = compact ? scale.s(6) : scale.s(6);
     return topGap +
         titlePadTop +
         titleLine +
@@ -1101,9 +1148,9 @@ class _ExploreCategoriesStrip extends StatelessWidget {
               Padding(
                 padding: EdgeInsets.fromLTRB(
                   scale.pagePad,
-                  compact ? scale.s(2) : scale.s(6),
+                  compact ? scale.s(10) : scale.s(6),
                   scale.pagePad,
-                  compact ? scale.s(2) : scale.s(8),
+                  compact ? scale.s(10) : scale.s(8),
                 ),
                 child: Row(
                   children: [
@@ -1189,7 +1236,7 @@ class _ExploreCategoriesStrip extends StatelessWidget {
                   },
                 ),
               ),
-              SizedBox(height: compact ? scale.s(2) : scale.s(6)),
+              SizedBox(height: compact ? scale.s(6) : scale.s(6)),
             ],
           ),
         ),
@@ -1785,6 +1832,7 @@ class _HomeTabState extends State<_HomeTab> {
                                 child: _ExploreCategoriesStrip(
                                   selectedId: _selectedCategory,
                                   categories: catalog.categories,
+                                  compact: true,
                                   onViewAll: () =>
                                       MainShellScope.read(context).selectTab(1),
                                   onSelect: (id) => setState(() {
@@ -1800,6 +1848,7 @@ class _HomeTabState extends State<_HomeTab> {
                             if (!showFullHomeLoading &&
                                 !showRefreshShimmer &&
                                 browsingHome &&
+                                catalog.store.showDiscountsAsBanner &&
                                 catalog.discounts.isNotEmpty)
                               SliverToBoxAdapter(
                                 child: _CurvedProductCarouselSection(
@@ -1819,6 +1868,7 @@ class _HomeTabState extends State<_HomeTab> {
                             if (!showFullHomeLoading &&
                                 !showRefreshShimmer &&
                                 browsingHome &&
+                                catalog.store.showOffersAsBanner &&
                                 catalog.offers.isNotEmpty)
                               SliverToBoxAdapter(
                                 child: _CurvedProductCarouselSection(
@@ -1861,6 +1911,14 @@ class _HomeTabState extends State<_HomeTab> {
                                       titleColor: titleColor,
                                       subtitleColor: subtitleColor,
                                       autoScrollCards: section.autoScrollCards,
+                                      titleFontSize: section.titleFontSize,
+                                      subtitleFontSize:
+                                          section.subtitleFontSize,
+                                      cardWidth: section.cardWidth,
+                                      rowHeight: section.rowHeight,
+                                      itemSpacing: section.itemSpacing,
+                                      paddingTop: section.paddingTop,
+                                      paddingBottom: section.paddingBottom,
                                       curveTop:
                                           catalog.sections.first == section,
                                     ),
@@ -1872,7 +1930,7 @@ class _HomeTabState extends State<_HomeTab> {
                                     subtitle: section.subtitle,
                                     subtitleStyle: section.emphasizeSubtitle
                                         ? TextStyle(
-                                            fontSize: 11,
+                                            fontSize: section.subtitleFontSize,
                                             fontWeight: FontWeight.w800,
                                             color: subtitleColor ??
                                                 AppTheme.primary,
@@ -1889,6 +1947,13 @@ class _HomeTabState extends State<_HomeTab> {
                                         section.backgroundImageUrl,
                                     titleColor: titleColor,
                                     subtitleColor: subtitleColor,
+                                    titleFontSize: section.titleFontSize,
+                                    subtitleFontSize: section.subtitleFontSize,
+                                    cardWidth: section.cardWidth,
+                                    rowHeight: section.rowHeight,
+                                    itemSpacing: section.itemSpacing,
+                                    paddingTop: section.paddingTop,
+                                    paddingBottom: section.paddingBottom,
                                     curveTop: catalog.sections.first == section,
                                     curveBottom: true,
                                     onViewAll: () =>
@@ -1927,6 +1992,16 @@ class _HomeTabState extends State<_HomeTab> {
                                       heroTag:
                                           'home_grid_${i}_${filtered[i].id}',
                                       compactFooter: true,
+                                      tightFooterTop: true,
+                                      footerTextScale: 1.08,
+                                      imageInset: 4,
+                                      imageInsetTop: 4,
+                                      imageInsetBottom: 4,
+                                      imageAlignment: Alignment.center,
+                                      imageScale: 1.28,
+                                      cartButtonSize: 30,
+                                      cartButtonStartInset: 12,
+                                      cartButtonBottomInset: 20,
                                     ),
                                     childCount: filtered.length,
                                   ),

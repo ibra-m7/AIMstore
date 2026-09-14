@@ -41,6 +41,13 @@ class HomeSectionRequest extends FormRequest
             'auto_scroll_cards' => ['nullable', 'boolean'],
             'show_title_icon' => ['nullable', 'boolean'],
             'emphasize_subtitle' => ['nullable', 'boolean'],
+            'title_font_size' => ['nullable', 'integer', 'min:12', 'max:36'],
+            'subtitle_font_size' => ['nullable', 'integer', 'min:8', 'max:24'],
+            'card_width' => ['nullable', 'integer', 'min:80', 'max:220'],
+            'row_height' => ['nullable', 'integer', 'min:100', 'max:400'],
+            'item_spacing' => ['nullable', 'integer', 'min:0', 'max:40'],
+            'padding_top' => ['nullable', 'integer', 'min:0', 'max:48'],
+            'padding_bottom' => ['nullable', 'integer', 'min:0', 'max:48'],
             'use_default_background' => ['nullable', 'boolean'],
             'use_default_title_color' => ['nullable', 'boolean'],
             'use_default_subtitle_color' => ['nullable', 'boolean'],
@@ -63,6 +70,13 @@ class HomeSectionRequest extends FormRequest
             'auto_scroll_cards' => 'تحريك الكروت',
             'show_title_icon' => 'أيقونة العنوان',
             'emphasize_subtitle' => 'تمييز العنوان الفرعي',
+            'title_font_size' => 'حجم خط العنوان',
+            'subtitle_font_size' => 'حجم خط العنوان الفرعي',
+            'card_width' => 'عرض البطاقة',
+            'row_height' => 'ارتفاع الصف',
+            'item_spacing' => 'المسافة بين البطاقات',
+            'padding_top' => 'المسافة العلوية',
+            'padding_bottom' => 'المسافة السفلية',
         ];
     }
 
@@ -91,6 +105,13 @@ class HomeSectionRequest extends FormRequest
             'background_image_url' => $backgroundMode === 'color'
                 ? null
                 : ($this->input('background_image_url') ?: null),
+            'title_font_size' => $this->filled('title_font_size') ? $this->input('title_font_size') : null,
+            'subtitle_font_size' => $this->filled('subtitle_font_size') ? $this->input('subtitle_font_size') : null,
+            'card_width' => $this->filled('card_width') ? $this->input('card_width') : null,
+            'row_height' => $this->filled('row_height') ? $this->input('row_height') : null,
+            'item_spacing' => $this->filled('item_spacing') ? $this->input('item_spacing') : null,
+            'padding_top' => $this->filled('padding_top') ? $this->input('padding_top') : null,
+            'padding_bottom' => $this->filled('padding_bottom') ? $this->input('padding_bottom') : null,
             'product_ids' => array_values(array_filter((array) $this->input('product_ids', []))),
         ]);
     }

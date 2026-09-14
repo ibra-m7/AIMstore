@@ -24,6 +24,14 @@
         ? '#'.strtoupper(ltrim((string) $bgColor, '#'))
         : '#E8EEF8';
     $bgImageSrc = Media::url($section->background_image_url);
+
+    $titleFontSize = old('title_font_size', $section->title_font_size ?? \App\Models\HomeSection::DEFAULT_TITLE_FONT_SIZE);
+    $subtitleFontSize = old('subtitle_font_size', $section->subtitle_font_size ?? \App\Models\HomeSection::DEFAULT_SUBTITLE_FONT_SIZE);
+    $cardWidth = old('card_width', $section->card_width ?? \App\Models\HomeSection::DEFAULT_CARD_WIDTH);
+    $rowHeight = old('row_height', $section->row_height);
+    $itemSpacing = old('item_spacing', $section->item_spacing ?? \App\Models\HomeSection::DEFAULT_ITEM_SPACING);
+    $paddingTop = old('padding_top', $section->padding_top ?? \App\Models\HomeSection::DEFAULT_PADDING_TOP);
+    $paddingBottom = old('padding_bottom', $section->padding_bottom ?? \App\Models\HomeSection::DEFAULT_PADDING_BOTTOM);
 @endphp
 
 <div class="alert alert-light border mb-4">
@@ -197,6 +205,68 @@
     </div>
 </div>
 
+<div class="card border mb-4">
+    <div class="card-body">
+        <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3 mb-md-4">
+            <div>
+                <h6 class="mb-1">مظهر العرض في الرئيسية</h6>
+                <p class="small text-muted mb-0">تحكّم بحجم الخط والعناصر والمسافات. القيم الافتراضية أصغر قليلاً لتناسب الشاشة.</p>
+            </div>
+            <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm rounded-pill"
+                data-home-section-layout-reset
+                data-default-title-font-size="{{ \App\Models\HomeSection::DEFAULT_TITLE_FONT_SIZE }}"
+                data-default-subtitle-font-size="{{ \App\Models\HomeSection::DEFAULT_SUBTITLE_FONT_SIZE }}"
+                data-default-card-width="{{ \App\Models\HomeSection::DEFAULT_CARD_WIDTH }}"
+                data-default-item-spacing="{{ \App\Models\HomeSection::DEFAULT_ITEM_SPACING }}"
+                data-default-padding-top="{{ \App\Models\HomeSection::DEFAULT_PADDING_TOP }}"
+                data-default-padding-bottom="{{ \App\Models\HomeSection::DEFAULT_PADDING_BOTTOM }}"
+            >
+                إعادة الإعدادات الافتراضية
+            </button>
+        </div>
+        <div class="row g-3" data-home-section-layout-fields>
+            <div class="col-6 col-md-3">
+                <label class="form-label">حجم خط العنوان</label>
+                <input type="number" min="12" max="36" name="title_font_size" value="{{ $titleFontSize }}" class="form-control form-control-sm @error('title_font_size') is-invalid @enderror" data-layout-field="title_font_size">
+                @error('title_font_size') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">حجم خط العنوان الفرعي</label>
+                <input type="number" min="8" max="24" name="subtitle_font_size" value="{{ $subtitleFontSize }}" class="form-control form-control-sm @error('subtitle_font_size') is-invalid @enderror" data-layout-field="subtitle_font_size">
+                @error('subtitle_font_size') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">عرض البطاقة</label>
+                <input type="number" min="80" max="220" name="card_width" value="{{ $cardWidth }}" class="form-control form-control-sm @error('card_width') is-invalid @enderror" data-layout-field="card_width">
+                @error('card_width') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">ارتفاع الصف</label>
+                <input type="number" min="100" max="400" name="row_height" value="{{ $rowHeight }}" class="form-control form-control-sm @error('row_height') is-invalid @enderror" placeholder="تلقائي" data-layout-field="row_height">
+                @error('row_height') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                <div class="form-hint">اتركه فارغاً ليُحسب من عرض البطاقة.</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">المسافة بين البطاقات</label>
+                <input type="number" min="0" max="40" name="item_spacing" value="{{ $itemSpacing }}" class="form-control form-control-sm @error('item_spacing') is-invalid @enderror" data-layout-field="item_spacing">
+                @error('item_spacing') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">المسافة العلوية</label>
+                <input type="number" min="0" max="48" name="padding_top" value="{{ $paddingTop }}" class="form-control form-control-sm @error('padding_top') is-invalid @enderror" data-layout-field="padding_top">
+                @error('padding_top') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">المسافة السفلية</label>
+                <input type="number" min="0" max="48" name="padding_bottom" value="{{ $paddingBottom }}" class="form-control form-control-sm @error('padding_bottom') is-invalid @enderror" data-layout-field="padding_bottom">
+                @error('padding_bottom') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-md-3 mb-3">
         <label class="form-label">{{ $strings::SORT_ORDER }}</label>
@@ -234,3 +304,29 @@
         </p>
     </div>
 </div>
+
+<script>
+(() => {
+    const button = document.querySelector('[data-home-section-layout-reset]');
+    if (!button || button.dataset.inlineResetBound === '1') return;
+    button.dataset.inlineResetBound = '1';
+    button.addEventListener('click', () => {
+        const defaults = {
+            title_font_size: button.getAttribute('data-default-title-font-size') || '',
+            subtitle_font_size: button.getAttribute('data-default-subtitle-font-size') || '',
+            card_width: button.getAttribute('data-default-card-width') || '',
+            row_height: '',
+            item_spacing: button.getAttribute('data-default-item-spacing') || '',
+            padding_top: button.getAttribute('data-default-padding-top') || '',
+            padding_bottom: button.getAttribute('data-default-padding-bottom') || '',
+        };
+        Object.entries(defaults).forEach(([name, value]) => {
+            const input = document.querySelector(`[data-layout-field="${name}"]`);
+            if (!input) return;
+            input.value = value;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    });
+})();
+</script>

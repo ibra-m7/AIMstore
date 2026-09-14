@@ -262,7 +262,10 @@
                             </span>
                             <div>
                                 <h4 class="product-relation-card__title">يُشترى معه</h4>
-                                <p class="product-relation-card__desc">منتجات مقترحة في تفاصيل المنتج لزيادة المبيعات.</p>
+                                <p class="product-relation-card__desc">
+                                    اختيار يدوي يظهر دائمًا في تفاصيل المنتج.
+                                    للتعبئة التلقائية لصف «يُشترى معه» على كل المنتجات فعّل الخيار من إعدادات العروض والتسويق.
+                                </p>
                             </div>
                         </div>
                     </header>

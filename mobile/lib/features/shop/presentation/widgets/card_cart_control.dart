@@ -264,6 +264,9 @@ class _CardCartControlState extends State<CardCartControl> {
         .fold<int>(0, (sum, item) => sum + item.quantity);
   }
 
+  double _plusIconSize(double buttonSize) =>
+      (buttonSize * 0.72).clamp(18.0, 26.0);
+
   Widget _buildIdlePlus({
     required bool disabled,
     required double size,
@@ -278,7 +281,7 @@ class _CardCartControlState extends State<CardCartControl> {
       child: Icon(
         Icons.add_rounded,
         color: disabled ? const Color(0xFFC5D4CB) : AppTheme.primaryDark,
-        size: 18,
+        size: _plusIconSize(size),
       ),
     );
   }
@@ -329,7 +332,7 @@ class _CardCartControlState extends State<CardCartControl> {
                       color: canPlus
                           ? Colors.white
                           : Colors.white.withValues(alpha: 0.4),
-                      size: 18,
+                      size: _plusIconSize(size),
                     ),
                   )
                 : _SquareTap(

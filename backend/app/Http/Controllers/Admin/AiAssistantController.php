@@ -115,6 +115,29 @@ class AiAssistantController extends Controller
             ->with('success', AppStrings::AI_SAVED);
     }
 
+    public function restoreCityMartPrompts(Request $request): RedirectResponse
+    {
+        $defaults = AiSettings::cityMartPromptDefaults();
+
+        Setting::setValue(Constants::SETTING_AI_NAME, $defaults['name']);
+        Setting::setValue(Constants::SETTING_AI_WELCOME, $defaults['welcome']);
+        Setting::setValue(Constants::SETTING_AI_SYSTEM_PROMPT, $defaults['system_prompt']);
+        Setting::setValue(Constants::SETTING_AI_TRAIN_PROMPT, $defaults['train_prompt']);
+        Setting::setValue(
+            Constants::SETTING_AI_SUGGESTION_CHIPS,
+            json_encode($defaults['suggestion_chips'], JSON_UNESCAPED_UNICODE)
+        );
+
+        $tab = (string) $request->input('active_tab', 'prompt');
+        if (! in_array($tab, ['general', 'prompt', 'display', 'voice', 'performance', 'training'], true)) {
+            $tab = 'prompt';
+        }
+
+        return redirect()
+            ->route('admin.ai.index', ['tab' => $tab])
+            ->with('success', AppStrings::AI_PROMPTS_RESTORED);
+    }
+
     public function train(Request $request, AiTrainingService $training): RedirectResponse
     {
         $data = $request->validate([

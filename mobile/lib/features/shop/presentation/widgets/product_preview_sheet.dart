@@ -377,21 +377,36 @@ class _ProductPreviewSheetState extends State<ProductPreviewSheet>
     final height = MediaQuery.sizeOf(context).height;
     final catalog = context.watch<CatalogCubit>().state;
     final boughtTogether = _boughtTogether;
+    final excludeBought = {
+      p.id,
+      ...boughtTogether.map((item) => item.id),
+    };
     final similar = _similar.isNotEmpty
         ? _similar
+              .where((item) => !excludeBought.contains(item.id))
+              .take(8)
+              .toList()
         : (!_recsLoaded
               ? catalog.products
                     .where(
                       (item) =>
-                          item.id != p.id && item.categoryId == p.categoryId,
+                          !excludeBought.contains(item.id) &&
+                          item.categoryId == p.categoryId,
                     )
                     .take(8)
                     .toList()
               : const <ProductModel>[]);
+    final excludeSuggested = {
+      ...excludeBought,
+      ...similar.map((item) => item.id),
+    };
     final suggested = _suggested.isNotEmpty
         ? _suggested
+              .where((item) => !excludeSuggested.contains(item.id))
+              .take(8)
+              .toList()
         : (!_recsLoaded
-              ? catalog.suggestions(excludeIds: {p.id}).take(8).toList()
+              ? catalog.suggestions(excludeIds: excludeSuggested).take(8).toList()
               : const <ProductModel>[]);
     final images = _images;
 
@@ -567,18 +582,26 @@ class _ProductPreviewSheetState extends State<ProductPreviewSheet>
                             products: boughtTogether,
                             onOpen: _showProduct,
                             highlighted: true,
+                            grayImageWell: false,
                           ),
+                        if (boughtTogether.isNotEmpty &&
+                            (similar.isNotEmpty || suggested.isNotEmpty))
+                          const _RecommendGrayGap(),
                         if (similar.isNotEmpty)
                           _RecommendRow(
                             title: 'منتجات مشابهة',
                             products: similar,
                             onOpen: _showProduct,
+                            grayImageWell: true,
                           ),
+                        if (similar.isNotEmpty && suggested.isNotEmpty)
+                          const _RecommendGrayGap(),
                         if (suggested.isNotEmpty)
                           _RecommendRow(
                             title: 'منتجات مقترحة',
                             products: suggested,
                             onOpen: _showProduct,
+                            grayImageWell: true,
                           ),
                       ],
                     ),
@@ -862,12 +885,14 @@ class _RecommendRow extends StatelessWidget {
   final List<ProductModel> products;
   final ValueChanged<ProductModel> onOpen;
   final bool highlighted;
+  final bool grayImageWell;
 
   const _RecommendRow({
     required this.title,
     required this.products,
     required this.onOpen,
     this.highlighted = false,
+    this.grayImageWell = false,
   });
 
   @override
@@ -896,6 +921,7 @@ class _RecommendRow extends StatelessWidget {
               final product = products[index];
               return _RelatedTile(
                 product: product,
+                grayImageWell: grayImageWell,
                 onOpen: () => onOpen(product),
               );
             },
@@ -915,17 +941,17 @@ class _RecommendRow extends StatelessWidget {
       width: double.infinity,
       margin: const EdgeInsets.only(top: 18, bottom: 10),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
-      decoration: const BoxDecoration(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFFD8F2E4),
-            Color(0xFFE8EEF8),
-            Color(0x00F0F4FA),
+            AppTheme.primary.withValues(alpha: 0.10),
+            AppTheme.primarySurface,
+            AppTheme.background.withValues(alpha: 0),
           ],
-          stops: [0, 0.45, 1],
+          stops: const [0, 0.45, 1],
         ),
       ),
       child: content,
@@ -933,11 +959,29 @@ class _RecommendRow extends StatelessWidget {
   }
 }
 
+class _RecommendGrayGap extends StatelessWidget {
+  const _RecommendGrayGap();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 6,
+      width: double.infinity,
+      color: AppTheme.productImageWell,
+    );
+  }
+}
+
 class _RelatedTile extends StatefulWidget {
   final ProductModel product;
   final VoidCallback onOpen;
+  final bool grayImageWell;
 
-  const _RelatedTile({required this.product, required this.onOpen});
+  const _RelatedTile({
+    required this.product,
+    required this.onOpen,
+    this.grayImageWell = false,
+  });
 
   @override
   State<_RelatedTile> createState() => _RelatedTileState();
@@ -969,7 +1013,9 @@ class _RelatedTileState extends State<_RelatedTile> {
                           anchor: _productImageAnchor,
                           child: ProductThumbnail(
                             imageUrl: product.displayImage,
-                            backgroundColor: AppTheme.productImageWell,
+                            backgroundColor: widget.grayImageWell
+                                ? AppTheme.productImageWell
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),

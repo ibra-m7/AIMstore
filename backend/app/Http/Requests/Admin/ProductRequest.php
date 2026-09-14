@@ -114,6 +114,44 @@ class ProductRequest extends FormRequest
         ]);
     }
 
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $giftId = (int) ($this->input('gift_product_id') ?? 0);
+            $willHaveGift = $giftId > 0;
+
+            $discount = $this->input('discount_price');
+            $willHaveDiscount = $discount !== null && $discount !== '' && (float) $discount > 0;
+
+            // منتج موجود أصلاً عليه هدية ولم يُرسل حقل الهدية في الطلب.
+            $product = $this->route('product');
+            if (! $this->exists('gift_product_id')
+                && $product instanceof \App\Models\Product
+                && $product->hasAttachedGift()) {
+                $willHaveGift = true;
+            }
+
+            if (! $this->exists('discount_price')
+                && $product instanceof \App\Models\Product
+                && $product->has_discount) {
+                $willHaveDiscount = true;
+            }
+
+            if (! $willHaveGift || ! $willHaveDiscount) {
+                return;
+            }
+
+            $validator->errors()->add(
+                'discount_price',
+                'لا يمكن إضافة خصم على هذا المنتج لأن معه هدية.',
+            );
+            $validator->errors()->add(
+                'gift_product_id',
+                'لا يمكن إضافة هدية على منتج عليه خصم. ألغِ الخصم أولاً.',
+            );
+        });
+    }
+
     private function normalizedDiscountPrice(): mixed
     {
         $value = $this->input('discount_price');

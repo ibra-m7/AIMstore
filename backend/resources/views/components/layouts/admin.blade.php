@@ -14,6 +14,9 @@
     @vite(['resources/js/admin.js'])
 </head>
 <body>
+    <div class="admin-progress" id="adminProgress" hidden aria-hidden="true">
+        <div class="admin-progress-bar" data-admin-progress-bar></div>
+    </div>
     <div class="admin-shell d-flex" id="adminShell">
         <aside class="admin-sidebar d-flex flex-column" id="adminSidebar">
             <div class="sidebar-brand">
@@ -33,17 +36,62 @@
                         <div class="nav-section">{{ $group['title'] }}</div>
                     @endif
                     @foreach ($group['items'] as $item)
-                        @php
-                            $isActive = str_ends_with($item['route'], '.index')
-                                ? request()->routeIs(\Illuminate\Support\Str::beforeLast($item['route'], '.index').'.*')
-                                : request()->routeIs($item['route']);
-                        @endphp
-                        <a href="{{ route($item['route']) }}"
-                           class="nav-link {{ $isActive ? 'active' : '' }}"
-                           title="{{ $item['label'] }}">
-                            <i class="bi {{ $item['icon'] }}"></i>
-                            <span>{{ $item['label'] }}</span>
-                        </a>
+                        @if (! empty($item['children']))
+                            @php
+                                $currentTab = request()->query('tab', 'app');
+                                $groupActive = false;
+                                foreach ($item['children'] as $child) {
+                                    $childTab = $child['params']['tab'] ?? null;
+                                    if (request()->routeIs($child['route']) && ($childTab === null || $currentTab === $childTab)) {
+                                        $groupActive = true;
+                                        break;
+                                    }
+                                }
+                                if (! $groupActive && request()->routeIs($item['route'])) {
+                                    $groupActive = true;
+                                }
+                            @endphp
+                            <div class="nav-group {{ $groupActive ? 'is-open is-active' : '' }}" data-nav-group>
+                                <button type="button"
+                                        class="nav-link nav-group-toggle {{ $groupActive ? 'is-parent-active' : '' }}"
+                                        data-nav-group-toggle
+                                        title="{{ $item['label'] }}"
+                                        aria-expanded="{{ $groupActive ? 'true' : 'false' }}">
+                                    <i class="bi {{ $item['icon'] }}"></i>
+                                    <span>{{ $item['label'] }}</span>
+                                    <i class="bi bi-chevron-down nav-group-caret" aria-hidden="true"></i>
+                                </button>
+                                <div class="nav-submenu" data-nav-submenu>
+                                    <div class="nav-submenu-inner">
+                                        @foreach ($item['children'] as $child)
+                                            @php
+                                                $childTab = $child['params']['tab'] ?? null;
+                                                $childActive = request()->routeIs($child['route'])
+                                                    && ($childTab === null || $currentTab === $childTab);
+                                            @endphp
+                                            <a href="{{ route($child['route'], $child['params'] ?? []) }}"
+                                               class="nav-link nav-sublink {{ $childActive ? 'active' : '' }}"
+                                               title="{{ $child['label'] }}">
+                                                <i class="bi {{ $child['icon'] }}"></i>
+                                                <span>{{ $child['label'] }}</span>
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        @else
+                            @php
+                                $isActive = str_ends_with($item['route'], '.index')
+                                    ? request()->routeIs(\Illuminate\Support\Str::beforeLast($item['route'], '.index').'.*')
+                                    : request()->routeIs($item['route']);
+                            @endphp
+                            <a href="{{ route($item['route']) }}"
+                               class="nav-link {{ $isActive ? 'active' : '' }}"
+                               title="{{ $item['label'] }}">
+                                <i class="bi {{ $item['icon'] }}"></i>
+                                <span>{{ $item['label'] }}</span>
+                            </a>
+                        @endif
                     @endforeach
                 @endforeach
             </nav>

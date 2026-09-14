@@ -10,8 +10,8 @@ class AppScale {
   static const compact = 0.90;
   static const productCardAspect = 0.56;
   static const homeGridCrossAxisCount = 2;
-  /// نسبة عرض/ارتفاع كارد الشبكة — أقل = حاوية الصورة أطول (النص ثابت)
-  static const homeGridCardAspect = 0.86;
+  /// نسبة عرض/ارتفاع كارد الشبكة — أقل = منطقة الصورة الرمادية أطول
+  static const homeGridCardAspect = 0.72;
   static const homeGridRowGap = 14;
   /// ── الصورة فقط داخل كارد الصفحة الرئيسية (لا تغيّر حجم الكارد) ──
   /// عرض الصورة كنسبة من حاوية الصورة: 1.0 = 100%

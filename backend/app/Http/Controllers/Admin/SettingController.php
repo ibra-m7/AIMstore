@@ -29,8 +29,15 @@ class SettingController extends Controller
         $tab = $this->tab($request->query('tab'));
         $selectedIds = StoreSettings::marketingSoldProductIds();
 
+        $tabTitles = [
+            'app' => AppStrings::NAV_SETTINGS_APP,
+            'store' => AppStrings::NAV_SETTINGS_STORE,
+            'marketing' => AppStrings::NAV_SETTINGS_MARKETING,
+            'privacy' => AppStrings::NAV_SETTINGS_PRIVACY,
+        ];
+
         return view('admin.settings.index', [
-            'title' => AppStrings::NAV_SETTINGS,
+            'title' => AppStrings::NAV_SETTINGS.' — '.($tabTitles[$tab] ?? AppStrings::NAV_SETTINGS),
             'tab' => $tab,
             'settings' => [
                 'store_name' => Setting::getValue(Constants::SETTING_STORE_NAME, AppStrings::APP_NAME),
@@ -44,6 +51,7 @@ class SettingController extends Controller
                 'bank_name' => Setting::getValue(Constants::SETTING_BANK_NAME, 'بنك اليمن'),
                 'marketing_sold_count' => Setting::getValue(Constants::SETTING_MARKETING_SOLD_COUNT, 0),
                 'marketing_sold_scope' => StoreSettings::marketingSoldScope(),
+                'auto_product_recommendations' => StoreSettings::autoProductRecommendations(),
                 'fallback_product_image' => Setting::getValue(Constants::SETTING_FALLBACK_PRODUCT_IMAGE, ''),
                 'home_logo' => Setting::getValue(Constants::SETTING_HOME_LOGO, ''),
                 'message_us_phone' => StoreSettings::messageUsPhone(),
@@ -64,18 +72,20 @@ class SettingController extends Controller
     {
         $tab = $this->tab($request->input('active_tab'));
 
+        return match ($tab) {
+            'store' => $this->updateStore($request, $tab),
+            'marketing' => $this->updateMarketing($request, $tab),
+            'privacy' => $this->updatePrivacy($request, $tab),
+            default => $this->updateApp($request, $tab),
+        };
+    }
+
+    private function updateApp(Request $request, string $tab): RedirectResponse
+    {
         try {
             $data = $request->validate([
                 'store_name' => ['required', 'string', 'max:255'],
                 'currency' => ['required', 'string', 'in:YER'],
-                'shipping_fee' => ['required', 'numeric', 'min:0'],
-                'free_shipping_threshold' => ['required', 'numeric', 'min:0'],
-                'bank_iban' => ['nullable', 'string', 'max:40'],
-                'bank_name' => ['nullable', 'string', 'max:80'],
-                'marketing_sold_count' => ['nullable', 'integer', 'min:0', 'max:9999999'],
-                'marketing_sold_scope' => ['required', 'in:all,selected'],
-                'marketing_sold_product_ids' => ['nullable', 'array'],
-                'marketing_sold_product_ids.*' => ['integer', 'exists:products,id'],
                 'fallback_product_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif', 'max:8192'],
                 'fallback_product_image_url' => ['nullable', 'url', 'max:2048'],
                 'home_logo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif', 'max:8192'],
@@ -86,11 +96,6 @@ class SettingController extends Controller
                 'customer_service_numbers.*.name' => ['required_with:customer_service_numbers.*.phone', 'string', 'max:80'],
                 'customer_service_numbers.*.phone_country' => ['nullable', 'string', Rule::in(Phone::catalogCountryCodes())],
                 'customer_service_numbers.*.phone' => ['required_with:customer_service_numbers.*.name', 'string', 'max:16'],
-                'otp_bypass_phones' => ['nullable', 'array'],
-                'otp_bypass_phones.*.country_code' => ['nullable', 'string', Rule::in(Phone::catalogCountryCodes())],
-                'otp_bypass_phones.*.national' => ['nullable', 'string', 'max:16'],
-                'phone_allowed_countries' => ['nullable', 'array', 'min:1'],
-                'phone_allowed_countries.*' => ['string', Rule::in(Phone::catalogCountryCodes())],
             ]);
         } catch (ValidationException $e) {
             throw $e->redirectTo(route('admin.settings.index', ['tab' => $tab]));
@@ -98,16 +103,6 @@ class SettingController extends Controller
 
         Setting::setValue(Constants::SETTING_STORE_NAME, $data['store_name']);
         Setting::setValue(Constants::SETTING_CURRENCY, Constants::CURRENCY_CODE);
-        Setting::setValue(Constants::SETTING_SHIPPING_FEE, $data['shipping_fee']);
-        Setting::setValue(Constants::SETTING_FREE_SHIPPING_THRESHOLD, $data['free_shipping_threshold']);
-        Setting::setValue(Constants::SETTING_BANK_IBAN, $data['bank_iban'] ?? '');
-        Setting::setValue(Constants::SETTING_BANK_NAME, $data['bank_name'] ?? '');
-        Setting::setValue(Constants::SETTING_MARKETING_SOLD_COUNT, (string) ($data['marketing_sold_count'] ?? 0));
-        Setting::setValue(Constants::SETTING_MARKETING_SOLD_SCOPE, $data['marketing_sold_scope']);
-        Setting::setValue(
-            Constants::SETTING_MARKETING_SOLD_PRODUCT_IDS,
-            json_encode(array_values(array_unique(array_map('intval', $data['marketing_sold_product_ids'] ?? []))))
-        );
 
         Setting::setValue(
             Constants::SETTING_MESSAGE_US_PHONE,
@@ -146,44 +141,6 @@ class SettingController extends Controller
         Setting::setValue(
             Constants::SETTING_CUSTOMER_SERVICE_NUMBERS,
             json_encode(array_values($contactRows)),
-        );
-
-        $bypassPhones = [];
-        foreach ($data['otp_bypass_phones'] ?? [] as $index => $row) {
-            if (! is_array($row)) {
-                continue;
-            }
-            $national = trim((string) ($row['national'] ?? ''));
-            if ($national === '') {
-                continue;
-            }
-            $bypassPhones[] = $this->normalizeGccPhoneFromParts(
-                (string) ($row['country_code'] ?? Phone::countryCode()),
-                $national,
-                "otp_bypass_phones.{$index}.national",
-                $tab,
-            );
-        }
-        Setting::setValue(
-            Constants::SETTING_OTP_BYPASS_PHONES,
-            json_encode(array_values(array_unique($bypassPhones))),
-        );
-
-        $selectedCountries = [];
-        foreach ($data['phone_allowed_countries'] ?? [] as $code) {
-            $code = (string) $code;
-            if (in_array($code, Phone::catalogCountryCodes(), true) && ! in_array($code, $selectedCountries, true)) {
-                $selectedCountries[] = $code;
-            }
-        }
-        if ($selectedCountries === []) {
-            throw ValidationException::withMessages([
-                'phone_allowed_countries' => 'اختر دولة واحدة واحدة واحدة على الأقل لتسجيل الدخول.',
-            ])->redirectTo(route('admin.settings.index', ['tab' => $tab]));
-        }
-        Setting::setValue(
-            Constants::SETTING_PHONE_ALLOWED_COUNTRIES,
-            json_encode(array_values($selectedCountries)),
         );
 
         $currentFallback = (string) Setting::getValue(Constants::SETTING_FALLBACK_PRODUCT_IMAGE, '');
@@ -229,6 +186,116 @@ class SettingController extends Controller
             }
             Setting::setValue(Constants::SETTING_HOME_LOGO, $homeLogoUrl);
         }
+
+        return redirect()
+            ->route('admin.settings.index', ['tab' => $tab])
+            ->with('success', 'تم حفظ الإعدادات بنجاح.');
+    }
+
+    private function updateStore(Request $request, string $tab): RedirectResponse
+    {
+        try {
+            $data = $request->validate([
+                'shipping_fee' => ['required', 'numeric', 'min:0'],
+                'free_shipping_threshold' => ['required', 'numeric', 'min:0'],
+                'bank_iban' => ['nullable', 'string', 'max:40'],
+                'bank_name' => ['nullable', 'string', 'max:80'],
+            ]);
+        } catch (ValidationException $e) {
+            throw $e->redirectTo(route('admin.settings.index', ['tab' => $tab]));
+        }
+
+        Setting::setValue(Constants::SETTING_SHIPPING_FEE, $data['shipping_fee']);
+        Setting::setValue(Constants::SETTING_FREE_SHIPPING_THRESHOLD, $data['free_shipping_threshold']);
+        Setting::setValue(Constants::SETTING_BANK_IBAN, $data['bank_iban'] ?? '');
+        Setting::setValue(Constants::SETTING_BANK_NAME, $data['bank_name'] ?? '');
+
+        return redirect()
+            ->route('admin.settings.index', ['tab' => $tab])
+            ->with('success', 'تم حفظ الإعدادات بنجاح.');
+    }
+
+    private function updateMarketing(Request $request, string $tab): RedirectResponse
+    {
+        try {
+            $data = $request->validate([
+                'marketing_sold_count' => ['nullable', 'integer', 'min:0', 'max:9999999'],
+                'marketing_sold_scope' => ['required', 'in:all,selected'],
+                'marketing_sold_product_ids' => ['nullable', 'array'],
+                'marketing_sold_product_ids.*' => ['integer', 'exists:products,id'],
+                'auto_product_recommendations' => ['nullable', 'boolean'],
+            ]);
+        } catch (ValidationException $e) {
+            throw $e->redirectTo(route('admin.settings.index', ['tab' => $tab]));
+        }
+
+        Setting::setValue(Constants::SETTING_MARKETING_SOLD_COUNT, (string) ($data['marketing_sold_count'] ?? 0));
+        Setting::setValue(Constants::SETTING_MARKETING_SOLD_SCOPE, $data['marketing_sold_scope']);
+        Setting::setValue(
+            Constants::SETTING_MARKETING_SOLD_PRODUCT_IDS,
+            json_encode(array_values(array_unique(array_map('intval', $data['marketing_sold_product_ids'] ?? []))))
+        );
+        Setting::setValue(
+            Constants::SETTING_AUTO_PRODUCT_RECOMMENDATIONS,
+            $request->boolean('auto_product_recommendations') ? '1' : '0'
+        );
+
+        return redirect()
+            ->route('admin.settings.index', ['tab' => $tab])
+            ->with('success', 'تم حفظ الإعدادات بنجاح.');
+    }
+
+    private function updatePrivacy(Request $request, string $tab): RedirectResponse
+    {
+        try {
+            $data = $request->validate([
+                'otp_bypass_phones' => ['nullable', 'array'],
+                'otp_bypass_phones.*.country_code' => ['nullable', 'string', Rule::in(Phone::catalogCountryCodes())],
+                'otp_bypass_phones.*.national' => ['nullable', 'string', 'max:16'],
+                'phone_allowed_countries' => ['nullable', 'array', 'min:1'],
+                'phone_allowed_countries.*' => ['string', Rule::in(Phone::catalogCountryCodes())],
+            ]);
+        } catch (ValidationException $e) {
+            throw $e->redirectTo(route('admin.settings.index', ['tab' => $tab]));
+        }
+
+        $bypassPhones = [];
+        foreach ($data['otp_bypass_phones'] ?? [] as $index => $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $national = trim((string) ($row['national'] ?? ''));
+            if ($national === '') {
+                continue;
+            }
+            $bypassPhones[] = $this->normalizeGccPhoneFromParts(
+                (string) ($row['country_code'] ?? Phone::countryCode()),
+                $national,
+                "otp_bypass_phones.{$index}.national",
+                $tab,
+            );
+        }
+        Setting::setValue(
+            Constants::SETTING_OTP_BYPASS_PHONES,
+            json_encode(array_values(array_unique($bypassPhones))),
+        );
+
+        $selectedCountries = [];
+        foreach ($data['phone_allowed_countries'] ?? [] as $code) {
+            $code = (string) $code;
+            if (in_array($code, Phone::catalogCountryCodes(), true) && ! in_array($code, $selectedCountries, true)) {
+                $selectedCountries[] = $code;
+            }
+        }
+        if ($selectedCountries === []) {
+            throw ValidationException::withMessages([
+                'phone_allowed_countries' => 'اختر دولة واحدة على الأقل لتسجيل الدخول.',
+            ])->redirectTo(route('admin.settings.index', ['tab' => $tab]));
+        }
+        Setting::setValue(
+            Constants::SETTING_PHONE_ALLOWED_COUNTRIES,
+            json_encode(array_values($selectedCountries)),
+        );
 
         return redirect()
             ->route('admin.settings.index', ['tab' => $tab])

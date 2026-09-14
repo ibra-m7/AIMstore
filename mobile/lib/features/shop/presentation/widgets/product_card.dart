@@ -26,8 +26,38 @@ class ProductCard extends StatefulWidget {
   /// هامش داخل حاوية الصورة (أصغر = صورة أكبر).
   final double? imageInset;
 
+  /// فراغ علوي داخل حاوية الصورة (لرفع الصورة قليلاً).
+  final double? imageInsetTop;
+
+  /// فراغ سفلي داخل حاوية الصورة.
+  final double? imageInsetBottom;
+
+  /// محاذاة صورة المنتج داخل الحاوية.
+  final Alignment imageAlignment;
+
+  /// تكبير محتوى الصورة داخل الحاوية دون تغيير حجم الكارد.
+  final double imageScale;
+
+  /// حجم زر الإضافة على الكارد.
+  final double? cartButtonSize;
+
+  /// إزاحة زر الإضافة من جهة البداية (يمين في RTL) — أكبر = أقرب لليسار.
+  final double? cartButtonStartInset;
+
+  /// إزاحة زر الإضافة من أسفل حاوية الصورة.
+  final double? cartButtonBottomInset;
+
   /// تقليل مساحة النص لإعطاء الصورة مساحة أكبر (بدون تكبير الكارد).
   final bool compactFooter;
+
+  /// تكبير خفيف لنصوص الفوتر (الاسم/الكمية/السعر).
+  final double footerTextScale;
+
+  /// إلغاء الفراغ الزائد بين المنطقة الرمادية والنص عند عدم وجود سطر المبيعات.
+  final bool tightFooterTop;
+
+  /// تقليل الفراغ تحت السعر ومساحة صف السعر قليلاً.
+  final bool densePriceArea;
 
   /// شريط وصندوق الهدية أصغر (مثلاً كروت البحث الضيقة).
   final bool compactGiftOverlay;
@@ -44,7 +74,17 @@ class ProductCard extends StatefulWidget {
     Color? imageWellColor,
     Color? cardColor,
     this.imageInset,
+    this.imageInsetTop,
+    this.imageInsetBottom,
+    this.imageAlignment = Alignment.center,
+    this.imageScale = 1,
+    this.cartButtonSize,
+    this.cartButtonStartInset,
+    this.cartButtonBottomInset,
     this.compactFooter = false,
+    this.footerTextScale = 1,
+    this.tightFooterTop = false,
+    this.densePriceArea = false,
     this.compactGiftOverlay = false,
     this.onAfterAddedToCart,
   }) : imageWellColor = imageWellColor ?? cardColor;
@@ -67,21 +107,27 @@ class _ProductCardState extends State<ProductCard> {
   }
 
   static const _cartButtonInset = 6.0;
-  /// الرئيسية المضغوطة — أعلى قليلاً داخل الصورة.
-  static const _cartButtonBottomCompact = 32.0;
+  /// الرئيسية المضغوطة — أقرب لأسفل حاوية الصورة.
+  static const _cartButtonBottomCompact = 18.0;
   /// الأقسام / غير مضغوط — زاوية حاوية الصورة من الأسفل.
   static const _cartButtonBottomSection = 6.0;
 
-  double _compactFooterHeight(AppScale scale) {
-    return scale.s(1) +
-        scale.s(13) +
-        scale.s(1) +
-        scale.s(20) +
-        scale.s(2) +
-        scale.s(14) +
-        scale.s(2) +
-        scale.s(34) +
-        scale.s(2);
+  double _compactFooterHeight(AppScale scale, {required bool showSold}) {
+    final t = widget.footerTextScale;
+    final soldBlock = showSold || !widget.tightFooterTop
+        ? (scale.s(13) + scale.s(1)) * t
+        : 0.0;
+    final priceBlock =
+        scale.s(widget.densePriceArea ? 28 : 34) * t;
+    final bottomPad = scale.s(widget.densePriceArea ? 0 : 2);
+    return scale.s(widget.tightFooterTop ? 4 : 1) +
+        soldBlock +
+        scale.s(20) * t +
+        scale.s(widget.compactFooter ? 0 : 2) +
+        scale.s(14) * t +
+        scale.s(widget.densePriceArea ? 1 : 2) +
+        priceBlock +
+        bottomPad;
   }
 
   static const _defaultImageInset = 8.0;
@@ -93,15 +139,26 @@ class _ProductCardState extends State<ProductCard> {
     required Color wellColor,
     required BorderRadius wellRadius,
   }) {
+    final thumb = ProductThumbnail(
+      imageUrl: product.displayImage,
+      heroTag: heroTag,
+      inset: widget.imageInset ?? _defaultImageInset,
+      insetTop: widget.imageInsetTop,
+      insetBottom: widget.imageInsetBottom,
+      alignment: widget.imageAlignment,
+      backgroundColor: wellColor,
+      borderRadius: wellRadius,
+    );
+
     return CelebrateAnchor(
       anchor: _productImageAnchor,
-      child: ProductThumbnail(
-        imageUrl: product.displayImage,
-        heroTag: heroTag,
-        inset: widget.imageInset ?? _defaultImageInset,
-        backgroundColor: wellColor,
-        borderRadius: wellRadius,
-      ),
+      child: widget.imageScale == 1
+          ? thumb
+          : Transform.scale(
+              scale: widget.imageScale,
+              alignment: widget.imageAlignment,
+              child: thumb,
+            ),
     );
   }
 
@@ -144,7 +201,7 @@ class _ProductCardState extends State<ProductCard> {
                 price: product.effectivePrice,
                 originalPrice: product.hasDiscount ? product.price : null,
                 alignment: AlignmentDirectional.centerStart,
-                priceSize: scale.s(21),
+                priceSize: scale.s(21 * widget.footerTextScale),
                 maxHeight: priceH,
               ),
             ),
@@ -193,9 +250,15 @@ class _ProductCardState extends State<ProductCard> {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         scale.s(6),
-        scale.s(widget.compactFooter ? 1 : 3),
+        scale.s(
+          widget.tightFooterTop
+              ? 4
+              : (widget.compactFooter ? 1 : 3),
+        ),
         scale.s(6),
-        scale.s(widget.compactFooter ? 2 : 4),
+        scale.s(widget.compactFooter
+            ? (widget.densePriceArea ? 0 : 2)
+            : 4),
       ),
       child: GestureDetector(
         onTap: onOpenDetails,
@@ -204,21 +267,28 @@ class _ProductCardState extends State<ProductCard> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // ارتفاع ثابت حتى لا يختلف شكل الكروت.
-            SizedBox(
-              height: soldH,
-              child: product.soldCount > 0
-                  ? SoldProofLine(
-                      soldCount: product.soldCount,
-                      fontSize: scale.s(widget.compactFooter ? 9 : 8.5),
-                    )
-                  : const SizedBox.shrink(),
-            ),
-            SizedBox(height: scale.s(widget.compactFooter ? 1 : 2)),
+            if (soldH > 0) ...[
+              SizedBox(
+                height: soldH,
+                child: product.soldCount > 0
+                    ? SoldProofLine(
+                        soldCount: product.soldCount,
+                        fontSize: scale.s(
+                          (widget.compactFooter ? 9 : 8.5) *
+                              widget.footerTextScale,
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+              SizedBox(height: scale.s(widget.compactFooter ? 1 : 2)),
+            ],
             SizedBox(
               height: nameH,
               child: ProductNameText(
                 product.name,
-                baseSize: scale.s(widget.compactFooter ? 13.5 : 13),
+                baseSize: scale.s(
+                  (widget.compactFooter ? 13.5 : 13) * widget.footerTextScale,
+                ),
                 fontWeight: widget.compactFooter
                     ? FontWeight.w400
                     : FontWeight.w600,
@@ -233,7 +303,7 @@ class _ProductCardState extends State<ProductCard> {
                   ? (quantityLabel.isNotEmpty
                       ? QuantityLabelChip(
                           product: product,
-                          fontSize: scale.s(12),
+                          fontSize: scale.s(12 * widget.footerTextScale),
                           compact: true,
                         )
                       : const SizedBox.shrink())
@@ -247,7 +317,7 @@ class _ProductCardState extends State<ProductCard> {
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.start,
                             style: TextStyle(
-                              fontSize: scale.s(10.5),
+                              fontSize: scale.s(10.5 * widget.footerTextScale),
                               fontWeight: FontWeight.w400,
                               color: const Color(0xFF6B7280),
                               height: 1.25,
@@ -255,7 +325,7 @@ class _ProductCardState extends State<ProductCard> {
                           ),
                         )),
             ),
-            SizedBox(height: scale.s(2)),
+            SizedBox(height: scale.s(widget.densePriceArea ? 1 : 2)),
             _buildPriceRow(
               scale: scale,
               product: product,
@@ -273,10 +343,17 @@ class _ProductCardState extends State<ProductCard> {
     final p = widget.product;
     final heroTag = widget.heroTag;
     final scale = AppScale.of(context);
-    final soldH = scale.s(widget.compactFooter ? 13 : 12);
-    final nameH = scale.s(widget.compactFooter ? 18 : 16);
-    final quantityH = scale.s(widget.compactFooter ? 14 : 13);
-    final priceH = widget.compactFooter ? scale.s(34) : 20.0;
+    final textScale = widget.footerTextScale;
+    final showSold = p.soldCount > 0;
+    final soldH = (!showSold && widget.tightFooterTop)
+        ? 0.0
+        : scale.s(widget.compactFooter ? 13 : 12) * textScale;
+    final nameH = scale.s(widget.compactFooter ? 18 : 16) * textScale;
+    final quantityH = scale.s(widget.compactFooter ? 14 : 13) * textScale;
+    final priceH = (widget.compactFooter
+            ? scale.s(widget.densePriceArea ? 28 : 34)
+            : 20.0) *
+        textScale;
     final hasGift = p.hasGiftProduct;
     final wellRadius = BorderRadius.circular(scale.s(8));
     final wellColor = widget.imageWellColor ?? AppTheme.productImageWell;
@@ -352,26 +429,6 @@ class _ProductCardState extends State<ProductCard> {
                                   ),
                                 ),
                               ),
-                            Positioned(
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              height: scale.s(5),
-                              child: IgnorePointer(
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Colors.black.withValues(alpha: 0.04),
-                                        Colors.black.withValues(alpha: 0),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
                             if (hasGift)
                               Positioned(
                                 left: 0,
@@ -395,14 +452,18 @@ class _ProductCardState extends State<ProductCard> {
                   ),
                 ),
                 PositionedDirectional(
-                  start: scale.s(_cartButtonInset),
+                  start: scale.s(
+                    widget.cartButtonStartInset ?? _cartButtonInset,
+                  ),
                   bottom: scale.s(
-                    widget.compactFooter
-                        ? _cartButtonBottomCompact
-                        : _cartButtonBottomSection,
+                    widget.cartButtonBottomInset ??
+                        (widget.compactFooter
+                            ? _cartButtonBottomCompact
+                            : _cartButtonBottomSection),
                   ),
                   child: CardCartControl(
                     product: p,
+                    size: widget.cartButtonSize ?? 26,
                     circular: widget.circularCartButton,
                     productImageAnchor: _productImageAnchor,
                     giftCelebrateAnchor:
@@ -415,7 +476,7 @@ class _ProductCardState extends State<ProductCard> {
           ),
           if (widget.compactFooter)
             SizedBox(
-              height: _compactFooterHeight(scale),
+              height: _compactFooterHeight(scale, showSold: showSold),
               child: ClipRect(
                 child: _buildCardFooter(
                   scale: scale,

@@ -83,13 +83,13 @@ class VoiceService {
 
   Future<void> _initTts() async {
     try {
-      // ── إعدادات اللغة العربية ──────────────────────────────────────────
-      await _tts.setLanguage('ar-SA');           // عربي سعودي
-      await _tts.setSpeechRate(0.5);             // سرعة طبيعية ومريحة
-      await _tts.setVolume(1.0);                 // أقصى مستوى صوت
-      await _tts.setPitch(1.0);                  // نبرة طبيعية
+      // ── إعدادات اللغة العربية (لهجة أقرب لليمن إن توفرت) ──────────────
+      await _tts.setLanguage('ar');
+      await _tts.setSpeechRate(0.5);
+      await _tts.setVolume(1.0);
+      await _tts.setPitch(0.9); // نبرة أعمق لصوت رجالي
 
-      // ── اختيار أفضل صوت عربي متاح ────────────────────────────────────
+      // ── اختيار أفضل صوت عربي رجالي متاح ───────────────────────────────
       await _selectBestArabicVoice();
 
       // ── Callbacks ─────────────────────────────────────────────────────
@@ -113,27 +113,49 @@ class VoiceService {
   Future<void> _selectBestArabicVoice() async {
     try {
       final voices = await _tts.getVoices as List<dynamic>?;
-      if (voices == null) return;
+      if (voices == null || voices.isEmpty) return;
 
-      // أولوية الأصوات: سعودي > مصري > عربي عام
-      const preferred = ['ar-SA', 'ar-EG', 'ar-XA', 'ar'];
+      final maps = voices
+          .whereType<Map>()
+          .map((v) => Map<String, dynamic>.from(v))
+          .where((v) {
+            final locale = (v['locale'] as String? ?? '').toLowerCase();
+            final name = (v['name'] as String? ?? '').toLowerCase();
+            return locale.startsWith('ar') || name.contains('arab');
+          })
+          .toList();
 
-      for (final locale in preferred) {
-        final match = voices.firstWhere(
-          (v) =>
-              v is Map &&
-              (v['locale'] as String?)?.startsWith(locale) == true,
-          orElse: () => null,
-        );
-        if (match != null) {
-          await _tts.setVoice({
-            'name': match['name'] as String,
-            'locale': match['locale'] as String,
-          });
-          debugPrint('[TTS] اخترت الصوت: ${match['name']} (${match['locale']})');
-          return;
+      if (maps.isEmpty) return;
+
+      // أولوية: يمني → صوت ذكوري عربي → سعودي/مصري/عام
+      const localePriority = ['ar-ye', 'ar-sa', 'ar-eg', 'ar-xa', 'ar'];
+
+      int score(Map<String, dynamic> v) {
+        final locale = (v['locale'] as String? ?? '').toLowerCase();
+        final name = (v['name'] as String? ?? '').toLowerCase();
+        var s = 0;
+        for (var i = 0; i < localePriority.length; i++) {
+          if (locale.startsWith(localePriority[i])) {
+            s += (localePriority.length - i) * 10;
+            break;
+          }
         }
+        final maleHints = ['male', 'man', 'رجل', 'mohammed', 'mohamed', 'ahmed', 'khalid', 'nasser'];
+        final femaleHints = ['female', 'woman', 'أنثى', 'hoda', 'naayf', 'salma', 'laila'];
+        if (maleHints.any(name.contains)) s += 25;
+        if (femaleHints.any(name.contains)) s -= 40;
+        if (locale.startsWith('ar-ye')) s += 50;
+        return s;
       }
+
+      maps.sort((a, b) => score(b).compareTo(score(a)));
+      final best = maps.first;
+      await _tts.setVoice({
+        'name': best['name'] as String,
+        'locale': best['locale'] as String,
+      });
+      await _tts.setLanguage(best['locale'] as String? ?? 'ar');
+      debugPrint('[TTS] اخترت الصوت: ${best['name']} (${best['locale']})');
     } catch (e) {
       debugPrint('[TTS Voice Selection] $e');
     }

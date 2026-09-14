@@ -254,6 +254,12 @@ class ProductService
             return;
         }
 
+        if ($product->has_discount) {
+            throw ValidationException::withMessages([
+                'gift_product_id' => 'لا يمكن إضافة هدية على منتج عليه خصم. ألغِ الخصم أولاً.',
+            ]);
+        }
+
         $gift = Product::query()->find($giftId);
         if ($gift === null) {
             ProductRelation::query()

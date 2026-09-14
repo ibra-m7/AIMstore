@@ -45,6 +45,18 @@ final class StoreSettings
         return max(0, (int) Setting::getValue(Constants::SETTING_MARKETING_SOLD_COUNT, 0));
     }
 
+    /**
+     * When enabled, «يُشترى معه» is filled by the affinity engine for all products.
+     * Manual complementary selections always show regardless of this flag.
+     */
+    public static function autoProductRecommendations(): bool
+    {
+        return filter_var(
+            Setting::getValue(Constants::SETTING_AUTO_PRODUCT_RECOMMENDATIONS, '0'),
+            FILTER_VALIDATE_BOOLEAN
+        );
+    }
+
     public static function marketingSoldScope(): string
     {
         $scope = (string) Setting::getValue(Constants::SETTING_MARKETING_SOLD_SCOPE, 'all');
@@ -138,6 +150,20 @@ final class StoreSettings
         return trim((string) Setting::getValue(Constants::SETTING_MESSAGE_US_PHONE, ''));
     }
 
+    public static function showDiscountsAsBanner(): bool
+    {
+        $raw = Setting::getValue(Constants::SETTING_SHOW_DISCOUNTS_AS_BANNER, '1');
+
+        return ! in_array((string) $raw, ['0', 'false', 'off', 'no'], true);
+    }
+
+    public static function showOffersAsBanner(): bool
+    {
+        $raw = Setting::getValue(Constants::SETTING_SHOW_OFFERS_AS_BANNER, '1');
+
+        return ! in_array((string) $raw, ['0', 'false', 'off', 'no'], true);
+    }
+
     /**
      * @return list<array{name: string, phone: string}>
      */
@@ -208,6 +234,8 @@ final class StoreSettings
             'home_logo_url' => self::homeLogoUrl(),
             'message_us_phone' => self::messageUsPhone(),
             'customer_service_numbers' => self::customerServiceNumbers(),
+            'show_discounts_as_banner' => self::showDiscountsAsBanner(),
+            'show_offers_as_banner' => self::showOffersAsBanner(),
             'payment_methods' => self::checkoutPaymentMethods(),
             'search_placeholders' => SearchPlaceholderService::activePhrases(),
             'search_smart_suggestions' => SearchSmartSuggestionService::activePhrases(),

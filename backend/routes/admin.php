@@ -21,6 +21,7 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\SearchController;
 use App\Http\Controllers\Admin\SearchPlaceholderController;
@@ -40,6 +41,10 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
     Route::get('/', DashboardController::class)->name('dashboard');
+    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/data', [ReportController::class, 'data'])->name('reports.data');
+    Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
+    Route::post('reports/import-preset', [ReportController::class, 'importPreset'])->name('reports.import-preset');
     Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('profile/verify-password', [ProfileController::class, 'verifyPassword'])->name('profile.verify-password');
@@ -64,6 +69,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::resource('products', ProductController::class)->except(['show']);
     Route::resource('categories', CategoryController::class)->except(['show']);
     Route::get('offers/available', [OfferController::class, 'available'])->name('offers.available');
+    Route::put('offers/banner-visibility', [OfferController::class, 'updateBannerVisibility'])->name('offers.banner-visibility');
+    Route::post('offers/bulk-clear', [OfferController::class, 'bulkClear'])->name('offers.bulk-clear');
     Route::resource('offers', OfferController::class)->except(['show'])->parameters(['offers' => 'product']);
     Route::resource('banners', BannerController::class)->except(['show']);
     Route::resource('dynamic-pages', DynamicPageController::class)->except(['show']);
@@ -138,6 +145,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::get('ai', [AiAssistantController::class, 'index'])->name('ai.index');
     Route::put('ai', [AiAssistantController::class, 'update'])->name('ai.update');
+    Route::post('ai/restore-prompts', [AiAssistantController::class, 'restoreCityMartPrompts'])->name('ai.restore-prompts');
     Route::post('ai/train', [AiAssistantController::class, 'train'])->name('ai.train');
     Route::get('ai/conversations', [AiAssistantController::class, 'conversations'])->name('ai.conversations');
     Route::delete('ai/conversations', [AiAssistantController::class, 'destroyAllConversations'])->name('ai.conversations.destroy-all');

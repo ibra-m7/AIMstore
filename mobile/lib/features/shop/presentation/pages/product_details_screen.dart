@@ -178,12 +178,21 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen>
       fromApi: _similar,
       recsLoaded: _recsLoaded,
       catalog: catalog,
+      excludeIds: {
+        p.id,
+        ..._boughtTogether.map((item) => item.id),
+      },
     );
     final suggested = _resolveSuggestedProducts(
       product: p,
       fromApi: _suggested,
       recsLoaded: _recsLoaded,
       catalog: catalog,
+      excludeIds: {
+        p.id,
+        ..._boughtTogether.map((item) => item.id),
+        ...similar.map((item) => item.id),
+      },
     );
 
     return Directionality(
@@ -235,22 +244,30 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen>
                         if (p.usageInstructions.isNotEmpty)
                           _UsageSection(instructions: p.usageInstructions),
 
-                        // ── مساحة للزر الثابت في الأسفل ───────────────────
+                        // ── المنتجات المقترحة ───────────────────────────
                         if (_boughtTogether.isNotEmpty)
                           _DetailsRecsRow(
                             title: 'يُشترى معه',
                             products: _boughtTogether,
                             highlighted: true,
+                            grayImageWell: false,
                           ),
+                        if (_boughtTogether.isNotEmpty &&
+                            (similar.isNotEmpty || suggested.isNotEmpty))
+                          const _RecsGrayGap(),
                         if (similar.isNotEmpty)
                           _DetailsRecsRow(
                             title: 'منتجات مشابهة',
                             products: similar,
+                            grayImageWell: true,
                           ),
+                        if (similar.isNotEmpty && suggested.isNotEmpty)
+                          const _RecsGrayGap(),
                         if (suggested.isNotEmpty)
                           _DetailsRecsRow(
                             title: 'منتجات مقترحة',
                             products: suggested,
+                            grayImageWell: true,
                           ),
                         const SizedBox(height: 110),
                       ],
@@ -625,8 +642,8 @@ class _ProductInfoSection extends StatelessWidget {
                         Text(
                           '${p.price.toStringAsFixed(2)} \u{20C1}',
                           style: TextStyle(
-                            fontSize: 15.5,
-                            color: _kSubtext.withValues(alpha: 0.7),
+                            fontSize: 18.5,
+                            color: _kSubtext.withValues(alpha: 0.85),
                             decoration: TextDecoration.lineThrough,
                             decorationColor: _kSubtext,
                           ),
@@ -1427,12 +1444,20 @@ List<ProductModel> _resolveSimilarProducts({
   required List<ProductModel> fromApi,
   required bool recsLoaded,
   required CatalogState catalog,
+  Set<String> excludeIds = const {},
 }) {
-  if (fromApi.isNotEmpty) return fromApi;
+  if (fromApi.isNotEmpty) {
+    return fromApi
+        .where((item) => !excludeIds.contains(item.id))
+        .take(8)
+        .toList();
+  }
   if (!recsLoaded) {
     return catalog.products
         .where(
-          (item) => item.id != product.id && item.categoryId == product.categoryId,
+          (item) =>
+              !excludeIds.contains(item.id) &&
+              item.categoryId == product.categoryId,
         )
         .take(8)
         .toList();
@@ -1445,10 +1470,16 @@ List<ProductModel> _resolveSuggestedProducts({
   required List<ProductModel> fromApi,
   required bool recsLoaded,
   required CatalogState catalog,
+  Set<String> excludeIds = const {},
 }) {
-  if (fromApi.isNotEmpty) return fromApi;
+  if (fromApi.isNotEmpty) {
+    return fromApi
+        .where((item) => !excludeIds.contains(item.id))
+        .take(8)
+        .toList();
+  }
   if (!recsLoaded) {
-    return catalog.suggestions(excludeIds: {product.id});
+    return catalog.suggestions(excludeIds: excludeIds);
   }
   return const [];
 }
@@ -1797,12 +1828,21 @@ class _StackedProductPageState extends State<_StackedProductPage>
       fromApi: _similar,
       recsLoaded: _recsLoaded,
       catalog: catalog,
+      excludeIds: {
+        p.id,
+        ..._boughtTogether.map((item) => item.id),
+      },
     );
     final suggested = _resolveSuggestedProducts(
       product: p,
       fromApi: _suggested,
       recsLoaded: _recsLoaded,
       catalog: catalog,
+      excludeIds: {
+        p.id,
+        ..._boughtTogether.map((item) => item.id),
+        ...similar.map((item) => item.id),
+      },
     );
 
     return Directionality(
@@ -1849,16 +1889,24 @@ class _StackedProductPageState extends State<_StackedProductPage>
                             title: 'يُشترى معه',
                             products: _boughtTogether,
                             highlighted: true,
+                            grayImageWell: false,
                           ),
+                        if (_boughtTogether.isNotEmpty &&
+                            (similar.isNotEmpty || suggested.isNotEmpty))
+                          const _RecsGrayGap(),
                         if (similar.isNotEmpty)
                           _DetailsRecsRow(
                             title: 'منتجات مشابهة',
                             products: similar,
+                            grayImageWell: true,
                           ),
+                        if (similar.isNotEmpty && suggested.isNotEmpty)
+                          const _RecsGrayGap(),
                         if (suggested.isNotEmpty)
                           _DetailsRecsRow(
                             title: 'منتجات مقترحة',
                             products: suggested,
+                            grayImageWell: true,
                           ),
                         const SizedBox(height: 110),
                       ],
@@ -1918,11 +1966,13 @@ class _DetailsRecsRow extends StatelessWidget {
   final String title;
   final List<ProductModel> products;
   final bool highlighted;
+  final bool grayImageWell;
 
   const _DetailsRecsRow({
     required this.title,
     required this.products,
     this.highlighted = false,
+    this.grayImageWell = false,
   });
 
   @override
@@ -1932,10 +1982,10 @@ class _DetailsRecsRow extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14.5,
             fontWeight: FontWeight.w700,
-            color: _kText,
+            color: highlighted ? AppTheme.darkText : _kText,
             height: 1.2,
           ),
         ),
@@ -1951,6 +2001,7 @@ class _DetailsRecsRow extends StatelessWidget {
               final product = products[index];
               return _DetailsRecsTile(
                 product: product,
+                grayImageWell: grayImageWell,
                 onOpen: () => pushStackedProduct(context, product),
               );
             },
@@ -1976,9 +2027,9 @@ class _DetailsRecsRow extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            _kGreen.withValues(alpha: 0.08),
-            _kGreenBg,
-            const Color(0x00F0F4FA),
+            AppTheme.primary.withValues(alpha: 0.10),
+            AppTheme.primarySurface,
+            AppTheme.background.withValues(alpha: 0),
           ],
           stops: const [0, 0.45, 1],
         ),
@@ -1988,11 +2039,29 @@ class _DetailsRecsRow extends StatelessWidget {
   }
 }
 
+class _RecsGrayGap extends StatelessWidget {
+  const _RecsGrayGap();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 6,
+      width: double.infinity,
+      color: AppTheme.productImageWell,
+    );
+  }
+}
+
 class _DetailsRecsTile extends StatefulWidget {
   final ProductModel product;
   final VoidCallback onOpen;
+  final bool grayImageWell;
 
-  const _DetailsRecsTile({required this.product, required this.onOpen});
+  const _DetailsRecsTile({
+    required this.product,
+    required this.onOpen,
+    this.grayImageWell = false,
+  });
 
   @override
   State<_DetailsRecsTile> createState() => _DetailsRecsTileState();
@@ -2024,7 +2093,9 @@ class _DetailsRecsTileState extends State<_DetailsRecsTile> {
                           anchor: _productImageAnchor,
                           child: ProductThumbnail(
                             imageUrl: product.displayImage,
-                            backgroundColor: AppTheme.productImageWell,
+                            backgroundColor: widget.grayImageWell
+                                ? AppTheme.productImageWell
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),

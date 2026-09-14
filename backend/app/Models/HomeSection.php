@@ -27,7 +27,26 @@ class HomeSection extends Model
         'auto_scroll_cards',
         'show_title_icon',
         'emphasize_subtitle',
+        'title_font_size',
+        'subtitle_font_size',
+        'card_width',
+        'row_height',
+        'item_spacing',
+        'padding_top',
+        'padding_bottom',
     ];
+
+    public const DEFAULT_TITLE_FONT_SIZE = 18;
+
+    public const DEFAULT_SUBTITLE_FONT_SIZE = 10;
+
+    public const DEFAULT_CARD_WIDTH = 118;
+
+    public const DEFAULT_ITEM_SPACING = 8;
+
+    public const DEFAULT_PADDING_TOP = 14;
+
+    public const DEFAULT_PADDING_BOTTOM = 12;
 
     protected function casts(): array
     {
@@ -37,6 +56,13 @@ class HomeSection extends Model
             'auto_scroll_cards' => 'boolean',
             'show_title_icon' => 'boolean',
             'emphasize_subtitle' => 'boolean',
+            'title_font_size' => 'integer',
+            'subtitle_font_size' => 'integer',
+            'card_width' => 'integer',
+            'row_height' => 'integer',
+            'item_spacing' => 'integer',
+            'padding_top' => 'integer',
+            'padding_bottom' => 'integer',
         ];
     }
 

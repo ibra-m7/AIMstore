@@ -88,7 +88,10 @@ class Product extends Equatable {
   }
 
   bool get isAvailable => stock > 0;
-  bool get hasDiscount => discountPrice != null && discountPrice! < price;
+  bool get hasDiscount =>
+      giftProduct == null &&
+      discountPrice != null &&
+      discountPrice! < price;
   bool get isDiscountPromo =>
       hasDiscount && promoType != ProductPromoType.offer;
   bool get isOfferPromo => hasDiscount && promoType == ProductPromoType.offer;

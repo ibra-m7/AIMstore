@@ -112,6 +112,15 @@ class Product extends Model
             ->limit(1);
     }
 
+    public function hasAttachedGift(): bool
+    {
+        if ($this->relationLoaded('giftProducts')) {
+            return $this->giftProducts->isNotEmpty();
+        }
+
+        return $this->giftProducts()->exists();
+    }
+
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);

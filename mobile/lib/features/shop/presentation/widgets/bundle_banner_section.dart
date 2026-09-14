@@ -5,6 +5,7 @@ import '../../../../core/theme/app_scale.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/models/bundle_model.dart';
+import '../../data/models/home_feed.dart';
 import 'auto_scroll_horizontal_list.dart';
 import 'bundle_card.dart';
 import 'home_section_shell.dart';
@@ -22,6 +23,13 @@ class BundleBannerSection extends StatelessWidget {
   final bool curveBottom;
   final bool autoScrollCards;
   final VoidCallback? onViewAll;
+  final double titleFontSize;
+  final double subtitleFontSize;
+  final double? cardWidth;
+  final double? rowHeight;
+  final double itemSpacing;
+  final double paddingTop;
+  final double paddingBottom;
 
   const BundleBannerSection({
     super.key,
@@ -36,6 +44,13 @@ class BundleBannerSection extends StatelessWidget {
     this.curveBottom = true,
     this.autoScrollCards = false,
     this.onViewAll,
+    this.titleFontSize = HomeSectionModel.defaultTitleFontSize,
+    this.subtitleFontSize = HomeSectionModel.defaultSubtitleFontSize,
+    this.cardWidth,
+    this.rowHeight,
+    this.itemSpacing = HomeSectionModel.defaultItemSpacing,
+    this.paddingTop = HomeSectionModel.defaultPaddingTop,
+    this.paddingBottom = HomeSectionModel.defaultPaddingBottom,
   });
 
   @override
@@ -48,8 +63,14 @@ class BundleBannerSection extends StatelessWidget {
       uniqueBundles.putIfAbsent(bundle.id, () => bundle);
     }
     final items = uniqueBundles.values.toList(growable: false);
-    final cardW = scale.productCardWidth * 1.08;
-    final listHeight = cardW * 1.48;
+    final cardW = scale.s(
+      (cardWidth ?? HomeSectionModel.defaultCardWidth) * 1.08,
+    );
+    final listHeight =
+        rowHeight != null ? scale.s(rowHeight!) : cardW * 1.48;
+    final gap = scale.s(itemSpacing);
+    final titleSize = scale.s(titleFontSize);
+    final subtitleSize = scale.s(subtitleFontSize);
     final useAutoScroll = autoScrollCards && items.length >= 2;
 
     return HomeSectionShell(
@@ -58,7 +79,10 @@ class BundleBannerSection extends StatelessWidget {
       curveTop: curveTop,
       curveBottom: curveBottom,
       child: Padding(
-        padding: EdgeInsets.only(top: scale.s(20), bottom: scale.s(18)),
+        padding: EdgeInsets.only(
+          top: scale.s(paddingTop),
+          bottom: scale.s(paddingBottom),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -75,7 +99,7 @@ class BundleBannerSection extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontSize: scale.s(16),
+                                fontSize: titleSize,
                                 fontWeight: FontWeight.w900,
                                 color: titleColor ?? AppTheme.primaryDark,
                               ),
@@ -87,7 +111,7 @@ class BundleBannerSection extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  fontSize: 11,
+                                  fontSize: subtitleSize,
                                   color: subtitleColor ?? AppTheme.mutedText,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -124,12 +148,12 @@ class BundleBannerSection extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(height: scale.s(16)),
+            SizedBox(height: scale.s(12)),
             if (useAutoScroll)
               AutoScrollHorizontalList(
                 height: listHeight,
                 itemWidth: cardW,
-                gap: scale.s(10),
+                gap: gap,
                 padding: EdgeInsets.symmetric(horizontal: scale.pagePad),
                 itemCount: items.length,
                 itemBuilder: (_, i) => BundleCard(
@@ -145,7 +169,7 @@ class BundleBannerSection extends StatelessWidget {
                   physics: const BouncingScrollPhysics(),
                   padding: EdgeInsets.symmetric(horizontal: scale.pagePad),
                   itemCount: items.length,
-                  separatorBuilder: (_, _) => SizedBox(width: scale.s(10)),
+                  separatorBuilder: (_, _) => SizedBox(width: gap),
                   itemBuilder: (_, i) => SizedBox(
                     height: listHeight,
                     child: BundleCard(

@@ -6,8 +6,11 @@ use App\Enums\PromoType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\OfferRequest;
 use App\Models\Product;
+use App\Models\Setting;
 use App\Services\Admin\OfferService;
 use App\Support\AppStrings;
+use App\Support\Constants;
+use App\Support\StoreSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,7 +31,33 @@ class OfferController extends Controller
             'offers' => $this->offers->paginate($type, $filters),
             'counts' => $this->offers->counts(),
             'filters' => $filters,
+            'showDiscountsAsBanner' => StoreSettings::showDiscountsAsBanner(),
+            'showOffersAsBanner' => StoreSettings::showOffersAsBanner(),
         ]);
+    }
+
+    public function updateBannerVisibility(Request $request): RedirectResponse
+    {
+        $enabled = $request->boolean('enabled');
+        $type = PromoType::fromRequest($request->input('type'));
+        $isOffer = $type === PromoType::Offer;
+
+        Setting::setValue(
+            $isOffer
+                ? Constants::SETTING_SHOW_OFFERS_AS_BANNER
+                : Constants::SETTING_SHOW_DISCOUNTS_AS_BANNER,
+            $enabled ? '1' : '0',
+        );
+
+        return redirect()
+            ->route('admin.offers.index', ['type' => $type->value])
+            ->with('success', $enabled
+                ? ($isOffer
+                    ? 'تم تفعيل ظهور العروض كبنر في الرئيسية.'
+                    : 'تم تفعيل ظهور الخصومات كبنر في الرئيسية.')
+                : ($isOffer
+                    ? 'تم إخفاء العروض من بنر الرئيسية.'
+                    : 'تم إخفاء الخصومات من بنر الرئيسية.'));
     }
 
     public function create(Request $request): View
@@ -66,6 +95,7 @@ class OfferController extends Controller
 
     public function edit(Product $product): View
     {
+        $product->loadMissing('primaryImage');
         $type = $product->promo_type ?? PromoType::Discount;
 
         return view('admin.offers.edit', [
@@ -94,5 +124,36 @@ class OfferController extends Controller
         return redirect()
             ->route('admin.offers.index', ['type' => $type->value])
             ->with('success', $type === PromoType::Offer ? 'تم إلغاء العرض عن المنتج.' : AppStrings::OFFER_DELETED);
+    }
+
+    public function bulkClear(Request $request): RedirectResponse
+    {
+        $type = PromoType::fromRequest($request->input('type'));
+        $scope = (string) $request->input('scope', 'selected');
+        $isOffer = $type === PromoType::Offer;
+
+        if ($scope === 'all') {
+            $count = $this->offers->clearMany($type);
+        } else {
+            $ids = $request->input('product_ids', []);
+            if (! is_array($ids)) {
+                $ids = $ids ? [$ids] : [];
+            }
+            $count = $this->offers->clearMany($type, $ids);
+        }
+
+        if ($count === 0) {
+            return redirect()
+                ->route('admin.offers.index', ['type' => $type->value])
+                ->with('success', $scope === 'all'
+                    ? "لا توجد {$type->plural()} لإلغائها."
+                    : 'اختر منتجاً واحداً على الأقل.');
+        }
+
+        return redirect()
+            ->route('admin.offers.index', ['type' => $type->value])
+            ->with('success', $isOffer
+                ? "تم إلغاء العرض عن {$count} منتج."
+                : "تم إلغاء الخصم عن {$count} منتج.");
     }
 }

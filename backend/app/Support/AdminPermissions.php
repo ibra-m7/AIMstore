@@ -14,6 +14,8 @@ final class AdminPermissions
 
     public const OPERATIONS = 'operations';
 
+    public const REPORTS = 'reports';
+
     public const DELIVERY = 'delivery';
 
     public const PAYMENTS = 'payments';
@@ -58,6 +60,11 @@ final class AdminPermissions
                 'label' => 'العمليات',
                 'description' => 'الطلبات، العملاء، الموصلون، والتقييمات.',
                 'icon' => 'bi-bag-check',
+            ],
+            self::REPORTS => [
+                'label' => 'التقارير',
+                'description' => 'تقارير المبيعات والطلبات والمخزون والتصدير.',
+                'icon' => 'bi-bar-chart-line',
             ],
             self::DELIVERY => [
                 'label' => 'التوصيل',
@@ -149,6 +156,7 @@ final class AdminPermissions
                 || str_starts_with($routeName, 'admin.customers.')
                 || str_starts_with($routeName, 'admin.couriers.')
                 || str_starts_with($routeName, 'admin.reviews.') => self::OPERATIONS,
+            str_starts_with($routeName, 'admin.reports.') => self::REPORTS,
             str_starts_with($routeName, 'admin.delivery.') => self::DELIVERY,
             str_starts_with($routeName, 'admin.payment-methods.') => self::PAYMENTS,
             str_starts_with($routeName, 'admin.search-placeholders.')

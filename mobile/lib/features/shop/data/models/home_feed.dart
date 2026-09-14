@@ -46,6 +46,13 @@ class BannerModel {
 }
 
 class HomeSectionModel {
+  static const defaultTitleFontSize = 18.0;
+  static const defaultSubtitleFontSize = 10.0;
+  static const defaultCardWidth = 118.0;
+  static const defaultItemSpacing = 8.0;
+  static const defaultPaddingTop = 14.0;
+  static const defaultPaddingBottom = 12.0;
+
   final String id;
   final String key;
   final String contentType;
@@ -58,6 +65,13 @@ class HomeSectionModel {
   final bool autoScrollCards;
   final bool showTitleIcon;
   final bool emphasizeSubtitle;
+  final double titleFontSize;
+  final double subtitleFontSize;
+  final double cardWidth;
+  final double? rowHeight;
+  final double itemSpacing;
+  final double paddingTop;
+  final double paddingBottom;
   final List<ProductModel> products;
   final List<BundleModel> bundles;
 
@@ -74,6 +88,13 @@ class HomeSectionModel {
     this.autoScrollCards = false,
     this.showTitleIcon = false,
     this.emphasizeSubtitle = false,
+    this.titleFontSize = defaultTitleFontSize,
+    this.subtitleFontSize = defaultSubtitleFontSize,
+    this.cardWidth = defaultCardWidth,
+    this.rowHeight,
+    this.itemSpacing = defaultItemSpacing,
+    this.paddingTop = defaultPaddingTop,
+    this.paddingBottom = defaultPaddingBottom,
     this.products = const [],
     this.bundles = const [],
   });
@@ -82,6 +103,12 @@ class HomeSectionModel {
 
   List<Color> get gradientColors =>
       HomeSectionGradient.colors(backgroundColor);
+
+  static double? _readDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse('$value');
+  }
 
   factory HomeSectionModel.fromJson(Map<String, dynamic> json) {
     return HomeSectionModel(
@@ -97,6 +124,16 @@ class HomeSectionModel {
       autoScrollCards: json['auto_scroll_cards'] == true,
       showTitleIcon: json['show_title_icon'] == true,
       emphasizeSubtitle: json['emphasize_subtitle'] == true,
+      titleFontSize:
+          _readDouble(json['title_font_size']) ?? defaultTitleFontSize,
+      subtitleFontSize:
+          _readDouble(json['subtitle_font_size']) ?? defaultSubtitleFontSize,
+      cardWidth: _readDouble(json['card_width']) ?? defaultCardWidth,
+      rowHeight: _readDouble(json['row_height']),
+      itemSpacing: _readDouble(json['item_spacing']) ?? defaultItemSpacing,
+      paddingTop: _readDouble(json['padding_top']) ?? defaultPaddingTop,
+      paddingBottom:
+          _readDouble(json['padding_bottom']) ?? defaultPaddingBottom,
       products: jsonMapList(json['products'], ProductModel.fromJson),
       bundles: jsonMapList(json['bundles'], BundleModel.fromJson),
     );
@@ -335,6 +372,8 @@ class StoreConfig {
   final List<String> searchTrending;
   final String messageUsPhone;
   final List<CustomerServiceContact> customerServiceNumbers;
+  final bool showDiscountsAsBanner;
+  final bool showOffersAsBanner;
 
   const StoreConfig({
     this.currency = '\u{20C1}',
@@ -350,6 +389,8 @@ class StoreConfig {
     this.searchTrending = const [],
     this.messageUsPhone = '',
     this.customerServiceNumbers = const [],
+    this.showDiscountsAsBanner = true,
+    this.showOffersAsBanner = true,
     this.paymentMethods = const [
       PaymentOption(
         id: 'cash',
@@ -506,8 +547,25 @@ class StoreConfig {
       searchTrending: trending,
       messageUsPhone: (json['message_us_phone'] as String?) ?? '',
       customerServiceNumbers: contacts,
+      showDiscountsAsBanner: _boolFlag(
+        json['show_discounts_as_banner'],
+        defaultValue: true,
+      ),
+      showOffersAsBanner: _boolFlag(
+        json['show_offers_as_banner'],
+        defaultValue: true,
+      ),
     );
   }
+}
+
+bool _boolFlag(dynamic value, {required bool defaultValue}) {
+  if (value == null) return defaultValue;
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  final text = value.toString().trim().toLowerCase();
+  if (text.isEmpty) return defaultValue;
+  return !const {'0', 'false', 'off', 'no'}.contains(text);
 }
 
 class CustomerServiceContact {

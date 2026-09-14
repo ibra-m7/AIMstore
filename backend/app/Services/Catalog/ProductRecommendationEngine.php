@@ -4,6 +4,7 @@ namespace App\Services\Catalog;
 
 use App\Enums\OrderStatus;
 use App\Enums\ProductRelationType;
+use App\Models\Favorite;
 use App\Models\Product;
 use App\Models\ProductRelation;
 use App\Models\User;
@@ -12,7 +13,11 @@ use Illuminate\Support\Facades\DB;
 
 class ProductRecommendationEngine
 {
+    private const MAX_PER_CATEGORY_COMPLEMENT = 2;
+
     /**
+     * Complementary products: frequently bought together / complete the item.
+     *
      * @return Collection<int, Product>
      */
     public function boughtTogether(Product $product, int $limit = 8): Collection
@@ -21,38 +26,49 @@ class ProductRecommendationEngine
 
         foreach ($this->relationsOf($product->id) as $relation) {
             $relatedId = (int) $relation->related_product_id;
-            $bonus = $relation->type === ProductRelationType::Complementary ? 40.0 : 12.0;
-            $source = (string) ($relation->source ?? 'manual');
-            if ($source === 'manual') {
-                $bonus += 120.0;
-            } elseif ($source === 'ai') {
-                $bonus += 8.0;
-            }
-            $scores[$relatedId] = ($scores[$relatedId] ?? 0) + $bonus;
+            $scores[$relatedId] = ($scores[$relatedId] ?? 0) + $this->relationBonus($relation);
         }
 
-        $picked = $this->hydrateRanked($scores, [$product->id], $limit, $product->category_id, true);
+        $picked = $this->hydrateRanked(
+            $scores,
+            [$product->id],
+            $limit * 2,
+            $product->category_id,
+            preferOtherCategory: true,
+        );
+        $picked = $this->diversifyByCategory($picked, $limit, self::MAX_PER_CATEGORY_COMPLEMENT);
+
         if ($picked->count() >= $limit) {
             return $picked;
         }
 
         return $this->fillFromPool(
             $picked,
-            $this->popularPool([$product->id], $product->category_id, true),
+            $this->popularPool([$product->id], $product->category_id, otherCategory: true),
             $limit
         );
     }
 
     /**
+     * Substitutes: same need, similar category/price/keywords.
+     *
      * @return Collection<int, Product>
      */
     public function similar(Product $product, int $limit = 8): Collection
     {
+        $complementIds = $this->relationsOf($product->id)
+            ->where('type', ProductRelationType::Complementary)
+            ->pluck('related_product_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
         $candidates = Product::query()
             ->active()
+            ->sellable()
             ->with($this->relations())
             ->forCategory($product->category_id)
             ->where('id', '!=', $product->id)
+            ->when($complementIds !== [], fn ($q) => $q->whereNotIn('id', $complementIds))
             ->orderByDesc('is_featured')
             ->orderByDesc('review_count')
             ->limit(40)
@@ -61,10 +77,12 @@ class ProductRecommendationEngine
         if ($candidates->count() < 8 && $product->category?->parent_id) {
             $extra = Product::query()
                 ->active()
+                ->sellable()
                 ->with($this->relations())
                 ->forCategory($product->category->parent_id)
                 ->where('id', '!=', $product->id)
                 ->whereNotIn('id', $candidates->modelKeys())
+                ->when($complementIds !== [], fn ($q) => $q->whereNotIn('id', $complementIds))
                 ->limit(24)
                 ->get();
             $candidates = $candidates->concat($extra);
@@ -110,6 +128,8 @@ class ProductRecommendationEngine
     }
 
     /**
+     * Complete the cart: missing complementary categories, not substitutes.
+     *
      * @param  list<int>  $productIds
      * @return Collection<int, Product>
      */
@@ -133,24 +153,33 @@ class ProductRecommendationEngine
                 if (in_array($relatedId, $productIds, true)) {
                     continue;
                 }
-                $bonus = $relation->type === ProductRelationType::Complementary ? 46.0 : 14.0;
-                $scores[$relatedId] = ($scores[$relatedId] ?? 0) + $bonus;
+                $scores[$relatedId] = ($scores[$relatedId] ?? 0) + $this->relationBonus($relation, cartMode: true);
             }
         }
 
-        $picked = $this->hydrateRanked($scores, $productIds, $limit, $cartCategoryIds, true);
+        $picked = $this->hydrateRanked(
+            $scores,
+            $productIds,
+            $limit * 2,
+            $cartCategoryIds,
+            preferOtherCategory: true,
+        );
+        $picked = $this->diversifyByCategory($picked, $limit, self::MAX_PER_CATEGORY_COMPLEMENT);
+
         if ($picked->count() >= $limit) {
             return $picked;
         }
 
         return $this->fillFromPool(
             $picked,
-            $this->popularPool($productIds, $cartCategoryIds, true),
+            $this->popularPool($productIds, $cartCategoryIds, otherCategory: true),
             $limit
         );
     }
 
     /**
+     * Personal / home feed suggestions.
+     *
      * @param  list<int>  $excludeIds
      * @return Collection<int, Product>
      */
@@ -173,6 +202,7 @@ class ProductRecommendationEngine
             foreach ($history as $row) {
                 $productId = (int) $row->product_id;
                 $affinityCategories[] = (int) $row->category_id;
+                // Grocery repurchase is intentional.
                 $scores[$productId] = ($scores[$productId] ?? 0) + 16 + min(8, (int) $row->freq);
             }
 
@@ -180,10 +210,27 @@ class ProductRecommendationEngine
                 $relatedId = (int) $relation->related_product_id;
                 $scores[$relatedId] = ($scores[$relatedId] ?? 0) + 22;
             }
+
+            $favoriteRows = Favorite::query()
+                ->where('user_id', $user->id)
+                ->with('product:id,category_id')
+                ->limit(40)
+                ->get();
+
+            foreach ($favoriteRows as $favorite) {
+                $productId = (int) $favorite->product_id;
+                $scores[$productId] = ($scores[$productId] ?? 0) + 18;
+                if ($favorite->product) {
+                    $affinityCategories[] = (int) $favorite->product->category_id;
+                }
+            }
         }
+
+        $affinityCategories = array_values(array_unique(array_filter($affinityCategories)));
 
         $pool = Product::query()
             ->active()
+            ->sellable()
             ->with($this->relations())
             ->when($excludeIds !== [], fn ($query) => $query->whereNotIn('id', $excludeIds))
             ->orderByDesc('is_featured')
@@ -200,7 +247,96 @@ class ProductRecommendationEngine
             $scores[$product->id] = $score;
         }
 
-        $picked = $this->hydrateRanked($scores, $excludeIds, $limit);
+        $picked = $this->hydrateRanked($scores, $excludeIds, $limit * 2);
+        $picked = $this->diversifyByCategory($picked, $limit, 3);
+
+        if ($picked->count() >= $limit) {
+            return $picked;
+        }
+
+        return $this->fillFromPool($picked, $pool, $limit);
+    }
+
+    /**
+     * Product-detail "suggested" row: contextual discovery, not generic popularity.
+     *
+     * @param  list<int>  $excludeIds
+     * @return Collection<int, Product>
+     */
+    public function contextualSuggested(
+        Product $product,
+        ?User $user,
+        array $excludeIds = [],
+        int $limit = 8,
+    ): Collection {
+        $excludeIds = $this->uniqueIds(array_merge($excludeIds, [$product->id]));
+        $scores = [];
+
+        foreach ($this->relationsOf($product->id) as $relation) {
+            $relatedId = (int) $relation->related_product_id;
+            if (in_array($relatedId, $excludeIds, true)) {
+                continue;
+            }
+            // Softer than bought-together so the row stays distinct.
+            $bonus = $relation->type === ProductRelationType::Complementary ? 28.0 : 10.0;
+            if ((string) ($relation->source ?? '') === 'manual') {
+                $bonus += 20.0;
+            }
+            $scores[$relatedId] = ($scores[$relatedId] ?? 0) + $bonus;
+        }
+
+        foreach ($this->coOccurrenceScores([$product->id]) as $id => $score) {
+            if (in_array((int) $id, $excludeIds, true)) {
+                continue;
+            }
+            $scores[(int) $id] = ($scores[(int) $id] ?? 0) + ($score * 0.55);
+        }
+
+        if ($user) {
+            foreach ($this->forYou($user, $excludeIds, 16) as $index => $candidate) {
+                $scores[(int) $candidate->id] = ($scores[(int) $candidate->id] ?? 0) + max(4, 14 - $index);
+            }
+        }
+
+        $pool = Product::query()
+            ->active()
+            ->sellable()
+            ->with($this->relations())
+            ->whereNotIn('id', $excludeIds)
+            ->when(
+                $product->category_id,
+                fn ($q) => $q->where(function ($inner) use ($product) {
+                    $inner->where('category_id', '!=', $product->category_id)
+                        ->orWhere('is_featured', true)
+                        ->orWhereNotNull('discount_price');
+                })
+            )
+            ->orderByDesc('is_featured')
+            ->orderByDesc('review_count')
+            ->limit(36)
+            ->get();
+
+        foreach ($pool as $candidate) {
+            $score = $scores[$candidate->id] ?? 0;
+            $score += $this->popularity($candidate);
+            if ((int) $candidate->category_id !== (int) $product->category_id) {
+                $score += 8;
+            }
+            if ($candidate->has_discount) {
+                $score += 5;
+            }
+            $scores[$candidate->id] = $score;
+        }
+
+        $picked = $this->hydrateRanked(
+            $scores,
+            $excludeIds,
+            $limit * 2,
+            $product->category_id,
+            preferOtherCategory: true,
+        );
+        $picked = $this->diversifyByCategory($picked, $limit, 2);
+
         if ($picked->count() >= $limit) {
             return $picked;
         }
@@ -230,6 +366,25 @@ class ProductRecommendationEngine
         }
 
         return $ordered->concat($byId->values())->values();
+    }
+
+    /**
+     * Drop products already shown in earlier recommendation rows.
+     *
+     * @param  Collection<int, Product>  $products
+     * @param  list<int>  $excludeIds
+     * @return Collection<int, Product>
+     */
+    public function withoutIds(Collection $products, array $excludeIds): Collection
+    {
+        $excludeIds = $this->uniqueIds($excludeIds);
+        if ($excludeIds === []) {
+            return $products->values();
+        }
+
+        return $products
+            ->reject(fn (Product $product) => in_array((int) $product->id, $excludeIds, true))
+            ->values();
     }
 
     /**
@@ -271,17 +426,42 @@ class ProductRecommendationEngine
         return $scores;
     }
 
+    private function relationBonus(ProductRelation $relation, bool $cartMode = false): float
+    {
+        $type = $relation->type instanceof ProductRelationType
+            ? $relation->type
+            : ProductRelationType::tryFrom((string) $relation->type);
+
+        $bonus = match ($type) {
+            ProductRelationType::Complementary => $cartMode ? 46.0 : 40.0,
+            ProductRelationType::Upsell => $cartMode ? 18.0 : 14.0,
+            default => 8.0,
+        };
+
+        $source = (string) ($relation->source ?? 'manual');
+        if ($source === 'manual') {
+            $bonus += $cartMode ? 100.0 : 120.0;
+        } elseif ($source === 'ai') {
+            $bonus += 8.0;
+        }
+
+        return $bonus;
+    }
+
     /**
      * @return Collection<int, ProductRelation>
      */
     private function relationsOf(int $productId, ?Product $product = null): Collection
     {
         if ($product && $product->relationLoaded('productRelations')) {
-            return $product->productRelations;
+            return $product->productRelations
+                ->reject(fn (ProductRelation $relation) => $relation->type === ProductRelationType::Gift
+                    || (string) $relation->type === ProductRelationType::Gift->value);
         }
 
         return ProductRelation::query()
             ->where('product_id', $productId)
+            ->where('type', '!=', ProductRelationType::Gift->value)
             ->orderBy('sort_order')
             ->get();
     }
@@ -299,6 +479,7 @@ class ProductRecommendationEngine
 
         return ProductRelation::query()
             ->whereIn('product_id', $productIds)
+            ->where('type', '!=', ProductRelationType::Gift->value)
             ->orderBy('sort_order')
             ->get();
     }
@@ -324,9 +505,10 @@ class ProductRecommendationEngine
         }
 
         arsort($scores);
-        $ids = array_keys(array_slice($scores, 0, 40, true));
+        $ids = array_keys(array_slice($scores, 0, 48, true));
         $products = Product::query()
             ->active()
+            ->sellable()
             ->with($this->relations())
             ->whereIn('id', $ids)
             ->get()
@@ -361,6 +543,45 @@ class ProductRecommendationEngine
     }
 
     /**
+     * Cap how many products share the same category in a complement-style row.
+     *
+     * @param  Collection<int, Product>  $products
+     * @return Collection<int, Product>
+     */
+    private function diversifyByCategory(Collection $products, int $limit, int $maxPerCategory): Collection
+    {
+        $counts = [];
+        $picked = collect();
+        $deferred = collect();
+
+        foreach ($products as $product) {
+            $categoryId = (int) $product->category_id;
+            $used = $counts[$categoryId] ?? 0;
+            if ($used < $maxPerCategory) {
+                $picked->push($product);
+                $counts[$categoryId] = $used + 1;
+            } else {
+                $deferred->push($product);
+            }
+
+            if ($picked->count() >= $limit) {
+                break;
+            }
+        }
+
+        if ($picked->count() < $limit) {
+            foreach ($deferred as $product) {
+                $picked->push($product);
+                if ($picked->count() >= $limit) {
+                    break;
+                }
+            }
+        }
+
+        return $picked->values();
+    }
+
+    /**
      * @param  list<int>  $excludeIds
      * @param  int|list<int>|null  $avoidCategories
      * @return Collection<int, Product>
@@ -373,6 +594,7 @@ class ProductRecommendationEngine
 
         return Product::query()
             ->active()
+            ->sellable()
             ->with($this->relations())
             ->when($excludeIds !== [], fn ($query) => $query->whereNotIn('id', $excludeIds))
             ->when($otherCategory && $avoid !== [], fn ($query) => $query->whereNotIn('category_id', $avoid))

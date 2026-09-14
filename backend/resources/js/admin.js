@@ -66,11 +66,23 @@ document.querySelector("[data-sidebar-toggle]")?.addEventListener("click", () =>
 
 document.querySelector("[data-sidebar-backdrop]")?.addEventListener("click", closeMobileSidebar);
 document.querySelector("[data-sidebar-close]")?.addEventListener("click", closeMobileSidebar);
-document.querySelectorAll(".admin-sidebar .nav-link").forEach((link) => {
-    link.addEventListener("click", () => {
-        if (!desktopQuery.matches) {
-            closeMobileSidebar();
+
+document.querySelectorAll("[data-nav-group-toggle]").forEach((toggle) => {
+    toggle.addEventListener("click", (event) => {
+        event.preventDefault();
+        const group = toggle.closest("[data-nav-group]");
+        if (!group) {
+            return;
         }
+        const willOpen = !group.classList.contains("is-open");
+        document.querySelectorAll("[data-nav-group].is-open").forEach((other) => {
+            if (other !== group && !other.classList.contains("is-active")) {
+                other.classList.remove("is-open");
+                other.querySelector("[data-nav-group-toggle]")?.setAttribute("aria-expanded", "false");
+            }
+        });
+        group.classList.toggle("is-open", willOpen);
+        toggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
     });
 });
 
@@ -354,6 +366,73 @@ const isModifiedClick = (event) =>
 
 let ajaxController = null;
 let adminMutating = false;
+let adminProgressTimer = null;
+let adminProgressValue = 0;
+
+const getAdminProgress = () => document.getElementById("adminProgress");
+const getAdminProgressBar = () => document.querySelector("[data-admin-progress-bar]");
+
+const setAdminProgressWidth = (value) => {
+    adminProgressValue = Math.max(0, Math.min(100, value));
+    const bar = getAdminProgressBar();
+    if (bar) {
+        bar.style.width = `${adminProgressValue}%`;
+        bar.style.opacity = "1";
+    }
+};
+
+const startAdminProgress = () => {
+    const root = getAdminProgress();
+    const bar = getAdminProgressBar();
+    if (!root || !bar) {
+        return;
+    }
+
+    window.clearInterval(adminProgressTimer);
+    root.hidden = false;
+    root.setAttribute("aria-hidden", "false");
+    root.classList.remove("is-finishing");
+    bar.style.transition = "none";
+    setAdminProgressWidth(0);
+    // Force reflow so the width animation starts cleanly.
+    void bar.offsetWidth;
+    bar.style.transition = "";
+    setAdminProgressWidth(18);
+
+    adminProgressTimer = window.setInterval(() => {
+        if (adminProgressValue >= 86) {
+            return;
+        }
+        const step = adminProgressValue < 40 ? 9 : adminProgressValue < 70 ? 4 : 1.5;
+        setAdminProgressWidth(adminProgressValue + step);
+    }, 220);
+};
+
+const finishAdminProgress = () => {
+    const root = getAdminProgress();
+    const bar = getAdminProgressBar();
+    window.clearInterval(adminProgressTimer);
+    adminProgressTimer = null;
+
+    if (!root || !bar) {
+        return;
+    }
+
+    root.classList.add("is-finishing");
+    setAdminProgressWidth(100);
+    window.setTimeout(() => {
+        bar.style.opacity = "0";
+        window.setTimeout(() => {
+            root.hidden = true;
+            root.setAttribute("aria-hidden", "true");
+            root.classList.remove("is-finishing");
+            bar.style.transition = "none";
+            setAdminProgressWidth(0);
+            bar.style.opacity = "1";
+            bar.style.transition = "";
+        }, 220);
+    }, 160);
+};
 
 const playFlasherFrom = (doc) => {
     const source = doc.querySelector("script.flasher-js");
@@ -417,14 +496,38 @@ const playFlasherFrom = (doc) => {
 };
 
 const syncSidebarActive = (url) => {
-    const currentPath = new URL(url, window.location.origin).pathname.replace(/\/+$/, "") || "/";
-    document.querySelectorAll(".admin-sidebar .nav-link").forEach((link) => {
-        const path = new URL(link.href, window.location.origin).pathname.replace(/\/+$/, "") || "/";
-        const isDashboard = /\/admin$/.test(path);
-        link.classList.toggle(
-            "active",
-            isDashboard ? currentPath === path : currentPath === path || currentPath.startsWith(`${path}/`),
-        );
+    const parsed = new URL(url, window.location.origin);
+    const currentPath = parsed.pathname.replace(/\/+$/, "") || "/";
+    const currentTab = parsed.searchParams.get("tab") || "app";
+
+    document.querySelectorAll(".admin-sidebar a.nav-link").forEach((link) => {
+        const linkUrl = new URL(link.href, window.location.origin);
+        const path = linkUrl.pathname.replace(/\/+$/, "") || "/";
+        const linkTab = linkUrl.searchParams.get("tab");
+        let isActive = false;
+
+        if (linkTab !== null) {
+            isActive = currentPath === path && currentTab === linkTab;
+        } else {
+            const isDashboard = /\/admin$/.test(path);
+            isActive = isDashboard
+                ? currentPath === path
+                : currentPath === path || currentPath.startsWith(`${path}/`);
+        }
+
+        link.classList.toggle("active", isActive);
+    });
+
+    document.querySelectorAll("[data-nav-group]").forEach((group) => {
+        const hasActiveChild = !!group.querySelector("a.nav-link.active");
+        group.classList.toggle("is-active", hasActiveChild);
+        if (hasActiveChild) {
+            group.classList.add("is-open");
+        }
+        const toggle = group.querySelector("[data-nav-group-toggle]");
+        toggle?.classList.toggle("is-parent-active", hasActiveChild);
+        toggle?.classList.remove("active");
+        toggle?.setAttribute("aria-expanded", group.classList.contains("is-open") ? "true" : "false");
     });
 };
 
@@ -491,9 +594,11 @@ const swapAdminContent = async (url, { push = true, silent = false } = {}) => {
     ajaxController?.abort();
     ajaxController = new AbortController();
     if (!silent) {
-        currentMain.classList.add("is-ajax-loading");
+        startAdminProgress();
     }
     const scrollY = window.scrollY;
+    const sidebarNav = document.querySelector(".sidebar-nav");
+    const sidebarScroll = sidebarNav?.scrollTop ?? 0;
 
     try {
         const response = await fetch(url, {
@@ -519,13 +624,18 @@ const swapAdminContent = async (url, { push = true, silent = false } = {}) => {
         }
 
         window.scrollTo(0, scrollY);
+        if (sidebarNav) {
+            sidebarNav.scrollTop = sidebarScroll;
+        }
     } catch (error) {
         if (error?.name === "AbortError") {
             return;
         }
         window.location.assign(url);
     } finally {
-        currentMain.classList.remove("is-ajax-loading");
+        if (!silent) {
+            finishAdminProgress();
+        }
     }
 };
 
@@ -538,10 +648,12 @@ const submitAdminForm = async (form, submitter) => {
 
     adminMutating = true;
     ajaxController?.abort();
-    currentMain.classList.add("is-ajax-loading");
+    startAdminProgress();
     if (submitter) {
         submitter.disabled = true;
     }
+    const sidebarNav = document.querySelector(".sidebar-nav");
+    const sidebarScroll = sidebarNav?.scrollTop ?? 0;
 
     const formData = new FormData(form);
     if (submitter?.name && !formData.has(submitter.name)) {
@@ -581,11 +693,14 @@ const submitAdminForm = async (form, submitter) => {
 
         const doc = new DOMParser().parseFromString(await response.text(), "text/html");
         applyAdminDocument(doc, response.url || window.location.href, { historyMode: "replace" });
+        if (sidebarNav) {
+            sidebarNav.scrollTop = sidebarScroll;
+        }
     } catch {
         form.submit();
     } finally {
         adminMutating = false;
-        currentMain.classList.remove("is-ajax-loading");
+        finishAdminProgress();
         if (submitter) {
             submitter.disabled = false;
         }
@@ -595,6 +710,22 @@ const submitAdminForm = async (form, submitter) => {
 document.addEventListener("click", (event) => {
     if (isModifiedClick(event)) {
         return;
+    }
+
+    const sidebarLink = event.target.closest(".admin-sidebar a.nav-link[href]");
+    if (sidebarLink && sidebarLink.target !== "_blank") {
+        const href = sidebarLink.getAttribute("href");
+        if (href && href !== "#" && !href.startsWith("javascript:")) {
+            const url = new URL(sidebarLink.href, window.location.origin);
+            if (url.origin === window.location.origin) {
+                event.preventDefault();
+                if (!desktopQuery.matches) {
+                    closeMobileSidebar();
+                }
+                swapAdminContent(url.toString());
+                return;
+            }
+        }
     }
 
     const link = event.target.closest(".simple-pager a[href], .pagination a[href]");
@@ -1459,17 +1590,6 @@ const syncSettingsScope = () => {
         picker.dataset.scope = selected ? "selected" : "all";
     }
 };
-
-document.addEventListener("shown.bs.tab", (event) => {
-    const tab = event.target.closest("[data-settings-tab]");
-    if (!tab) {
-        return;
-    }
-    const input = document.querySelector("[data-settings-active-tab]");
-    if (input) {
-        input.value = tab.getAttribute("data-settings-tab") || "app";
-    }
-});
 
 document.addEventListener("submit", (event) => {
     const form = event.target.closest("[data-wipe-products-form]");
@@ -2622,6 +2742,35 @@ const bindHomeSectionContentType = () => {
 bindHomeSectionContentType();
 window.addEventListener("admin:content-ready", bindHomeSectionContentType);
 
+const bindHomeSectionLayoutReset = () => {
+    document.querySelectorAll("[data-home-section-layout-reset]").forEach((button) => {
+        if (button.dataset.homeSectionLayoutResetBound === "1") {
+            return;
+        }
+        button.dataset.homeSectionLayoutResetBound = "1";
+        button.addEventListener("click", () => {
+            const defaults = {
+                title_font_size: button.dataset.defaultTitleFontSize ?? "",
+                subtitle_font_size: button.dataset.defaultSubtitleFontSize ?? "",
+                card_width: button.dataset.defaultCardWidth ?? "",
+                row_height: "",
+                item_spacing: button.dataset.defaultItemSpacing ?? "",
+                padding_top: button.dataset.defaultPaddingTop ?? "",
+                padding_bottom: button.dataset.defaultPaddingBottom ?? "",
+            };
+            Object.entries(defaults).forEach(([name, value]) => {
+                const input = document.querySelector(`[data-layout-field="${name}"]`);
+                if (input) {
+                    input.value = value;
+                }
+            });
+        });
+    });
+};
+
+bindHomeSectionLayoutReset();
+window.addEventListener("admin:content-ready", bindHomeSectionLayoutReset);
+
 const syncHomeSectionColorToggle = (checkbox) => {
     const target = document.querySelector(checkbox.dataset.homeSectionColorToggle);
     if (!target) {
@@ -3342,3 +3491,832 @@ const bindPasswordPanels = () => {
 
 bindPasswordPanels();
 window.addEventListener("admin:content-ready", bindPasswordPanels);
+
+/* —— Reports hub —— */
+const bindReportsHub = () => {
+    const hub = document.getElementById("reportsHub");
+    if (!hub || hub.dataset.bound === "1") {
+        return;
+    }
+    hub.dataset.bound = "1";
+
+    const state = {
+        tab: hub.dataset.tab || "daily",
+        preset: hub.dataset.preset || "today",
+        from: hub.dataset.from,
+        to: hub.dataset.to,
+        currency: hub.dataset.currency || "",
+        cache: {},
+        orders: {
+            page: 1,
+            sort: "created_at",
+            dir: "desc",
+            q: "",
+            status: "",
+            per_page: 25,
+        },
+        client: {
+            products: [],
+            customers: [],
+            couriers: [],
+            inventory: [],
+            coupons: [],
+            sales: [],
+        },
+    };
+
+    try {
+        state.cache.overview = JSON.parse(hub.dataset.overview || "{}");
+    } catch {
+        state.cache.overview = {};
+    }
+    try {
+        if (hub.dataset.daily) {
+            state.cache.daily = JSON.parse(hub.dataset.daily);
+        }
+    } catch {
+        state.cache.daily = null;
+    }
+
+    const money = (value) =>
+        `${Number(value || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${state.currency}`;
+    const num = (value) => Number(value || 0).toLocaleString("en-US");
+    const esc = (value) =>
+        String(value ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;");
+
+    const loadingEl = hub.querySelector("[data-report-loading]");
+    const setLoading = (on) => {
+        if (!loadingEl) return;
+        loadingEl.hidden = !on;
+    };
+
+    const params = (extra = {}) => ({
+        preset: state.preset,
+        from: state.from,
+        to: state.to,
+        ...extra,
+    });
+
+    const queryString = (obj) =>
+        new URLSearchParams(
+            Object.entries(obj).filter(([, v]) => v !== null && v !== undefined && v !== ""),
+        ).toString();
+
+    const fetchSection = async (section, extra = {}) => {
+        const key = `${section}:${JSON.stringify(extra)}:${state.from}:${state.to}`;
+        if (state.cache[key]) {
+            return state.cache[key];
+        }
+        setLoading(true);
+        try {
+            const { data } = await window.axios.get(hub.dataset.dataUrl, {
+                params: params({ section, ...extra }),
+            });
+            state.cache[key] = data;
+            return data;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const renderBars = (el, rows, valueKey = "count") => {
+        if (!el) return;
+        const max = Math.max(1, ...rows.map((r) => Number(r[valueKey] || 0)));
+        if (!rows.length) {
+            el.innerHTML = `<p class="text-muted small mb-0">لا بيانات.</p>`;
+            return;
+        }
+        el.innerHTML = rows
+            .map((row) => {
+                const value = Number(row[valueKey] || 0);
+                const width = Math.max(4, Math.round((value / max) * 100));
+                return `<div class="reports-bar-row">
+                    <strong>${esc(row.label)}</strong>
+                    <div class="reports-bar-track"><div class="reports-bar-fill" style="width:${width}%"></div></div>
+                    <span>${num(value)}</span>
+                </div>`;
+            })
+            .join("");
+    };
+
+    const renderSalesChart = (el, series) => {
+        if (!el) return;
+        if (!series?.length) {
+            el.innerHTML = `<p class="text-muted small mb-0">لا بيانات للفترة المحددة.</p>`;
+            return;
+        }
+        const w = 640;
+        const h = 220;
+        const pad = { t: 16, r: 12, b: 28, l: 12 };
+        const values = series.map((s) => Number(s.revenue || 0));
+        const max = Math.max(1, ...values);
+        const stepX = (w - pad.l - pad.r) / Math.max(1, series.length - 1);
+        const points = series.map((s, i) => {
+            const x = pad.l + i * stepX;
+            const y = pad.t + (1 - Number(s.revenue || 0) / max) * (h - pad.t - pad.b);
+            return [x, y];
+        });
+        const line = points.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+        const area = `${line} L${points.at(-1)[0].toFixed(1)},${h - pad.b} L${points[0][0].toFixed(1)},${h - pad.b} Z`;
+        const labels = series
+            .filter((_, i) => series.length <= 14 || i % Math.ceil(series.length / 8) === 0)
+            .map((s) => {
+                const i = series.indexOf(s);
+                const x = pad.l + i * stepX;
+                return `<text x="${x}" y="${h - 8}" text-anchor="middle" font-size="10" fill="#6b7a99">${esc(s.label)}</text>`;
+            })
+            .join("");
+        el.innerHTML = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="منحنى الإيرادات">
+            <defs>
+                <linearGradient id="repFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#003399" stop-opacity="0.28"/>
+                    <stop offset="100%" stop-color="#003399" stop-opacity="0.02"/>
+                </linearGradient>
+            </defs>
+            <path d="${area}" fill="url(#repFill)"/>
+            <path d="${line}" fill="none" stroke="#003399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            ${points
+                .map(
+                    (p, i) =>
+                        `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="#fff" stroke="#003399" stroke-width="2">
+                            <title>${esc(series[i].date)} — ${money(series[i].revenue)}</title>
+                        </circle>`,
+                )
+                .join("")}
+            ${labels}
+        </svg>`;
+    };
+
+    const activateTab = (tab) => {
+        state.tab = tab;
+        hub.dataset.tab = tab;
+        hub.querySelectorAll("[data-report-tab]").forEach((btn) => {
+            const active = btn.getAttribute("data-report-tab") === tab;
+            btn.classList.toggle("is-active", active);
+            btn.setAttribute("aria-selected", active ? "true" : "false");
+        });
+        hub.querySelectorAll("[data-report-panel]").forEach((panel) => {
+            const active = panel.getAttribute("data-report-panel") === tab;
+            panel.classList.toggle("is-active", active);
+            panel.hidden = !active;
+        });
+        const tabInput = hub.querySelector("[data-report-tab-input]");
+        if (tabInput) tabInput.value = tab;
+        const url = new URL(window.location.href);
+        url.searchParams.set("tab", tab);
+        url.searchParams.set("preset", state.preset);
+        url.searchParams.set("from", state.from);
+        url.searchParams.set("to", state.to);
+        window.history.replaceState({}, "", url);
+        loadTab(tab);
+    };
+
+    const renderKpis = (kpis) => {
+        const wrap = hub.querySelector("[data-report-kpis]");
+        if (!wrap || !kpis) return;
+        wrap.innerHTML = kpis
+            .map((kpi) => {
+                const formatted =
+                    kpi.format === "money"
+                        ? money(kpi.value)
+                        : kpi.format === "percent"
+                          ? `${Number(kpi.value).toLocaleString("en-US", { maximumFractionDigits: 1 })}%`
+                          : num(kpi.value);
+                const deltaClass = kpi.delta === null ? "is-flat" : kpi.delta >= 0 ? "is-up" : "is-down";
+                const icon =
+                    kpi.delta === null ? "bi-dash" : kpi.delta >= 0 ? "bi-arrow-up-short" : "bi-arrow-down-short";
+                return `<div class="col-6 col-md-4 col-xl-3">
+                    <div class="reports-kpi reports-kpi--${esc(kpi.tone)}">
+                        <div class="reports-kpi__icon"><i class="bi ${esc(kpi.icon)}"></i></div>
+                        <div class="reports-kpi__body">
+                            <div class="reports-kpi__label">${esc(kpi.label)}</div>
+                            <div class="reports-kpi__value">${esc(formatted)}</div>
+                            <div class="reports-kpi__delta ${deltaClass}">
+                                <i class="bi ${icon}"></i> ${esc(kpi.delta_label)}
+                                <span>مقابل الفترة السابقة</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            })
+            .join("");
+    };
+
+    const renderOverview = (data) => {
+        renderKpis(data.kpis);
+        renderSalesChart(hub.querySelector("[data-report-sales-chart]"), data.series || []);
+        renderBars(hub.querySelector("[data-report-status-bars]"), data.status || []);
+        const seriesLabel = hub.querySelector("[data-report-series-label]");
+        if (seriesLabel) {
+            seriesLabel.textContent = data.is_hourly ? "ساعي" : "يومي";
+        }
+        const topP = hub.querySelector("[data-report-top-products]");
+        if (topP) {
+            topP.innerHTML = (data.top_products || []).length
+                ? data.top_products
+                      .map(
+                          (r, i) => `<tr>
+                        <td class="text-muted">${esc(r.rank || i + 1)}</td>
+                        <td class="fw-semibold">${esc(r.name)}</td>
+                        <td>${num(r.qty)}</td>
+                        <td>${money(r.revenue)}</td>
+                    </tr>`,
+                      )
+                      .join("")
+                : `<tr><td colspan="4" class="text-muted">لا بيانات في هذه الفترة.</td></tr>`;
+        }
+        const topC = hub.querySelector("[data-report-top-customers]");
+        if (topC) {
+            topC.innerHTML = (data.top_customers || []).length
+                ? data.top_customers
+                      .map(
+                          (r, i) => `<tr>
+                        <td class="text-muted">${esc(r.rank || i + 1)}</td>
+                        <td><div class="fw-semibold">${esc(r.name)}</div><small class="text-muted">${esc(r.tier || "")} · ${esc(r.phone || "")}</small></td>
+                        <td>${num(r.orders)}</td>
+                        <td>${money(r.spent)}</td>
+                    </tr>`,
+                      )
+                      .join("")
+                : `<tr><td colspan="4" class="text-muted">لا بيانات في هذه الفترة.</td></tr>`;
+        }
+    };
+
+    const tierClass = (tier) => {
+        if (tier === "ذهبي") return "is-gold";
+        if (tier === "فضي") return "is-silver";
+        if (tier === "برونزي") return "is-bronze";
+        return "is-new";
+    };
+
+    const renderDaily = (data) => {
+        if (!data) return;
+        const dateEl = hub.querySelector("[data-report-daily-date]");
+        if (dateEl) dateEl.textContent = data.date_label || data.date || "";
+        const compareEl = hub.querySelector("[data-report-daily-compare]");
+        if (compareEl) compareEl.textContent = data.compared_to || "مقارنة بأمس";
+
+        const kpiWrap = hub.querySelector("[data-report-daily-kpis]");
+        if (kpiWrap && data.kpis) {
+            kpiWrap.innerHTML = data.kpis
+                .map((kpi) => {
+                    const formatted =
+                        kpi.format === "money"
+                            ? money(kpi.value)
+                            : kpi.format === "percent"
+                              ? `${Number(kpi.value).toLocaleString("en-US", { maximumFractionDigits: 1 })}%`
+                              : num(kpi.value);
+                    const deltaClass = kpi.delta === null ? "is-flat" : kpi.delta >= 0 ? "is-up" : "is-down";
+                    const icon =
+                        kpi.delta === null ? "bi-dash" : kpi.delta >= 0 ? "bi-arrow-up-short" : "bi-arrow-down-short";
+                    return `<div class="col-6 col-md-4 col-xl-2">
+                        <div class="reports-kpi reports-kpi--${esc(kpi.tone)}">
+                            <div class="reports-kpi__icon"><i class="bi ${esc(kpi.icon)}"></i></div>
+                            <div class="reports-kpi__body">
+                                <div class="reports-kpi__label">${esc(kpi.label)}</div>
+                                <div class="reports-kpi__value">${esc(formatted)}</div>
+                                <div class="reports-kpi__delta ${deltaClass}">
+                                    <i class="bi ${icon}"></i> ${esc(kpi.delta_label)}
+                                    <span>مقابل أمس</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                })
+                .join("");
+        }
+
+        renderSalesChart(hub.querySelector("[data-report-hourly-chart]"), data.hourly || []);
+        renderBars(hub.querySelector("[data-report-daily-status]"), data.status || []);
+
+        const productsEl = hub.querySelector("[data-report-daily-products]");
+        if (productsEl) {
+            productsEl.innerHTML = (data.top_products || []).length
+                ? data.top_products
+                      .map(
+                          (r, i) => `<tr>
+                        <td class="text-muted">${esc(r.rank || i + 1)}</td>
+                        <td class="fw-semibold">${esc(r.name)}</td>
+                        <td>${num(r.qty)}</td>
+                        <td>${money(r.revenue)}</td>
+                    </tr>`,
+                      )
+                      .join("")
+                : `<tr><td colspan="4" class="text-muted">لا مبيعات مسجّلة اليوم بعد.</td></tr>`;
+        }
+
+        const customersEl = hub.querySelector("[data-report-daily-customers]");
+        if (customersEl) {
+            customersEl.innerHTML = (data.top_customers || []).length
+                ? data.top_customers
+                      .map(
+                          (r, i) => `<tr>
+                        <td class="text-muted">${esc(r.rank || i + 1)}</td>
+                        <td><div class="fw-semibold">${esc(r.name)}</div><small class="text-muted">${esc(r.tier || "")} · ${esc(r.phone || "")}</small></td>
+                        <td>${num(r.orders)}</td>
+                        <td>${money(r.spent)}</td>
+                    </tr>`,
+                      )
+                      .join("")
+                : `<tr><td colspan="4" class="text-muted">لا طلبات عملاء اليوم بعد.</td></tr>`;
+        }
+
+        const ordersEl = hub.querySelector("[data-report-daily-orders]");
+        if (ordersEl) {
+            ordersEl.innerHTML = (data.recent_orders || []).length
+                ? data.recent_orders
+                      .map(
+                          (r) => `<tr>
+                        <td class="fw-semibold">${esc(r.order_number)}</td>
+                        <td>${esc(r.customer || "—")}</td>
+                        <td><span class="badge text-bg-light">${esc(r.status_label || "")}</span></td>
+                        <td>${money(r.total)}</td>
+                        <td>${esc(r.created_at || "")}</td>
+                        <td><a class="btn btn-sm btn-outline-success rounded-pill" href="${esc(r.edit_url)}">فتح</a></td>
+                    </tr>`,
+                      )
+                      .join("")
+                : `<tr><td colspan="6" class="text-muted text-center py-3">لا طلبات لهذا اليوم.</td></tr>`;
+        }
+    };
+
+    const sortClient = (key, sortKey, dir) => {
+        const rows = [...(state.client[key] || [])];
+        rows.sort((a, b) => {
+            const av = a[sortKey];
+            const bv = b[sortKey];
+            if (typeof av === "number" || typeof bv === "number") {
+                return dir === "asc" ? Number(av) - Number(bv) : Number(bv) - Number(av);
+            }
+            return dir === "asc"
+                ? String(av ?? "").localeCompare(String(bv ?? ""), "ar")
+                : String(bv ?? "").localeCompare(String(av ?? ""), "ar");
+        });
+        state.client[key] = rows;
+        return rows;
+    };
+
+    const filterClient = (key, q) => {
+        const needle = (q || "").trim().toLowerCase();
+        const rows = state.client[key] || [];
+        if (!needle) return rows;
+        return rows.filter((row) => JSON.stringify(row).toLowerCase().includes(needle));
+    };
+
+    const paintProducts = (rows) => {
+        const el = hub.querySelector("[data-report-products-rows]");
+        if (!el) return;
+        el.innerHTML = rows.length
+            ? rows
+                  .map(
+                      (r, i) => `<tr data-search>
+                    <td class="text-muted">${esc(r.rank || i + 1)}</td>
+                    <td class="fw-semibold">${esc(r.name)}</td>
+                    <td>${num(r.qty)}</td>
+                    <td>${money(r.revenue)}</td>
+                    <td>${num(r.orders)}</td>
+                </tr>`,
+                  )
+                  .join("")
+            : `<tr><td colspan="5" class="text-muted">لا بيانات.</td></tr>`;
+    };
+
+    const paintCustomers = (rows) => {
+        const el = hub.querySelector("[data-report-customers-rows]");
+        if (!el) return;
+        el.innerHTML = rows.length
+            ? rows
+                  .map(
+                      (r, i) => `<tr>
+                    <td class="text-muted">${esc(r.rank || i + 1)}</td>
+                    <td class="fw-semibold">${esc(r.name)}</td>
+                    <td>${esc(r.phone || "—")}</td>
+                    <td>${num(r.orders)}</td>
+                    <td>${num(r.delivered || 0)}</td>
+                    <td>${money(r.spent)}</td>
+                    <td>${num(r.loyalty || 0)}</td>
+                    <td><span class="reports-tier ${tierClass(r.tier)}">${esc(r.tier || "—")}</span></td>
+                    <td>${esc(r.last_order_at || "—")}</td>
+                </tr>`,
+                  )
+                  .join("")
+            : `<tr><td colspan="9" class="text-muted">لا بيانات.</td></tr>`;
+    };
+
+    const paintCouriers = (rows) => {
+        const el = hub.querySelector("[data-report-couriers-rows]");
+        if (!el) return;
+        el.innerHTML = rows.length
+            ? rows
+                  .map(
+                      (r) => `<tr>
+                    <td>
+                        <div class="fw-semibold">${esc(r.name)}</div>
+                        <small class="text-muted">${esc(r.phone || "")}</small>
+                    </td>
+                    <td>${num(r.orders)}</td>
+                    <td>${num(r.delivered)}</td>
+                    <td>${num(r.cancelled)}</td>
+                    <td>${money(r.revenue)}</td>
+                    <td>
+                        ${r.is_online ? '<span class="badge text-bg-success">متصل</span>' : '<span class="badge text-bg-secondary">غير متصل</span>'}
+                        ${r.is_active ? "" : '<span class="badge text-bg-warning">موقوف</span>'}
+                    </td>
+                </tr>`,
+                  )
+                  .join("")
+            : `<tr><td colspan="6" class="text-muted">لا بيانات.</td></tr>`;
+    };
+
+    const paintInventory = (summary, rows) => {
+        const kpis = hub.querySelector("[data-report-inventory-kpis]");
+        if (kpis && summary) {
+            const cards = [
+                ["إجمالي المنتجات", num(summary.total), "bi-box-seam"],
+                ["نفد المخزون", num(summary.out_of_stock), "bi-x-octagon"],
+                ["منخفض", num(summary.low_stock), "bi-exclamation-triangle"],
+                ["قيمة المخزون", money(summary.inventory_value), "bi-cash-stack"],
+            ];
+            kpis.innerHTML = cards
+                .map(
+                    ([label, value, icon]) => `<div class="col-6 col-md-3">
+                    <div class="reports-kpi">
+                        <div class="reports-kpi__icon"><i class="bi ${icon}"></i></div>
+                        <div><div class="reports-kpi__label">${label}</div><div class="reports-kpi__value">${value}</div></div>
+                    </div>
+                </div>`,
+                )
+                .join("");
+        }
+        const el = hub.querySelector("[data-report-inventory-rows]");
+        if (!el) return;
+        el.innerHTML = rows.length
+            ? rows
+                  .map((r) => {
+                      const badge =
+                          r.stock <= 0
+                              ? '<span class="reports-stock-badge is-out">نفد</span>'
+                              : '<span class="reports-stock-badge is-low">منخفض</span>';
+                      return `<tr>
+                        <td class="fw-semibold">${esc(r.name)}</td>
+                        <td>${esc(r.category || "—")}</td>
+                        <td>${num(r.stock)} ${badge}</td>
+                        <td>${money(r.price)}</td>
+                        <td>${r.is_active ? "نشط" : "مخفي"}</td>
+                    </tr>`;
+                  })
+                  .join("")
+            : `<tr><td colspan="5" class="text-muted">لا منتجات منخفضة المخزون.</td></tr>`;
+    };
+
+    const paintCoupons = (rows) => {
+        const el = hub.querySelector("[data-report-coupons-rows]");
+        if (!el) return;
+        el.innerHTML = rows.length
+            ? rows
+                  .map(
+                      (r) => `<tr>
+                    <td class="fw-semibold">${esc(r.code)}</td>
+                    <td>${esc(r.title || "—")}</td>
+                    <td>${num(r.uses)}</td>
+                    <td>${money(r.discount_total)}</td>
+                    <td>${money(r.order_total)}</td>
+                    <td>${r.is_active ? "نعم" : "لا"}</td>
+                </tr>`,
+                  )
+                  .join("")
+            : `<tr><td colspan="6" class="text-muted">لا بيانات.</td></tr>`;
+    };
+
+    const paintSales = (data) => {
+        renderSalesChart(hub.querySelector("[data-report-sales-chart-full]"), data.series || []);
+        renderBars(hub.querySelector("[data-report-payment-bars]"), data.payments || [], "count");
+        renderBars(hub.querySelector("[data-report-method-bars]"), data.methods || [], "count");
+        state.client.sales = data.series || [];
+        const el = hub.querySelector("[data-report-sales-rows]");
+        if (!el) return;
+        el.innerHTML = state.client.sales
+            .map(
+                (r) => `<tr>
+                <td>${esc(r.date)}</td>
+                <td>${money(r.revenue)}</td>
+                <td>${num(r.orders)}</td>
+            </tr>`,
+            )
+            .join("");
+    };
+
+    const paintOrders = (table) => {
+        const el = hub.querySelector("[data-report-orders-rows]");
+        const pager = hub.querySelector("[data-report-orders-pager]");
+        if (!el) return;
+        const rows = table?.data || [];
+        el.innerHTML = rows.length
+            ? rows
+                  .map(
+                      (r) => `<tr>
+                    <td class="fw-semibold">${esc(r.order_number)}</td>
+                    <td>${esc(r.customer || "—")}<div class="small text-muted">${esc(r.phone || "")}</div></td>
+                    <td>${esc(r.courier || "—")}</td>
+                    <td><span class="badge text-bg-light">${esc(r.status_label || r.status)}</span></td>
+                    <td>${esc(r.payment || "—")}</td>
+                    <td class="fw-bold">${money(r.total)}</td>
+                    <td>${esc(r.created_at || "")}</td>
+                    <td><a class="btn btn-sm btn-outline-success rounded-pill" href="${esc(r.edit_url)}">فتح</a></td>
+                </tr>`,
+                  )
+                  .join("")
+            : `<tr><td colspan="8" class="text-muted text-center py-4">لا طلبات مطابقة.</td></tr>`;
+        if (pager) {
+            const current = table.current_page || 1;
+            const last = table.last_page || 1;
+            pager.innerHTML = `
+                <span class="small text-muted">${num(table.total || 0)} طلب — صفحة ${current} من ${last}</span>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" data-orders-page="${current - 1}" ${current <= 1 ? "disabled" : ""}>السابق</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" data-orders-page="${current + 1}" ${current >= last ? "disabled" : ""}>التالي</button>
+                </div>`;
+        }
+    };
+
+    const paintReviews = (data) => {
+        const avg = hub.querySelector("[data-report-reviews-avg]");
+        const count = hub.querySelector("[data-report-reviews-count]");
+        if (avg) avg.textContent = Number(data.avg_rating || 0).toFixed(2);
+        if (count) count.textContent = `${num(data.count || 0)} تقييم في الفترة`;
+        renderBars(
+            hub.querySelector("[data-report-reviews-bars]"),
+            (data.distribution || []).map((d) => ({
+                label: `${d.rating} ★`,
+                count: d.count,
+            })),
+            "count",
+        );
+    };
+
+    const loadTab = async (tab) => {
+        if (tab === "daily") {
+            if (state.cache.daily) {
+                renderDaily(state.cache.daily);
+            }
+            const res = await fetchSection("daily");
+            state.cache.daily = res.data;
+            renderDaily(res.data);
+            return;
+        }
+        if (tab === "overview") {
+            if (state.cache.overview?.kpis) {
+                renderOverview(state.cache.overview);
+            }
+            const res = await fetchSection("overview");
+            state.cache.overview = res.data;
+            renderOverview(res.data);
+            return;
+        }
+        if (tab === "sales") {
+            const res = await fetchSection("sales");
+            paintSales(res.data);
+            return;
+        }
+        if (tab === "orders") {
+            await loadOrders();
+            return;
+        }
+        if (tab === "products") {
+            const res = await fetchSection("products");
+            state.client.products = res.data.items || [];
+            paintProducts(state.client.products);
+            return;
+        }
+        if (tab === "customers") {
+            const res = await fetchSection("customers");
+            state.client.customers = res.data.items || [];
+            paintCustomers(state.client.customers);
+            return;
+        }
+        if (tab === "couriers") {
+            const res = await fetchSection("couriers");
+            state.client.couriers = res.data.items || [];
+            paintCouriers(state.client.couriers);
+            return;
+        }
+        if (tab === "inventory") {
+            const res = await fetchSection("inventory");
+            state.client.inventory = res.data.items || [];
+            paintInventory(res.data.summary, state.client.inventory);
+            return;
+        }
+        if (tab === "coupons") {
+            const res = await fetchSection("coupons");
+            state.client.coupons = res.data.items || [];
+            paintCoupons(state.client.coupons);
+            return;
+        }
+        if (tab === "reviews") {
+            const res = await fetchSection("reviews");
+            paintReviews(res.data);
+        }
+    };
+
+    const loadOrders = async () => {
+        const res = await fetchSection("orders", {
+            q: state.orders.q,
+            status: state.orders.status,
+            sort: state.orders.sort,
+            dir: state.orders.dir,
+            page: state.orders.page,
+            per_page: state.orders.per_page,
+        });
+        paintOrders(res.data.table);
+    };
+
+    hub.querySelectorAll("[data-report-tab]").forEach((btn) => {
+        btn.addEventListener("click", () => activateTab(btn.getAttribute("data-report-tab")));
+    });
+
+    hub.querySelector("[data-report-refresh]")?.addEventListener("click", () => {
+        state.cache = {};
+        loadTab(state.tab);
+    });
+
+    hub.querySelector("[data-report-print]")?.addEventListener("click", () => window.print());
+
+    let ordersTimer;
+    hub.querySelector("[data-report-orders-q]")?.addEventListener("input", (event) => {
+        clearTimeout(ordersTimer);
+        ordersTimer = setTimeout(() => {
+            state.orders.q = event.target.value;
+            state.orders.page = 1;
+            loadOrders();
+        }, 280);
+    });
+    hub.querySelector("[data-report-orders-status]")?.addEventListener("change", (event) => {
+        state.orders.status = event.target.value;
+        state.orders.page = 1;
+        loadOrders();
+    });
+    hub.querySelector("[data-report-orders-per-page]")?.addEventListener("change", (event) => {
+        state.orders.per_page = Number(event.target.value) || 25;
+        state.orders.page = 1;
+        loadOrders();
+    });
+    hub.addEventListener("click", (event) => {
+        const pageBtn = event.target.closest("[data-orders-page]");
+        if (pageBtn) {
+            const page = Number(pageBtn.getAttribute("data-orders-page"));
+            if (page >= 1) {
+                state.orders.page = page;
+                loadOrders();
+            }
+            return;
+        }
+        const sortBtn = event.target.closest("[data-orders-sort]");
+        if (sortBtn) {
+            const key = sortBtn.getAttribute("data-orders-sort");
+            if (state.orders.sort === key) {
+                state.orders.dir = state.orders.dir === "asc" ? "desc" : "asc";
+            } else {
+                state.orders.sort = key;
+                state.orders.dir = "desc";
+            }
+            hub.querySelectorAll("[data-orders-sort]").forEach((b) => b.classList.remove("is-active"));
+            sortBtn.classList.add("is-active");
+            loadOrders();
+        }
+    });
+
+    hub.querySelectorAll("[data-client-filter]").forEach((input) => {
+        input.addEventListener("input", () => {
+            const key = input.getAttribute("data-client-filter");
+            const rows = filterClient(key, input.value);
+            if (key === "products") paintProducts(rows);
+            if (key === "customers") paintCustomers(rows);
+            if (key === "inventory") paintInventory(null, rows);
+        });
+    });
+
+    hub.querySelectorAll("[data-report-sortable]").forEach((table) => {
+        table.querySelectorAll("th[data-sort]").forEach((th) => {
+            th.style.cursor = "pointer";
+            th.addEventListener("click", () => {
+                const key = table.getAttribute("data-client-table");
+                if (!key || !state.client[key]) return;
+                const sortKey = th.getAttribute("data-sort");
+                const dir = th.dataset.dir === "asc" ? "desc" : "asc";
+                th.dataset.dir = dir;
+                const rows = sortClient(key, sortKey, dir);
+                if (key === "products") paintProducts(rows);
+                if (key === "customers") paintCustomers(rows);
+                if (key === "couriers") paintCouriers(rows);
+                if (key === "inventory") paintInventory(null, rows);
+                if (key === "coupons") paintCoupons(rows);
+            });
+        });
+    });
+
+    document.querySelectorAll("[data-report-export]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const format = btn.getAttribute("data-report-export");
+            const type =
+                document.querySelector('#reportExportModal input[name="export_type"]:checked')?.value || "overview";
+            const url = `${hub.dataset.exportUrl}?${queryString(params({ type, format }))}`;
+            window.location.href = url;
+        });
+    });
+
+    hub.querySelector("[data-report-save-preset]")?.addEventListener("click", () => {
+        const preset = {
+            preset: state.preset,
+            from: state.from,
+            to: state.to,
+            tab: state.tab,
+            saved_at: new Date().toISOString(),
+        };
+        const blob = new Blob([JSON.stringify(preset, null, 2)], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `report-preset-${state.from}-${state.to}.json`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    });
+
+    const importForm = document.querySelector("[data-report-import-form]");
+    importForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const errorEl = importForm.querySelector("[data-report-import-error]");
+        if (errorEl) {
+            errorEl.hidden = true;
+            errorEl.textContent = "";
+        }
+        const formData = new FormData(importForm);
+        try {
+            const { data } = await window.axios.post(hub.dataset.importUrl, formData);
+            if (data.redirect) {
+                window.location.href = data.redirect;
+                return;
+            }
+            throw new Error(data.message || "فشل الاستيراد");
+        } catch (err) {
+            const message = err?.response?.data?.message || err.message || "تعذر استيراد الملف.";
+            if (errorEl) {
+                errorEl.hidden = false;
+                errorEl.textContent = message;
+            }
+        }
+    });
+
+    // Initial paint from server-provided overview, then hydrate active tab.
+    if (state.cache.daily) {
+        renderDaily(state.cache.daily);
+    }
+    if (state.cache.overview?.kpis) {
+        renderOverview(state.cache.overview);
+        renderSalesChart(hub.querySelector("[data-report-sales-chart]"), state.cache.overview.series || []);
+        renderBars(hub.querySelector("[data-report-status-bars]"), state.cache.overview.status || []);
+    }
+    loadTab(state.tab);
+};
+
+bindReportsHub();
+window.addEventListener("admin:content-ready", bindReportsHub);
+
+const syncPromoBulkSelection = (root = document) => {
+    const wrap = root.querySelector?.("[data-promo-bulk]") || document.querySelector("[data-promo-bulk]");
+    if (!wrap) {
+        return;
+    }
+    const boxes = [...wrap.querySelectorAll("[data-promo-select]")];
+    const selected = boxes.filter((box) => box.checked);
+    const all = wrap.querySelector("[data-promo-select-all]");
+    if (all) {
+        all.checked = boxes.length > 0 && selected.length === boxes.length;
+        all.indeterminate = selected.length > 0 && selected.length < boxes.length;
+    }
+    const btn = wrap.querySelector("[data-promo-bulk-selected]");
+    if (btn) {
+        btn.disabled = selected.length === 0;
+    }
+};
+
+document.addEventListener("change", (event) => {
+    const all = event.target.closest("[data-promo-select-all]");
+    if (all) {
+        const wrap = all.closest("[data-promo-bulk]");
+        wrap?.querySelectorAll("[data-promo-select]").forEach((box) => {
+            box.checked = all.checked;
+        });
+        syncPromoBulkSelection(wrap || document);
+        return;
+    }
+    if (event.target.closest("[data-promo-select]")) {
+        syncPromoBulkSelection(event.target.closest("[data-promo-bulk]") || document);
+    }
+});
+
+syncPromoBulkSelection();
+window.addEventListener("admin:content-ready", () => syncPromoBulkSelection());
+

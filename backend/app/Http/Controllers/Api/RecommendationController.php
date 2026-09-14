@@ -26,7 +26,10 @@ class RecommendationController extends Controller
 
         return ApiResponse::success(
             'توصيات المنتج',
-            $this->recommendations->forProduct($model)
+            $this->recommendations->forProduct(
+                $model,
+                Auth::guard('sanctum')->user()
+            )
         );
     }
 

@@ -116,7 +116,8 @@ class HeaderSearchBar extends StatelessWidget {
             g,
           )!;
     final iconGlass = categoriesScroll ? 0.0 : g;
-    final shadowAlpha = categoriesScroll ? 0.06 + 0.04 * scrollT : 0.07 * (1 - g);
+    // الرئيسية: بدون ظل تحت الحقل. الأقسام: ظل خفيف عند التمرير.
+    final shadowAlpha = categoriesScroll ? 0.06 + 0.04 * scrollT : 0.0;
 
     final content = Stack(
       alignment: Alignment.center,

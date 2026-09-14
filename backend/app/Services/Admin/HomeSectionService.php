@@ -70,9 +70,64 @@ class HomeSectionService
             'auto_scroll_cards' => (bool) ($data['auto_scroll_cards'] ?? false),
             'show_title_icon' => (bool) ($data['show_title_icon'] ?? false),
             'emphasize_subtitle' => (bool) ($data['emphasize_subtitle'] ?? false),
+            'title_font_size' => $this->normalizeSize(
+                $data['title_font_size'] ?? null,
+                HomeSection::DEFAULT_TITLE_FONT_SIZE,
+                12,
+                36,
+            ),
+            'subtitle_font_size' => $this->normalizeSize(
+                $data['subtitle_font_size'] ?? null,
+                HomeSection::DEFAULT_SUBTITLE_FONT_SIZE,
+                8,
+                24,
+            ),
+            'card_width' => $this->normalizeSize(
+                $data['card_width'] ?? null,
+                HomeSection::DEFAULT_CARD_WIDTH,
+                80,
+                220,
+            ),
+            'row_height' => $this->nullableSize($data['row_height'] ?? null, 100, 400),
+            'item_spacing' => $this->normalizeSize(
+                $data['item_spacing'] ?? null,
+                HomeSection::DEFAULT_ITEM_SPACING,
+                0,
+                40,
+            ),
+            'padding_top' => $this->normalizeSize(
+                $data['padding_top'] ?? null,
+                HomeSection::DEFAULT_PADDING_TOP,
+                0,
+                48,
+            ),
+            'padding_bottom' => $this->normalizeSize(
+                $data['padding_bottom'] ?? null,
+                HomeSection::DEFAULT_PADDING_BOTTOM,
+                0,
+                48,
+            ),
             'sort_order' => (int) ($data['sort_order'] ?? 0),
             'is_active' => (bool) ($data['is_active'] ?? false),
         ];
+    }
+
+    private function normalizeSize(mixed $value, int $default, int $min, int $max): int
+    {
+        if ($value === null || $value === '') {
+            return $default;
+        }
+
+        return max($min, min($max, (int) $value));
+    }
+
+    private function nullableSize(mixed $value, int $min, int $max): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return max($min, min($max, (int) $value));
     }
 
     private function resolveKey(array $data, ?HomeSection $section = null): string

@@ -5,7 +5,7 @@ namespace App\Support;
 final class AdminMenu
 {
     /**
-     * @return list<array{title: string, icon: string, items: list<array{label: string, route: string, icon: string}>}>
+     * @return list<array{title: string, icon: string, items: list<array<string, mixed>>}>
      */
     public static function groups(): array
     {
@@ -58,6 +58,7 @@ final class AdminMenu
                     ['label' => AppStrings::NAV_CUSTOMERS, 'route' => 'admin.customers.index', 'icon' => 'bi-people'],
                     ['label' => AppStrings::NAV_COURIERS, 'route' => 'admin.couriers.index', 'icon' => 'bi-bicycle'],
                     ['label' => AppStrings::NAV_REVIEWS, 'route' => 'admin.reviews.index', 'icon' => 'bi-star'],
+                    ['label' => AppStrings::NAV_REPORTS, 'route' => 'admin.reports.index', 'icon' => 'bi-bar-chart-line'],
                 ],
             ],
             [
@@ -69,7 +70,37 @@ final class AdminMenu
                     ['label' => AppStrings::NAV_SEARCH_PAGE, 'route' => 'admin.search-placeholders.index', 'icon' => 'bi-search'],
                     ['label' => AppStrings::NAV_NOTIFICATIONS, 'route' => 'admin.notifications.index', 'icon' => 'bi-bell'],
                     ['label' => AppStrings::NAV_AI, 'route' => 'admin.ai.index', 'icon' => 'bi-stars'],
-                    ['label' => AppStrings::NAV_SETTINGS, 'route' => 'admin.settings.index', 'icon' => 'bi-sliders'],
+                    [
+                        'label' => AppStrings::NAV_SETTINGS,
+                        'route' => 'admin.settings.index',
+                        'icon' => 'bi-sliders',
+                        'children' => [
+                            [
+                                'label' => AppStrings::NAV_SETTINGS_APP,
+                                'route' => 'admin.settings.index',
+                                'params' => ['tab' => 'app'],
+                                'icon' => 'bi-phone',
+                            ],
+                            [
+                                'label' => AppStrings::NAV_SETTINGS_STORE,
+                                'route' => 'admin.settings.index',
+                                'params' => ['tab' => 'store'],
+                                'icon' => 'bi-shop',
+                            ],
+                            [
+                                'label' => AppStrings::NAV_SETTINGS_MARKETING,
+                                'route' => 'admin.settings.index',
+                                'params' => ['tab' => 'marketing'],
+                                'icon' => 'bi-megaphone',
+                            ],
+                            [
+                                'label' => AppStrings::NAV_SETTINGS_PRIVACY,
+                                'route' => 'admin.settings.index',
+                                'params' => ['tab' => 'privacy'],
+                                'icon' => 'bi-shield-lock',
+                            ],
+                        ],
+                    ],
                     ['label' => AppStrings::NAV_TEAM, 'route' => 'admin.staff.index', 'icon' => 'bi-person-gear'],
                 ],
             ],
@@ -83,9 +114,24 @@ final class AdminMenu
         foreach ($groups as $group) {
             $items = [];
             foreach ($group['items'] as $item) {
-                if ($user->canAccessRoute($item['route'])) {
-                    $items[] = $item;
+                if (! $user->canAccessRoute($item['route'])) {
+                    continue;
                 }
+
+                if (! empty($item['children']) && is_array($item['children'])) {
+                    $children = [];
+                    foreach ($item['children'] as $child) {
+                        if ($user->canAccessRoute($child['route'])) {
+                            $children[] = $child;
+                        }
+                    }
+                    if ($children === []) {
+                        continue;
+                    }
+                    $item['children'] = $children;
+                }
+
+                $items[] = $item;
             }
             if ($items === []) {
                 continue;

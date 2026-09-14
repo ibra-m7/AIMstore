@@ -121,6 +121,8 @@ final class Constants
 
     public const SETTING_MARKETING_SOLD_PRODUCT_IDS = 'marketing_sold_product_ids';
 
+    public const SETTING_AUTO_PRODUCT_RECOMMENDATIONS = 'auto_product_recommendations';
+
     public const SETTING_FALLBACK_PRODUCT_IMAGE = 'fallback_product_image';
 
     public const SETTING_HOME_LOGO = 'home_logo';
@@ -132,6 +134,10 @@ final class Constants
     public const SETTING_OTP_BYPASS_PHONES = 'otp_bypass_phones';
 
     public const SETTING_PHONE_ALLOWED_COUNTRIES = 'phone_allowed_countries';
+
+    public const SETTING_SHOW_DISCOUNTS_AS_BANNER = 'show_discounts_as_banner';
+
+    public const SETTING_SHOW_OFFERS_AS_BANNER = 'show_offers_as_banner';
 
     public const AI_DEFAULT_MAX_PRODUCTS = 6;
 

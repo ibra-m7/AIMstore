@@ -12,35 +12,8 @@
             @method('PUT')
             <input type="hidden" name="active_tab" value="{{ $tab }}" data-settings-active-tab>
 
-            <ul class="nav settings-tabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button type="button" class="nav-link {{ $tab === 'app' ? 'active' : '' }}" id="tab-app" data-bs-toggle="tab" data-bs-target="#pane-app" data-settings-tab="app" role="tab" aria-controls="pane-app" aria-selected="{{ $tab === 'app' ? 'true' : 'false' }}">
-                        <i class="bi bi-phone"></i>
-                        التطبيق
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button type="button" class="nav-link {{ $tab === 'store' ? 'active' : '' }}" id="tab-store" data-bs-toggle="tab" data-bs-target="#pane-store" data-settings-tab="store" role="tab" aria-controls="pane-store" aria-selected="{{ $tab === 'store' ? 'true' : 'false' }}">
-                        <i class="bi bi-shop"></i>
-                        المتجر
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button type="button" class="nav-link {{ $tab === 'marketing' ? 'active' : '' }}" id="tab-marketing" data-bs-toggle="tab" data-bs-target="#pane-marketing" data-settings-tab="marketing" role="tab" aria-controls="pane-marketing" aria-selected="{{ $tab === 'marketing' ? 'true' : 'false' }}">
-                        <i class="bi bi-megaphone"></i>
-                        العروض والتسويق
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button type="button" class="nav-link {{ $tab === 'privacy' ? 'active' : '' }}" id="tab-privacy" data-bs-toggle="tab" data-bs-target="#pane-privacy" data-settings-tab="privacy" role="tab" aria-controls="pane-privacy" aria-selected="{{ $tab === 'privacy' ? 'true' : 'false' }}">
-                        <i class="bi bi-shield-lock"></i>
-                        الخصوصية
-                    </button>
-                </li>
-            </ul>
-
-            <div class="tab-content p-4 p-md-5">
-                <div class="tab-pane fade {{ $tab === 'app' ? 'show active' : '' }}" id="pane-app" role="tabpanel" aria-labelledby="tab-app" tabindex="0">
+            <div class="p-4 p-md-5">
+                @if ($tab === 'app')
                     <h2 class="settings-pane-title">إعدادات التطبيق</h2>
                     <p class="settings-pane-lead">الاسم والعملة كما يظهران للعميل داخل التطبيق.</p>
 
@@ -119,9 +92,7 @@
                     <x-admin.contact-numbers-picker
                         :rows="old('customer_service_numbers', $settings['customer_service_numbers'])"
                     />
-                </div>
-
-                <div class="tab-pane fade {{ $tab === 'store' ? 'show active' : '' }}" id="pane-store" role="tabpanel" aria-labelledby="tab-store" tabindex="0">
+                @elseif ($tab === 'store')
                     <h2 class="settings-pane-title">إعدادات المتجر</h2>
                     <p class="settings-pane-lead">الشحن والتحويل البنكي داخل اليمن.</p>
 
@@ -181,11 +152,34 @@
                             حذف كل المنتجات
                         </button>
                     </div>
-                </div>
-
-                <div class="tab-pane fade {{ $tab === 'marketing' ? 'show active' : '' }}" id="pane-marketing" role="tabpanel" aria-labelledby="tab-marketing" tabindex="0">
+                @elseif ($tab === 'marketing')
                     <h2 class="settings-pane-title">العروض والتسويق</h2>
-                    <p class="settings-pane-lead">عدد تسويقي يظهر على المنتجات.</p>
+                    <p class="settings-pane-lead">عدد تسويقي يظهر على المنتجات، وتوصيات «يُشترى معه» في التطبيق.</p>
+
+                    <div class="border rounded-4 p-3 mb-4 bg-light">
+                        <input type="hidden" name="auto_product_recommendations" value="0">
+                        <div class="form-check form-switch mb-0">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                role="switch"
+                                id="auto_product_recommendations"
+                                name="auto_product_recommendations"
+                                value="1"
+                                @checked(filter_var(old('auto_product_recommendations', ($settings['auto_product_recommendations'] ?? false) ? '1' : '0'), FILTER_VALIDATE_BOOLEAN))
+                            >
+                            <label class="form-check-label" for="auto_product_recommendations">
+                                <strong>تفعيل «يُشترى معه» التلقائي لكل المنتجات</strong>
+                                <span class="d-block small text-muted">
+                                    عند التفعيل يملأ النظام صف «يُشترى معه» تلقائيًا لجميع المنتجات.
+                                    عند الإيقاف يظهر فقط ما تختاره يدويًا في كل منتج.
+                                </span>
+                            </label>
+                        </div>
+                        @error('auto_product_recommendations')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
 
                     <div class="mb-3">
                         <label class="form-label">عدد العملاء التسويقي</label>
@@ -231,9 +225,7 @@
                             <span>البنرات</span>
                         </a>
                     </div>
-                </div>
-
-                <div class="tab-pane fade {{ $tab === 'privacy' ? 'show active' : '' }}" id="pane-privacy" role="tabpanel" aria-labelledby="tab-privacy" tabindex="0">
+                @else
                     <h2 class="settings-pane-title">الخصوصية</h2>
                     <p class="settings-pane-lead mb-4">إدارة أرقام الدخول المباشر ودول رمز الهاتف في التطبيق.</p>
 
@@ -276,26 +268,28 @@
                     <x-admin.otp-bypass-phones-picker
                         :phones="old('otp_bypass_phones', $settings['otp_bypass_phones'])"
                     />
-                </div>
+                @endif
 
-                <div class="pt-2">
+                <div class="pt-4">
                     <button class="btn btn-brand">{{ $strings::SAVE }}</button>
                 </div>
             </div>
         </form>
 
-        <form
-            id="wipe-products-form"
-            method="POST"
-            action="{{ route('admin.settings.products.destroy-all') }}"
-            data-wipe-products-form
-            data-wipe-phrase="{{ $strings::WIPE_PRODUCTS_CONFIRMATION_PHRASE }}"
-            data-wipe-confirm="{{ $strings::CONFIRM_WIPE_PRODUCTS }}"
-            class="d-none"
-            aria-hidden="true"
-        >
-            @csrf
-            @method('DELETE')
-        </form>
+        @if ($tab === 'store')
+            <form
+                id="wipe-products-form"
+                method="POST"
+                action="{{ route('admin.settings.products.destroy-all') }}"
+                data-wipe-products-form
+                data-wipe-phrase="{{ $strings::WIPE_PRODUCTS_CONFIRMATION_PHRASE }}"
+                data-wipe-confirm="{{ $strings::CONFIRM_WIPE_PRODUCTS }}"
+                class="d-none"
+                aria-hidden="true"
+            >
+                @csrf
+                @method('DELETE')
+            </form>
+        @endif
     </div>
 </x-layouts.admin>

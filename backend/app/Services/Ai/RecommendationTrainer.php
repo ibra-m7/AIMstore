@@ -244,19 +244,24 @@ class RecommendationTrainer
     private function trainPrompt(Product $product, Collection $candidates): string
     {
         return implode("\n", [
-            'الآلية المطلوبة: تدريب علاقات المنتج',
+            'الآلية المطلوبة: تدريب علاقات المنتج لسيتي مارت',
             $this->anchorBlock([
                 'product_id' => $product->id,
                 'name' => $product->name,
                 'category' => $product->category?->name,
                 'price' => (float) $product->effective_price,
                 'keywords' => $product->keywords ?? [],
+                'benefits' => collect($product->benefits ?? [])->take(4)->all(),
+                'store_aisle' => $product->store_aisle,
+                'store_shelf' => $product->store_shelf,
+                'store_location_note' => $product->store_location_note,
             ]),
-            'المرشحون:',
+            'المرشحون من قاعدة بيانات المتجر:',
             $this->catalogLines($candidates),
             'أرجع JSON فقط: {"complementary_ids":[...],"similar_ids":[...]}',
-            'complementary_ids: حتى 6 منتجات تُشترى معه أو تكمل السلة من فئة مختلفة.',
-            'similar_ids: حتى 6 بدائل أو منتجات مشابهة من نفس الحاجة.',
+            'complementary_ids: حتى 6 منتجات تُشترى معه أو تكمل السلة اليمنية المنزلية من فئة مختلفة.',
+            'similar_ids: حتى 6 بدائل أو منتجات مشابهة من نفس الحاجة والسعر القريب.',
+            'راعِ الموقع داخل المحل عند التشابه المنطقي، ولا تختلق معرّفات خارج القائمة.',
         ]);
     }
 
@@ -267,14 +272,28 @@ class RecommendationTrainer
     {
         return $candidates->map(function (Product $product) {
             $keywords = collect($product->keywords ?? [])->take(4)->implode('، ');
+            $benefits = collect($product->benefits ?? [])->take(2)->implode('، ');
+            $aisle = trim((string) ($product->store_aisle ?? ''));
+            $shelf = trim((string) ($product->store_shelf ?? ''));
+            $note = trim((string) ($product->store_location_note ?? ''));
+            $location = collect([
+                $aisle !== '' ? 'ممر:'.$aisle : null,
+                $shelf !== '' ? 'رف:'.$shelf : null,
+                $note !== '' ? $note : null,
+            ])->filter()->implode(' / ');
+            if ($location === '') {
+                $location = 'موقع:غير مسجّل';
+            }
 
             return sprintf(
-                '[%d] %s | %s | %.2f | %s',
+                '[%d] %s | %s | %.2f | %s | %s | %s',
                 $product->id,
                 $product->name,
                 $product->category?->name ?? 'عام',
                 (float) $product->effective_price,
-                $keywords
+                $keywords !== '' ? $keywords : '-',
+                $benefits !== '' ? $benefits : '-',
+                $location
             );
         })->implode("\n");
     }

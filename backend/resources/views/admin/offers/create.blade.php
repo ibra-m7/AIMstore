@@ -1,4 +1,6 @@
 <x-layouts.admin :title="$title">
+    <x-admin.page-head :title="$title" />
+
     <div class="page-card p-4 p-md-5">
         <form method="POST" action="{{ route('admin.offers.store') }}" id="promo-form">
             @csrf
