@@ -772,6 +772,13 @@ document.addEventListener("submit", (event) => {
     }
 
     const method = (form.getAttribute("method") || "get").toLowerCase();
+    const override = (form.querySelector('input[name="_method"]')?.value || "").toUpperCase();
+
+    // Native submit for method-spoofed forms — fetch POST can drop spoofing and 405 on GET fallback.
+    if (method === "post" && ["PUT", "PATCH", "DELETE"].includes(override)) {
+        return;
+    }
+
     event.preventDefault();
     const submitter = event.submitter instanceof HTMLElement ? event.submitter : null;
 

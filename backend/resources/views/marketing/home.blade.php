@@ -41,7 +41,7 @@
                     <span>توصيل سريع لبابك!</span>
                 </div>
 
-                <div class="mkt-phone" aria-hidden="true">
+                <div class="mkt-phone" aria-label="معاينة أقسام التطبيق">
                     <div class="mkt-phone-screen">
                         <div class="mkt-phone-bar">
                             <img src="{{ asset('images/logo.png') }}" alt="">
@@ -49,10 +49,11 @@
                         </div>
                         <div class="mkt-phone-search">ابحث في سيتي مارت...</div>
                         <div class="mkt-phone-grid">
-                            <div class="mkt-phone-tile"><i class="bi bi-cup-hot"></i>مشروبات</div>
-                            <div class="mkt-phone-tile"><i class="bi bi-egg-fried"></i>ألبان</div>
-                            <div class="mkt-phone-tile"><i class="bi bi-flower1"></i>خضار</div>
-                            <div class="mkt-phone-tile"><i class="bi bi-box2-heart"></i>عروض</div>
+                            @foreach (($exploreCategories ?? []) as $tile)
+                                <a class="mkt-phone-tile" href="{{ $tile['href'] }}">
+                                    <i class="bi {{ $tile['icon'] }}" aria-hidden="true"></i>{{ $tile['label'] }}
+                                </a>
+                            @endforeach
                         </div>
                         <div class="mkt-phone-banner">أسعار ولا في الأحلام — إلا في سيتي مارت</div>
                     </div>

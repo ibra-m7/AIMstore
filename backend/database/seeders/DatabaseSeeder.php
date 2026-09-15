@@ -16,7 +16,8 @@ class DatabaseSeeder extends Seeder
             CatalogSeeder::class,
             ProductDetailsSeeder::class,
             CouponSeeder::class,
-            ContentPageSeeder::class,
+            // Policy/terms pages are optional — seed explicitly with:
+            // php artisan db:seed --class=ContentPageSeeder
         ]);
     }
 }

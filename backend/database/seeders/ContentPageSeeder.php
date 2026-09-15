@@ -6,6 +6,13 @@ use App\Enums\PagePlacement;
 use App\Models\Page;
 use Illuminate\Database\Seeder;
 
+/**
+ * Seeds optional policy/terms content pages used by the mobile app.
+ *
+ * Not called from DatabaseSeeder so admin/E2E can start with an empty pages list.
+ * Run explicitly when needed:
+ *   php artisan db:seed --class=ContentPageSeeder
+ */
 class ContentPageSeeder extends Seeder
 {
     public function run(): void

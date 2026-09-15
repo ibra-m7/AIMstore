@@ -197,7 +197,9 @@ class CategoryService
     public function create(array $data): Category
     {
         $this->pullSectionIds($data);
+        unset($data['level']);
         $data['slug'] = Slug::unique($data['name'], 'categories');
+        $data['description'] = $data['description'] ?? null;
         $data['sort_order'] = (int) ($data['sort_order'] ?? 0);
         $data['is_active'] = (bool) ($data['is_active'] ?? true);
         $data['parent_id'] = $data['parent_id'] ?: null;
@@ -225,7 +227,9 @@ class CategoryService
         }
 
         $this->pullSectionIds($data);
+        unset($data['level']);
         $data['slug'] = Slug::unique($data['name'], 'categories', 'slug', $category->id);
+        $data['description'] = $data['description'] ?? null;
         $data['sort_order'] = (int) ($data['sort_order'] ?? 0);
         $data['is_active'] = (bool) ($data['is_active'] ?? false);
         $data['parent_id'] = $parentId;

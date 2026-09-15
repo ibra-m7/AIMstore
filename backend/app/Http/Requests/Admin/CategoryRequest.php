@@ -16,6 +16,7 @@ class CategoryRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:5000'],
             'parent_id' => [
                 Rule::requiredIf(fn () => $this->input('level') !== 'root'),
                 'nullable',
@@ -48,6 +49,7 @@ class CategoryRequest extends FormRequest
 
         return [
             'name' => $name,
+            'description' => 'الوصف',
             'parent_id' => $parent,
             'icon' => 'الأيقونة',
             'image' => 'الصورة',
@@ -64,6 +66,7 @@ class CategoryRequest extends FormRequest
             'is_active' => $this->boolean('is_active'),
             'parent_id' => $this->input('level') === 'root' ? null : ($this->input('parent_id') ?: null),
             'color' => $this->input('color') ?: null,
+            'description' => $this->filled('description') ? trim((string) $this->input('description')) : null,
         ]);
     }
 }

@@ -127,7 +127,7 @@ class CourierController extends Controller
         $courier->update($data);
 
         return redirect()
-            ->route('admin.couriers.edit', $courier)
+            ->route('admin.couriers.index')
             ->with('success', AppStrings::COURIER_UPDATED);
     }
 

@@ -7,6 +7,7 @@ use App\Http\Controllers\PublicStorageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [MarketingController::class, 'index'])->name('home');
+Route::get('/categories', [MarketingController::class, 'categories'])->name('marketing.categories');
 
 Route::get('/media/fallback-product', FallbackProductImageController::class)
     ->name('media.fallback-product');

@@ -19,6 +19,12 @@
     @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
 </div>
 
+<div class="mb-3">
+    <label class="form-label">الوصف</label>
+    <textarea name="description" rows="3" class="form-control @error('description') is-invalid @enderror" placeholder="وصف مختصر يظهر في التطبيق (اختياري)">{{ old('description', $category->description) }}</textarea>
+    @error('description') <div class="invalid-feedback">{{ $message }}</div> @enderror
+</div>
+
 @if ($level === 'root')
     <input type="hidden" name="parent_id" value="">
 @else

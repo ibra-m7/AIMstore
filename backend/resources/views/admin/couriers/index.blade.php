@@ -5,14 +5,14 @@
         :create-label="$strings::ADD_COURIER"
     />
 
-    <form method="GET" class="d-flex flex-wrap gap-2 mb-3">
+    <form method="GET" action="{{ route('admin.couriers.index') }}" class="d-flex flex-wrap gap-2 mb-3">
         <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" class="form-control" style="max-width: 240px" placeholder="ابحث بالاسم أو الجوال">
         <select name="status" class="form-select" style="max-width: 140px">
             <option value="">{{ $strings::STATUS }}</option>
             <option value="active" @selected(($filters['status'] ?? '') === 'active')">{{ $strings::ACTIVE }}</option>
             <option value="inactive" @selected(($filters['status'] ?? '') === 'inactive')">{{ $strings::INACTIVE }}</option>
         </select>
-        <button class="btn btn-outline-success rounded-pill">{{ $strings::FILTER }}</button>
+        <button type="submit" class="btn btn-outline-success rounded-pill">{{ $strings::FILTER }}</button>
     </form>
 
     <div class="page-card p-4">

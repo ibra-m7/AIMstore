@@ -243,6 +243,16 @@ html {
     color: var(--cm-blue);
     font-size: 0.68rem;
     font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mkt-phone-tile:hover,
+.mkt-phone-tile:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(0, 51, 153, 0.14);
+    color: var(--cm-blue);
 }
 
 .mkt-phone-tile i {
