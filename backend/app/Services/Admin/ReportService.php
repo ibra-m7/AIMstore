@@ -53,6 +53,10 @@ class ReportService
      */
     public function resolvePeriod(?string $preset, ?string $from, ?string $to): array
     {
+        // URL may carry from/to without preset=custom (AJAX GET rebuild). Infer custom.
+        if ((! $preset || ! isset(self::PRESETS[$preset])) && filled($from) && filled($to)) {
+            $preset = 'custom';
+        }
         $preset = $preset && isset(self::PRESETS[$preset]) ? $preset : 'today';
         $now = now()->endOfDay();
 

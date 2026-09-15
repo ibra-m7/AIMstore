@@ -665,6 +665,10 @@ const submitAdminForm = async (form, submitter) => {
         return;
     }
 
+    // Build payload before disabling controls so _method / fields stay included.
+    const actionUrl = form.getAttribute("action") || window.location.href;
+    const formData = buildAdminFormData(form, submitter);
+
     adminMutating = true;
     ajaxController?.abort();
     startAdminProgress();
@@ -673,8 +677,6 @@ const submitAdminForm = async (form, submitter) => {
     }
     const sidebarNav = document.querySelector(".sidebar-nav");
     const sidebarScroll = sidebarNav?.scrollTop ?? 0;
-    const actionUrl = form.getAttribute("action") || window.location.href;
-    const formData = buildAdminFormData(form, submitter);
 
     try {
         const response = await fetch(actionUrl, {
@@ -698,14 +700,15 @@ const submitAdminForm = async (form, submitter) => {
             return;
         }
 
+        // Never location.assign(actionUrl) on failure — that GETs PUT/PATCH/DELETE routes (405).
         if (!response.ok) {
-            window.location.assign(response.url || actionUrl);
+            form.submit();
             return;
         }
 
         const contentType = response.headers.get("content-type") || "";
         if (!contentType.includes("text/html")) {
-            window.location.assign(response.url || window.location.href);
+            form.submit();
             return;
         }
 

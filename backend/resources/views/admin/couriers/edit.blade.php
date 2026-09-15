@@ -51,7 +51,7 @@
             @method('PUT')
             @include('admin.couriers._form')
             <div class="d-flex gap-2">
-                <button class="btn btn-brand">{{ $strings::SAVE }}</button>
+                <button type="submit" class="btn btn-brand">{{ $strings::SAVE }}</button>
                 <a href="{{ route('admin.couriers.index') }}" class="btn btn-outline-secondary rounded-pill">{{ $strings::CANCEL }}</a>
             </div>
         </form>

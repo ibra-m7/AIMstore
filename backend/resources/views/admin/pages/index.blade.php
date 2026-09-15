@@ -6,7 +6,7 @@
         subtitle="صفحات المحتوى مثل سياسة الخصوصية وشروط الاستخدام. اختر مكان الظهور ونص الزر في التطبيق."
     />
 
-    <form method="GET" class="d-flex flex-wrap gap-2 mb-3">
+    <form method="GET" action="{{ route('admin.pages.index') }}" class="d-flex flex-wrap gap-2 mb-3">
         <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" class="form-control" style="max-width: 240px" placeholder="{{ $strings::SEARCH }}">
         <select name="status" class="form-select" style="max-width: 140px">
             <option value="">{{ $strings::STATUS }}</option>
@@ -21,7 +21,7 @@
                 </option>
             @endforeach
         </select>
-        <button class="btn btn-outline-success rounded-pill">{{ $strings::FILTER }}</button>
+        <button type="submit" class="btn btn-outline-success rounded-pill">{{ $strings::FILTER }}</button>
     </form>
 
     <div class="page-card p-4">
@@ -63,7 +63,7 @@
                                         <form method="POST" action="{{ route('admin.pages.destroy', $page) }}" onsubmit="return confirm('{{ $strings::CONFIRM_DELETE }}')">
                                             @csrf
                                             @method('DELETE')
-                                            <button class="btn btn-sm btn-outline-danger rounded-pill">{{ $strings::DELETE }}</button>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">{{ $strings::DELETE }}</button>
                                         </form>
                                     </div>
                                 </td>
