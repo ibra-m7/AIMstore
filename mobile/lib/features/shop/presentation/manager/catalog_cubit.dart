@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/realtime/home_realtime_service.dart';
 import '../../data/models/category_model.dart';
 import '../../data/models/dynamic_page_model.dart';
 import '../../data/models/home_feed.dart';
@@ -202,16 +203,20 @@ class CatalogState extends Equatable {
 }
 
 class CatalogCubit extends Cubit<CatalogState> {
-  CatalogCubit({CatalogApi? api})
+  CatalogCubit({CatalogApi? api, HomeRealtimeService? realtime})
     : _api = api ?? CatalogApi.instance,
+      _realtime = realtime ?? HomeRealtimeService.instance,
       super(CatalogState());
 
   final CatalogApi _api;
+  final HomeRealtimeService _realtime;
+  bool _realtimeRefreshInFlight = false;
 
   Future<void> load({bool refresh = false}) async {
     final cached = await _api.cachedHome();
     if (cached != null) {
       emit(CatalogState(loading: false, refreshing: true, feed: cached));
+      _syncRealtime(cached.store.realtime);
     } else {
       emit(
         state.copyWith(
@@ -225,6 +230,7 @@ class CatalogCubit extends Cubit<CatalogState> {
     try {
       final feed = await _api.home();
       emit(CatalogState(loading: false, refreshing: false, feed: feed));
+      _syncRealtime(feed.store.realtime);
     } on ApiException catch (e) {
       _emitFailure(cached, e.message);
     } on NetworkException catch (e) {
@@ -236,10 +242,41 @@ class CatalogCubit extends Cubit<CatalogState> {
     }
   }
 
+  void _syncRealtime(RealtimeConfig config) {
+    _realtime.start(
+      config: config,
+      onUpdated: (_) => _refreshFromRealtime(),
+    );
+  }
+
+  Future<void> _refreshFromRealtime() async {
+    if (_realtimeRefreshInFlight || isClosed) return;
+    if (state.loading || state.refreshing) return;
+
+    _realtimeRefreshInFlight = true;
+    try {
+      final feed = await _api.home();
+      if (isClosed) return;
+      emit(CatalogState(loading: false, refreshing: false, feed: feed));
+      _syncRealtime(feed.store.realtime);
+    } catch (_) {
+      // Keep current feed if a background refresh fails.
+    } finally {
+      _realtimeRefreshInFlight = false;
+    }
+  }
+
+  @override
+  Future<void> close() async {
+    await _realtime.stop();
+    return super.close();
+  }
+
   void _emitFailure(HomeFeed? cached, String message) {
     final feed = !state.feed.isEmpty ? state.feed : cached;
     if (feed != null && !feed.isEmpty) {
       emit(CatalogState(loading: false, offline: true, feed: feed));
+      _syncRealtime(feed.store.realtime);
       return;
     }
     emit(state.copyWith(loading: false, refreshing: false, error: message));

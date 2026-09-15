@@ -3,6 +3,26 @@
 namespace App\Providers;
 
 use App\Contracts\WhatsAppSender;
+use App\Models\Banner;
+use App\Models\BundleItem;
+use App\Models\Category;
+use App\Models\DeliveryRule;
+use App\Models\DeliverySlotWindow;
+use App\Models\DisplaySection;
+use App\Models\DynamicPage;
+use App\Models\HomeSection;
+use App\Models\HomeSectionProduct;
+use App\Models\PickupSlotWindow;
+use App\Models\Product;
+use App\Models\ProductBundle;
+use App\Models\ProductImage;
+use App\Models\ProductRelation;
+use App\Models\SearchPlaceholder;
+use App\Models\SearchSmartSuggestion;
+use App\Models\SearchTrendingPin;
+use App\Models\Setting;
+use App\Models\StorePaymentMethod;
+use App\Observers\HomeFeedRealtimeObserver;
 use App\Services\WhatsApp\WhatsAppSenderManager;
 use App\Support\AdminMenu;
 use App\Support\AppStrings;
@@ -11,9 +31,9 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -54,5 +74,36 @@ class AppServiceProvider extends ServiceProvider
         View::composer('components.layouts.admin', function ($view) {
             $view->with('adminMenu', AdminMenu::groups());
         });
+
+        $this->observeHomeFeedModels();
+    }
+
+    private function observeHomeFeedModels(): void
+    {
+        $observer = HomeFeedRealtimeObserver::class;
+
+        foreach ([
+            Product::class,
+            ProductImage::class,
+            ProductRelation::class,
+            ProductBundle::class,
+            BundleItem::class,
+            Banner::class,
+            HomeSection::class,
+            HomeSectionProduct::class,
+            Category::class,
+            DisplaySection::class,
+            DynamicPage::class,
+            Setting::class,
+            StorePaymentMethod::class,
+            SearchPlaceholder::class,
+            SearchSmartSuggestion::class,
+            SearchTrendingPin::class,
+            DeliveryRule::class,
+            DeliverySlotWindow::class,
+            PickupSlotWindow::class,
+        ] as $model) {
+            $model::observe($observer);
+        }
     }
 }

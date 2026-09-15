@@ -8,6 +8,7 @@ use App\Models\StorePaymentMethod;
 use App\Services\Admin\SearchDiscoveryService;
 use App\Services\Admin\SearchPlaceholderService;
 use App\Services\Admin\SearchSmartSuggestionService;
+use App\Support\HomeFeedRealtime;
 use App\Support\Media;
 
 final class StoreSettings
@@ -240,6 +241,7 @@ final class StoreSettings
             'search_placeholders' => SearchPlaceholderService::activePhrases(),
             'search_smart_suggestions' => SearchSmartSuggestionService::activePhrases(),
             'search_trending' => app(SearchDiscoveryService::class)->trendingTerms(),
+            'realtime' => HomeFeedRealtime::clientConfig(),
         ];
     }
 

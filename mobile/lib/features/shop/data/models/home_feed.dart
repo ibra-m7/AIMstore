@@ -374,6 +374,7 @@ class StoreConfig {
   final List<CustomerServiceContact> customerServiceNumbers;
   final bool showDiscountsAsBanner;
   final bool showOffersAsBanner;
+  final RealtimeConfig realtime;
 
   const StoreConfig({
     this.currency = '\u{20C1}',
@@ -391,6 +392,7 @@ class StoreConfig {
     this.customerServiceNumbers = const [],
     this.showDiscountsAsBanner = true,
     this.showOffersAsBanner = true,
+    this.realtime = const RealtimeConfig(),
     this.paymentMethods = const [
       PaymentOption(
         id: 'cash',
@@ -555,6 +557,43 @@ class StoreConfig {
         json['show_offers_as_banner'],
         defaultValue: true,
       ),
+      realtime: json['realtime'] is Map
+          ? RealtimeConfig.fromJson(
+              Map<String, dynamic>.from(json['realtime'] as Map),
+            )
+          : const RealtimeConfig(),
+    );
+  }
+}
+
+class RealtimeConfig {
+  final bool enabled;
+  final String driver;
+  final String key;
+  final String cluster;
+  final String channel;
+  final String event;
+
+  const RealtimeConfig({
+    this.enabled = false,
+    this.driver = 'pusher',
+    this.key = '',
+    this.cluster = '',
+    this.channel = 'store.home',
+    this.event = 'home.updated',
+  });
+
+  bool get isReady =>
+      enabled && key.isNotEmpty && cluster.isNotEmpty && channel.isNotEmpty;
+
+  factory RealtimeConfig.fromJson(Map<String, dynamic> json) {
+    return RealtimeConfig(
+      enabled: _boolFlag(json['enabled'], defaultValue: false),
+      driver: (json['driver'] as String?) ?? 'pusher',
+      key: (json['key'] as String?) ?? '',
+      cluster: (json['cluster'] as String?) ?? '',
+      channel: (json['channel'] as String?) ?? 'store.home',
+      event: (json['event'] as String?) ?? 'home.updated',
     );
   }
 }

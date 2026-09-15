@@ -106,6 +106,7 @@ class BundleService
         }
 
         $section->bundles()->sync($sync);
+        \App\Support\HomeFeedRealtime::ping('home_section.bundles_reordered');
     }
 
     private function attachToSection(HomeSection $section, ProductBundle $bundle, ?int $sortOrder = null): void

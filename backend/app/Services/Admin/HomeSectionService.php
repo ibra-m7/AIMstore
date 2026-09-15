@@ -4,6 +4,7 @@ namespace App\Services\Admin;
 
 use App\Models\HomeSection;
 use App\Support\Constants;
+use App\Support\HomeFeedRealtime;
 use App\Support\Media;
 use App\Support\Slug;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -30,6 +31,8 @@ class HomeSectionService
         $section = HomeSection::query()->create($this->payload($data));
         $this->syncRelations($section, $data);
 
+        HomeFeedRealtime::ping('home_section.created');
+
         return $section;
     }
 
@@ -37,6 +40,8 @@ class HomeSectionService
     {
         $section->update($this->payload($data, $section));
         $this->syncRelations($section, $data);
+
+        HomeFeedRealtime::ping('home_section.updated');
 
         return $section;
     }
@@ -47,6 +52,8 @@ class HomeSectionService
         $section->products()->detach();
         $section->bundles()->detach();
         $section->delete();
+
+        HomeFeedRealtime::ping('home_section.deleted');
     }
 
     private function payload(array $data, ?HomeSection $section = null): array
