@@ -18,6 +18,8 @@ class DynamicPageService
             ->when($filters['q'] ?? null, function ($query, $search) {
                 $query->where('title', 'like', '%'.$search.'%');
             })
+            ->when(($filters['status'] ?? '') === 'active', fn ($query) => $query->where('is_active', true))
+            ->when(($filters['status'] ?? '') === 'inactive', fn ($query) => $query->where('is_active', false))
             ->orderBy('sort_order')
             ->latest('id')
             ->paginate(Constants::DEFAULT_PAGE_SIZE)

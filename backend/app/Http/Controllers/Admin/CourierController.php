@@ -86,6 +86,9 @@ class CourierController extends Controller
         $data = $request->validated();
         $data['phone'] = $request->normalizedPhone();
         unset($data['phone_country']);
+        if (array_key_exists('email', $data) && $data['email'] === null) {
+            $data['email'] = null;
+        }
 
         Courier::query()->create($data);
 
@@ -117,6 +120,9 @@ class CourierController extends Controller
         unset($data['phone_country']);
         if (empty($data['password'])) {
             unset($data['password']);
+        }
+        if (array_key_exists('email', $data) && ($data['email'] === '' || $data['email'] === null)) {
+            $data['email'] = null;
         }
         $courier->update($data);
 

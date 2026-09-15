@@ -30,12 +30,53 @@ final class Media
             );
         }
 
-        $path = $file->store($directory, 'public');
+        try {
+            $path = $file->store($directory, 'public');
+        } catch (\Throwable $e) {
+            $path = self::storeUploadedFileFallback($file, $directory);
+            if ($path === null) {
+                throw new \RuntimeException('تعذّر حفظ الملف المرفوع: '.$e->getMessage(), 0, $e);
+            }
+
+            return $path;
+        }
+
+        if (! is_string($path) || $path === '') {
+            $path = self::storeUploadedFileFallback($file, $directory);
+        }
+
         if (! is_string($path) || $path === '') {
             throw new \RuntimeException('تعذّر حفظ الملف المرفوع.');
         }
 
         return $path;
+    }
+
+    /**
+     * Windows sometimes fails move_uploaded_file with "Access is denied"; copy via stream instead.
+     */
+    private static function storeUploadedFileFallback(UploadedFile $file, string $directory): ?string
+    {
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'bin');
+        $path = trim($directory, '/').'/'.Str::random(40).'.'.$extension;
+        $realPath = $file->getRealPath();
+
+        if (! is_string($realPath) || $realPath === '' || ! is_file($realPath)) {
+            return null;
+        }
+
+        $stream = fopen($realPath, 'rb');
+        if ($stream === false) {
+            return null;
+        }
+
+        try {
+            $stored = Storage::disk('public')->put($path, $stream);
+        } finally {
+            fclose($stream);
+        }
+
+        return $stored ? $path : null;
     }
 
     public static function storePath(string $absolutePath, string $directory, ?string $oldPath = null): ?string

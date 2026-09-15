@@ -35,6 +35,10 @@ class ReportController extends Controller
         if (! isset(ReportService::TABS[$tab])) {
             $tab = $defaultTab;
         }
+        // Daily report is single-day only — multi-day presets must land on overview.
+        if ($tab === 'daily' && ! ($period['preset'] === 'today' || ($period['is_single_day'] ?? false))) {
+            $tab = 'overview';
+        }
 
         $daily = $tab === 'daily' || $period['preset'] === 'today'
             ? $this->reports->dailyReport($period)

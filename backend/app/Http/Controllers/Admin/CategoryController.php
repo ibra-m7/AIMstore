@@ -17,6 +17,33 @@ class CategoryController extends Controller
 
     public function index(Request $request): View|RedirectResponse
     {
+        $filters = [
+            'q' => trim((string) $request->input('q', '')),
+            'type' => (string) $request->input('type', ''),
+            'status' => (string) $request->input('status', ''),
+        ];
+        $hasListFilters = $filters['q'] !== '' || $filters['type'] !== '' || $filters['status'] !== '';
+
+        if ($hasListFilters) {
+            $items = $this->categories->paginate([
+                'q' => $filters['q'] !== '' ? $filters['q'] : null,
+                'type' => $filters['type'] !== '' ? $filters['type'] : null,
+                'status' => $filters['status'] !== '' ? $filters['status'] : null,
+            ]);
+
+            return view('admin.categories.index', [
+                'title' => 'الأقسام',
+                'parent' => null,
+                'ancestors' => collect(),
+                'depth' => 0,
+                'items' => $items,
+                'filters' => $filters,
+                'filtered' => true,
+                'createUrl' => route('admin.categories.create'),
+                'createLabel' => $this->addLabel(0),
+            ]);
+        }
+
         $parent = $this->parentFromRequest($request);
         if ($parent && $this->categories->depthOf($parent) >= 2) {
             return redirect()->route('admin.categories.index', array_filter([
@@ -38,6 +65,8 @@ class CategoryController extends Controller
             'ancestors' => $this->categories->ancestorChain($parent),
             'depth' => $depth,
             'items' => $items,
+            'filters' => $filters,
+            'filtered' => false,
             'createUrl' => route('admin.categories.create', array_filter([
                 'parent_id' => $parent?->id,
             ])),

@@ -21,8 +21,17 @@ class BannerRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'show_title' => ['nullable', 'boolean'],
             'subtitle' => ['nullable', 'string', 'max:255'],
-            'image' => [$creating ? 'required' : 'nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
-            'image_url' => ['nullable', 'url', 'max:2048'],
+            'image' => [
+                $creating ? 'required_without:image_url' : 'nullable',
+                'file',
+                'mimes:jpg,jpeg,png,webp,gif',
+                'max:4096',
+            ],
+            'image_url' => [
+                $creating ? 'required_without:image' : 'nullable',
+                'url',
+                'max:2048',
+            ],
             'link_type' => ['required', Rule::enum(BannerLinkType::class)],
             'link_id' => [
                 'nullable',
@@ -67,6 +76,14 @@ class BannerRequest extends FormRequest
             'link_url' => 'الرابط',
             'starts_at' => 'تاريخ البداية',
             'ends_at' => 'تاريخ النهاية',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'image.required_without' => 'أضف صورة أو رابط صورة للإعلان.',
+            'image_url.required_without' => 'أضف صورة أو رابط صورة للإعلان.',
         ];
     }
 

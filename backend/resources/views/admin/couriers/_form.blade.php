@@ -9,6 +9,13 @@
 </div>
 
 <div class="mb-3">
+    <label class="form-label">البريد الإلكتروني</label>
+    <input type="email" name="email" value="{{ old('email', $courier->email) }}" class="form-control @error('email') is-invalid @enderror" autocomplete="email">
+    @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    <div class="form-hint">اختياري — للتواصل الإداري فقط. تسجيل دخول الموصل يتم برقم الجوال.</div>
+</div>
+
+<div class="mb-3">
     <label class="form-label">رقم الجوال</label>
     <x-admin.gcc-phone-input
         country-name="phone_country"

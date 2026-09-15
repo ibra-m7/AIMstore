@@ -22,7 +22,7 @@ class DynamicPageController extends Controller
 
     public function index(Request $request): View
     {
-        $filters = $request->only(['q']);
+        $filters = $request->only(['q', 'status']);
 
         return view('admin.dynamic-pages.index', [
             'title' => AppStrings::NAV_DYNAMIC_PAGES,

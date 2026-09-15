@@ -639,6 +639,25 @@ const swapAdminContent = async (url, { push = true, silent = false } = {}) => {
     }
 };
 
+const buildAdminFormData = (form, submitter) => {
+    let formData;
+    try {
+        formData = submitter ? new FormData(form, submitter) : new FormData(form);
+    } catch {
+        formData = new FormData(form);
+        if (submitter?.name) {
+            formData.append(submitter.name, submitter.value ?? "");
+        }
+    }
+
+    const methodOverride = form.querySelector('input[name="_method"]')?.value;
+    if (methodOverride) {
+        formData.set("_method", methodOverride);
+    }
+
+    return formData;
+};
+
 const submitAdminForm = async (form, submitter) => {
     const currentMain = document.querySelector(".admin-content");
     if (!currentMain) {
@@ -654,23 +673,17 @@ const submitAdminForm = async (form, submitter) => {
     }
     const sidebarNav = document.querySelector(".sidebar-nav");
     const sidebarScroll = sidebarNav?.scrollTop ?? 0;
-
-    const formData = new FormData(form);
-    if (submitter?.name && !formData.has(submitter.name)) {
-        formData.append(submitter.name, submitter.value ?? "");
-    }
-    const methodOverride = form.querySelector('input[name="_method"]')?.value;
-    if (methodOverride) {
-        formData.set("_method", methodOverride);
-    }
+    const actionUrl = form.getAttribute("action") || window.location.href;
+    const formData = buildAdminFormData(form, submitter);
 
     try {
-        const response = await fetch(form.getAttribute("action") || window.location.href, {
+        const response = await fetch(actionUrl, {
             method: "POST",
             body: formData,
             credentials: "same-origin",
             headers: {
                 Accept: "text/html",
+                "X-Requested-With": "XMLHttpRequest",
             },
             redirect: "follow",
         });
@@ -682,6 +695,11 @@ const submitAdminForm = async (form, submitter) => {
 
         if (response.redirected && /\/login(?:\/|$|\?)/.test(new URL(response.url).pathname)) {
             window.location.assign(response.url);
+            return;
+        }
+
+        if (!response.ok) {
+            window.location.assign(response.url || actionUrl);
             return;
         }
 
@@ -752,11 +770,16 @@ document.addEventListener("submit", (event) => {
 
     const method = (form.getAttribute("method") || "get").toLowerCase();
     event.preventDefault();
+    const submitter = event.submitter instanceof HTMLElement ? event.submitter : null;
 
     if (method === "get") {
         const url = new URL(form.getAttribute("action") || window.location.href, window.location.origin);
         url.search = "";
-        new FormData(form).forEach((value, key) => {
+        const formData = buildAdminFormData(form, submitter);
+        formData.forEach((value, key) => {
+            if (key === "_token" || key === "_method") {
+                return;
+            }
             if (String(value).trim() !== "") {
                 url.searchParams.append(key, String(value));
             }
@@ -765,7 +788,7 @@ document.addEventListener("submit", (event) => {
         return;
     }
 
-    submitAdminForm(form, event.submitter instanceof HTMLElement ? event.submitter : null);
+    submitAdminForm(form, submitter);
 });
 
 window.addEventListener("popstate", () => {

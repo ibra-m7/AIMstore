@@ -11,8 +11,24 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-    @vite(['resources/js/admin.js'])
+    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+        @vite(['resources/js/admin.js'])
+    @else
+        <style>body{font-family:Cairo,sans-serif;padding:2rem;direction:rtl} .vite-missing{max-width:40rem;margin:auto;background:#fff3cd;border:1px solid #ffecb5;border-radius:12px;padding:1.25rem}</style>
+    @endif
 </head>
+@php
+    $viteReady = file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot'));
+@endphp
+@if (! $viteReady)
+<body>
+    <div class="vite-missing">
+        <strong>تعذّر تحميل أصول لوحة التحكم.</strong>
+        <p class="mb-0 mt-2">شغّل <code>npm run build</code> أو <code>npm run dev</code> داخل مجلد <code>backend</code> ثم أعد تحميل الصفحة.</p>
+    </div>
+</body>
+</html>
+@else
 <body>
     <div class="admin-progress" id="adminProgress" hidden aria-hidden="true">
         <div class="admin-progress-bar" data-admin-progress-bar></div>
@@ -170,3 +186,4 @@
     <div class="live-toast-stack" data-live-toasts></div>
 </body>
 </html>
+@endif

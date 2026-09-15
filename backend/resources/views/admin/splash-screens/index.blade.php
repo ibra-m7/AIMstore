@@ -6,7 +6,7 @@
         subtitle="إن فعّلت شاشة هنا تظهر في التطبيق بدل السبلاش الافتراضي. إن لم توجد شاشة مفعّلة يبقى التصميم الحالي."
     />
 
-    <form method="GET" class="d-flex flex-wrap gap-2 mb-3">
+    <form method="GET" action="{{ route('admin.splash-screens.index') }}" class="d-flex flex-wrap gap-2 mb-3">
         <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" class="form-control" style="max-width: 240px" placeholder="{{ $strings::SEARCH }}">
         <select name="status" class="form-select" style="max-width: 140px">
             <option value="">{{ $strings::STATUS }}</option>

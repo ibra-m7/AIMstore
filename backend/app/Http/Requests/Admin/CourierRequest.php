@@ -24,6 +24,7 @@ class CourierRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:80'],
+            'email' => ['nullable', 'email', 'max:120'],
             'phone_country' => ['required', 'string', Rule::in(Phone::allowedCountryCodes())],
             'phone' => ['required', 'string', 'max:16'],
             'password' => $passwordRules,
@@ -66,7 +67,9 @@ class CourierRequest extends FormRequest
     {
         return [
             'name' => 'الاسم',
+            'email' => 'البريد الإلكتروني',
             'phone' => 'رقم الجوال',
+            'phone_country' => 'دولة الجوال',
             'password' => 'كلمة المرور',
         ];
     }
@@ -80,7 +83,13 @@ class CourierRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $allowed = Phone::allowedCountryCodes();
         $country = (string) $this->input('phone_country', Phone::countryCode());
+        $country = preg_replace('/\D+/', '', $country) ?: $country;
+        if ($allowed !== [] && ! in_array($country, $allowed, true)) {
+            $fallback = Phone::countryCode();
+            $country = in_array($fallback, $allowed, true) ? $fallback : $allowed[0];
+        }
         $national = trim((string) $this->input('phone', ''));
         $phone = Phone::combineGcc($country, $national);
 
@@ -88,6 +97,7 @@ class CourierRequest extends FormRequest
             'phone_country' => $country,
             'phone' => $national,
             'phone_normalized' => $phone,
+            'email' => $this->filled('email') ? trim((string) $this->input('email')) : null,
             'is_active' => $this->boolean('is_active'),
             'handles_delivery' => $this->boolean('handles_delivery'),
             'handles_pickup' => $this->boolean('handles_pickup'),

@@ -3,7 +3,7 @@
         :title="$title"
         subtitle="حدّث الحالة، أو عدّل منتجات أي طلب قبل التسليم"
     />
-    <form method="GET" class="d-flex flex-wrap gap-2 mb-3">
+    <form method="GET" action="{{ route('admin.orders.index') }}" class="d-flex flex-wrap gap-2 mb-3">
         <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" class="form-control" style="max-width: 240px" placeholder="رقم الطلب أو العميل">
         <select name="status" class="form-select" style="max-width: 180px">
             <option value="">{{ $strings::STATUS }}</option>

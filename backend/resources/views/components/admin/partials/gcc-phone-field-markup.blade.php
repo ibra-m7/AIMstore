@@ -1,8 +1,26 @@
 @php
     use App\Support\Phone;
 
-    $catalog = Phone::countryCatalog();
-    $selected = $catalog[$country] ?? $catalog[Phone::countryCode()];
+    $allowedCodes = Phone::allowedCountryCodes();
+    $fullCatalog = Phone::countryCatalog();
+    $catalog = [];
+    foreach ($allowedCodes as $code) {
+        if (isset($fullCatalog[$code])) {
+            $catalog[$code] = $fullCatalog[$code];
+        }
+    }
+    if ($catalog === []) {
+        $catalog = $fullCatalog;
+    }
+
+    $defaultCode = Phone::countryCode();
+    if (! isset($catalog[$defaultCode])) {
+        $defaultCode = (string) array_key_first($catalog);
+    }
+    if (! isset($catalog[$country])) {
+        $country = $defaultCode;
+    }
+    $selected = $catalog[$country];
     $sizeClass = ($size ?? '') === 'sm' ? 'gcc-phone-field--sm' : '';
     $countryFieldAttr = $useDataFields ?? false
         ? 'data-field="'.($countryDataField ?? 'phone_country').'"'

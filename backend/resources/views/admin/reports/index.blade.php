@@ -57,7 +57,7 @@
             </div>
 
             <form method="GET" action="{{ route('admin.reports.index') }}" class="reports-filters mt-3" data-report-filters>
-                <input type="hidden" name="tab" value="{{ $tab }}" data-report-tab-input>
+                {{-- Intentionally omit tab so period presets pick the server default (daily vs overview). --}}
                 <div class="reports-presets" role="tablist" aria-label="الفترة">
                     @foreach ($presets as $key => $label)
                         @if ($key !== 'custom')

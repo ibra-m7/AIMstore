@@ -34,6 +34,15 @@ class CategoryService
             ->when(is_numeric($filters['parent_id'] ?? null), fn ($query) => $query->where('parent_id', $filters['parent_id']))
             ->when(($filters['status'] ?? '') === 'active', fn ($query) => $query->where('is_active', true))
             ->when(($filters['status'] ?? '') === 'inactive', fn ($query) => $query->where('is_active', false))
+            ->when(($filters['type'] ?? '') === self::TAB_MAINS, function ($query) {
+                $query->whereNull('parent_id');
+            })
+            ->when(($filters['type'] ?? '') === self::TAB_BRANCHES, function ($query) {
+                $query->whereHas('parent', fn ($parent) => $parent->whereNull('parent_id'));
+            })
+            ->when(($filters['type'] ?? '') === self::TAB_CLASSES, function ($query) {
+                $query->whereHas('parent.parent');
+            })
             ->orderBy('sort_order')
             ->orderBy('name')
             ->paginate(Constants::DEFAULT_PAGE_SIZE)

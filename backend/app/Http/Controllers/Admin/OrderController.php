@@ -24,6 +24,8 @@ class OrderController extends Controller
     public function index(Request $request): View
     {
         $filters = $request->only(['q', 'status']);
+        $statusFilter = trim((string) ($filters['status'] ?? ''));
+        $statusEnum = OrderStatus::tryFrom($statusFilter);
 
         $orders = Order::query()
             ->with(['user', 'items', 'address', 'courier'])
@@ -35,7 +37,7 @@ class OrderController extends Controller
                         ->orWhereHas('courier', fn ($courier) => $courier->where('name', 'like', '%'.$search.'%'));
                 });
             })
-            ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
+            ->when($statusEnum !== null, fn ($query) => $query->where('status', $statusEnum->value))
             ->latest()
             ->paginate(Constants::DEFAULT_PAGE_SIZE)
             ->withQueryString();
@@ -48,7 +50,10 @@ class OrderController extends Controller
         return view('admin.orders.index', [
             'title' => AppStrings::NAV_ORDERS,
             'orders' => $orders,
-            'filters' => $filters,
+            'filters' => [
+                'q' => $filters['q'] ?? '',
+                'status' => $statusEnum?->value ?? '',
+            ],
             'statuses' => OrderStatus::cases(),
             'paymentStatuses' => PaymentStatus::cases(),
             'availableCouriers' => $availableCouriers,
