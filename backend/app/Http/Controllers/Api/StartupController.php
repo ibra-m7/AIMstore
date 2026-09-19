@@ -23,7 +23,7 @@ class StartupController extends Controller
                 'title' => $slide->title,
                 'subtitle' => $slide->subtitle,
                 'description' => $slide->description,
-                'image_url' => Media::url($slide->image_url) ?? '',
+                'image_url' => Media::publicUrl($slide->image_url) ?? '',
                 'sort_order' => $slide->sort_order,
             ])
             ->values()

@@ -31,7 +31,7 @@ class CatalogApi {
     final json = await _client.get(
       '/home',
       auth: true,
-      timeout: const Duration(seconds: 60),
+      timeout: const Duration(seconds: 15),
     );
     final data = _dataMap(json);
     final feed = HomeFeed.fromJson(data);

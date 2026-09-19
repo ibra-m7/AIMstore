@@ -20,9 +20,7 @@ class HomeSectionResource extends JsonResource
             'title_color' => $this->title_color,
             'subtitle_color' => $this->subtitle_color,
             'background_color' => $this->background_color,
-            'background_image_url' => $this->background_image_url
-                ? \App\Support\Media::url($this->background_image_url)
-                : null,
+            'background_image_url' => \App\Support\Media::publicUrl($this->background_image_url),
             'auto_scroll_cards' => (bool) $this->auto_scroll_cards,
             'show_title_icon' => (bool) $this->show_title_icon,
             'emphasize_subtitle' => (bool) $this->emphasize_subtitle,

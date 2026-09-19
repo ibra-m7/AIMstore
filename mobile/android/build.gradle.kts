@@ -19,6 +19,18 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+subprojects {
+    pluginManager.withPlugin("com.android.library") {
+        extensions.configure<com.android.build.api.variant.LibraryAndroidComponentsExtension>("androidComponents") {
+            finalizeDsl { extension ->
+                if ((extension.compileSdk ?: 0) < 36) {
+                    extension.compileSdk = 36
+                }
+            }
+        }
+    }
+}
+
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }

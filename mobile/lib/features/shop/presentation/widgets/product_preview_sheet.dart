@@ -340,7 +340,9 @@ class _ProductPreviewSheetState extends State<ProductPreviewSheet>
   }
 
   Future<void> _share() async {
-    await Share.share('${p.name}\n${AppStrings.appName}', subject: p.name);
+    await SharePlus.instance.share(
+      ShareParams(text: '${p.name}\n${AppStrings.appName}', subject: p.name),
+    );
   }
 
   bool _tracksDismiss(Offset delta) {

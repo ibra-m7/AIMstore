@@ -399,12 +399,15 @@ Future<void> _shareCart(BuildContext context) async {
   }
   final lines = buffer.join('\n');
   final box = context.findRenderObject() as RenderBox?;
-  await Share.share(
-    'سلتي في ${AppStrings.appName}\n$lines\n'
-    '${AppStrings.cartTotal}: ${cart.total.toStringAsFixed(2)} ${AppStrings.currency}',
-    sharePositionOrigin: box == null
-        ? null
-        : box.localToGlobal(Offset.zero) & box.size,
+  await SharePlus.instance.share(
+    ShareParams(
+      text:
+          'سلتي في ${AppStrings.appName}\n$lines\n'
+          '${AppStrings.cartTotal}: ${cart.total.toStringAsFixed(2)} ${AppStrings.currency}',
+      sharePositionOrigin: box == null
+          ? null
+          : box.localToGlobal(Offset.zero) & box.size,
+    ),
   );
 }
 
@@ -614,13 +617,7 @@ class _CartBundleCard extends StatelessWidget {
                   child: ColoredBox(
                     color: AppTheme.productImageWell,
                     child: Center(
-                      child: BundleCoverImages(
-                        bundle: bundle,
-                        singleSize: scale.s(56),
-                        stackWidth: scale.s(64),
-                        stackHeight: scale.s(52),
-                        thumbSize: scale.s(34),
-                      ),
+                      child: BundleCoverImages(bundle: bundle),
                     ),
                   ),
                 ),

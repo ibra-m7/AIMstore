@@ -108,10 +108,13 @@ class _BundleCardState extends State<BundleCard> {
                                   color: AppTheme.productImageWell,
                                 ),
                               ),
-                              Center(
-                                child: CelebrateAnchor(
-                                  anchor: _imageAnchor,
-                                  child: BundleCoverImages(bundle: bundle),
+                              Positioned.fill(
+                                child: Padding(
+                                  padding: EdgeInsets.all(scale.s(8)),
+                                  child: CelebrateAnchor(
+                                    anchor: _imageAnchor,
+                                    child: BundleCoverImages(bundle: bundle),
+                                  ),
                                 ),
                               ),
                               if (discount > 0)

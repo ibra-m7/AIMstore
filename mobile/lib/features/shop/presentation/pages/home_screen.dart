@@ -1687,7 +1687,9 @@ class _HomeTabState extends State<_HomeTab> {
       if (p.imageUrl.trim().isNotEmpty) urls.add(p.imageUrl);
     }
     for (final url in urls) {
+      if (AppNetworkImage.isDead(url)) continue;
       final resolved = AppNetworkImage.resolveUrl(url);
+      if (resolved.isEmpty) continue;
       final provider = CachedNetworkImageProvider(
         resolved,
         headers: AppNetworkImage.headersFor(resolved),
@@ -2067,14 +2069,18 @@ class _HomePromoSlider extends StatefulWidget {
 }
 
 class _HomePromoSliderState extends State<_HomePromoSlider> {
-  /// مضاعف كبير لإبقاء PageView في حلقة سلسة يميناً ويساراً.
-  static const int _loopCopies = 1000;
+  /// عدد محدود من النسخ يكفي للسحب يميناً ويساراً دون خطأ دقة PageView.
+  static const int _loopCopies = 12;
 
   PageController? _controller;
   int _current = 0;
   Timer? _timer;
 
   int get _count => widget.slides.length;
+
+  bool get _loop => _count > 1;
+
+  int get _itemCount => _loop ? _count * _loopCopies : _count;
 
   int get _middlePage =>
       _count < 2 ? 0 : (_count * (_loopCopies ~/ 2));
@@ -2109,15 +2115,34 @@ class _HomePromoSliderState extends State<_HomePromoSlider> {
   void _startAutoScroll() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (!mounted || _count < 2) return;
+      if (!mounted || !_loop) return;
       final controller = _controller;
       if (controller == null || !controller.hasClients) return;
-      final currentPage = controller.page?.round() ?? _middlePage;
+      var currentPage = controller.page?.round() ?? _middlePage;
+      if (currentPage >= _itemCount - _count - 1) {
+        currentPage = _middlePage + _realIndex(currentPage);
+        controller.jumpToPage(currentPage);
+      }
       controller.animateToPage(
         currentPage + 1,
         duration: const Duration(milliseconds: 620),
         curve: Curves.easeInOutCubic,
       );
+    });
+  }
+
+  void _onPageChanged(int page) {
+    if (!mounted) return;
+    setState(() => _current = _realIndex(page));
+    if (!_loop) return;
+    if (page > _count && page < _itemCount - _count) return;
+    final target = _middlePage + _realIndex(page);
+    if (target == page) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final controller = _controller;
+      if (controller == null || !controller.hasClients) return;
+      controller.jumpToPage(target);
     });
   }
 
@@ -2133,7 +2158,6 @@ class _HomePromoSliderState extends State<_HomePromoSlider> {
     final slides = widget.slides;
     if (slides.isEmpty) return const SizedBox.shrink();
 
-    final loop = slides.length > 1;
     final controller = _controller;
     if (controller == null) return const SizedBox.shrink();
 
@@ -2154,8 +2178,9 @@ class _HomePromoSliderState extends State<_HomePromoSlider> {
           child: PageView.builder(
             controller: controller,
             allowImplicitScrolling: true,
-            itemCount: loop ? slides.length * _loopCopies : slides.length,
-            onPageChanged: (i) => setState(() => _current = _realIndex(i)),
+            padEnds: false,
+            itemCount: _itemCount,
+            onPageChanged: _onPageChanged,
             itemBuilder: (_, i) =>
                 _PromoBannerCard(slide: slides[_realIndex(i)]),
           ),

@@ -68,6 +68,7 @@ class HomeBrandLogo extends StatelessWidget {
       alignment: Alignment.centerRight,
       fadeInDuration: const Duration(milliseconds: 120),
       filterQuality: FilterQuality.high,
+      errorListener: (_) {},
       placeholder: (_, _) => _asset(width, height),
       errorWidget: (_, _, _) => _asset(width, height),
     );

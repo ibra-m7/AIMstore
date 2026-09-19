@@ -35,6 +35,7 @@ class BundleModel {
   final String? summary;
   final String? description;
   final String? imageUrl;
+  final List<String> apiPreviewUrls;
   final double discountPercent;
   final double bundlePrice;
   final double originalPrice;
@@ -48,6 +49,7 @@ class BundleModel {
     this.summary,
     this.description,
     this.imageUrl,
+    this.apiPreviewUrls = const [],
     this.discountPercent = 0,
     required this.bundlePrice,
     required this.originalPrice,
@@ -65,14 +67,24 @@ class BundleModel {
     return ((1 - bundlePrice / originalPrice) * 100).round();
   }
 
+  List<String> get productPreviewUrls {
+    final seen = <String>{};
+    final urls = <String>[];
+    for (final item in items) {
+      if (item.product.id.isEmpty) continue;
+      final url = item.product.displayImage.trim();
+      if (url.isEmpty || !seen.add(url)) continue;
+      urls.add(url);
+      if (urls.length >= 3) break;
+    }
+    return urls;
+  }
+
   List<String> get previewImageUrls {
     final cover = imageUrl?.trim() ?? '';
     if (cover.isNotEmpty) return [cover];
-    return items
-        .map((item) => item.product.displayImage)
-        .where((url) => url.isNotEmpty)
-        .take(3)
-        .toList();
+    if (apiPreviewUrls.isNotEmpty) return apiPreviewUrls;
+    return productPreviewUrls;
   }
 
   String get flyImageUrl {
@@ -88,12 +100,23 @@ class BundleModel {
       summary: json['summary'] as String?,
       description: json['description'] as String?,
       imageUrl: (json['image_url'] as String?)?.trim(),
+      apiPreviewUrls: _stringList(json['preview_image_urls']),
       discountPercent: (json['discount_percent'] as num?)?.toDouble() ?? 0,
       bundlePrice: (json['bundle_price'] as num?)?.toDouble() ?? 0,
       originalPrice: (json['original_price'] as num?)?.toDouble() ?? 0,
       itemCount: (json['item_count'] as num?)?.toInt() ?? 0,
       isAvailable: json['is_available'] != false,
-      items: jsonMapList(json['items'], BundleItemModel.fromJson),
+      items: jsonMapList(json['items'], BundleItemModel.fromJson)
+          .where((item) => item.product.id.isNotEmpty)
+          .toList(),
     );
   }
+}
+
+List<String> _stringList(dynamic raw) {
+  if (raw is! List) return const [];
+  return raw
+      .map((item) => item?.toString().trim() ?? '')
+      .where((url) => url.isNotEmpty)
+      .toList();
 }

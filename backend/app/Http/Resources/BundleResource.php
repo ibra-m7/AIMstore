@@ -17,7 +17,8 @@ class BundleResource extends JsonResource
             'slug' => $this->slug,
             'summary' => $this->summary ?? '',
             'description' => $this->description ?? '',
-            'image_url' => Media::url($this->image_url) ?? '',
+            'image_url' => Media::publicUrl($this->image_url) ?? '',
+            'preview_image_urls' => $this->coverPreviewUrls(),
             'discount_percent' => (float) $this->discount_percent,
             'bundle_price' => (float) $this->bundle_price,
             'original_price' => (float) $this->original_price,
@@ -37,6 +38,7 @@ class BundleResource extends JsonResource
         }
 
         return $this->items
+            ->filter(fn ($item) => $item->product !== null)
             ->map(function ($item) {
                 return [
                     'product' => (new ProductResource($item->product))->resolve(),
@@ -45,5 +47,30 @@ class BundleResource extends JsonResource
             })
             ->values()
             ->all();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function coverPreviewUrls(): array
+    {
+        $cover = Media::publicUrl($this->image_url);
+        if (is_string($cover) && $cover !== '') {
+            return [$cover];
+        }
+
+        $urls = [];
+        foreach ($this->itemsPayload() as $item) {
+            $url = trim((string) ($item['product']['image_url'] ?? ''));
+            if ($url === '' || in_array($url, $urls, true)) {
+                continue;
+            }
+            $urls[] = $url;
+            if (count($urls) >= 3) {
+                break;
+            }
+        }
+
+        return $urls;
     }
 }

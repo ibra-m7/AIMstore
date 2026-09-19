@@ -21,6 +21,7 @@ use App\Support\StoreSettings;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -41,65 +42,70 @@ class CatalogService
 
     public function storefront(?User $user = null): array
     {
-        $relations = $this->productRelations();
+        $payload = Cache::remember('catalog.storefront.v2', 45, function () {
+            $relations = $this->productRelations();
 
-        $categories = $this->rootTree();
+            $categories = $this->rootTree();
 
-        $products = Product::query()
-            ->active()
-            ->sellable()
-            ->with($relations)
-            ->orderBy('sort_order')
-            ->orderByDesc('review_count')
-            ->get();
-
-        $promoProducts = $products
-            ->filter(fn (Product $product) => $product->has_discount)
-            ->values();
-
-        $discounts = $promoProducts
-            ->filter(fn (Product $product) => $product->promo_type !== PromoType::Offer)
-            ->take(8)
-            ->values();
-
-        $offers = $promoProducts
-            ->filter(fn (Product $product) => $product->promo_type === PromoType::Offer)
-            ->take(8)
-            ->values();
-
-        $sections = $this->optionalCollect(
-            fn () => HomeSection::query()
+            $products = Product::query()
                 ->active()
-                ->with([
-                    'products' => fn ($q) => $q->active()->with($relations),
-                    'bundles' => fn ($q) => $q->active()->with($this->bundleRelations()),
-                ])
-                ->get()
-        );
+                ->sellable()
+                ->with($relations)
+                ->orderBy('sort_order')
+                ->orderByDesc('review_count')
+                ->get();
 
-        $banners = $this->optionalCollect(
-            fn () => Banner::query()->currentlyVisible()->get()
-        );
+            $promoProducts = $products
+                ->filter(fn (Product $product) => $product->has_discount)
+                ->values();
 
-        $pages = $this->optionalCollect(
-            fn () => DynamicPage::query()
-                ->active()
-                ->with(['products' => fn ($q) => $q->active()->with($relations)])
-                ->get()
-        );
+            $discounts = $promoProducts
+                ->filter(fn (Product $product) => $product->promo_type !== PromoType::Offer)
+                ->take(8)
+                ->values();
 
-        return [
-            'banners' => BannerResource::collection($banners)->resolve(),
-            'categories' => CategoryResource::collection($categories)->resolve(),
-            'discounts' => ProductResource::collection($discounts)->resolve(),
-            'offers' => ProductResource::collection($offers)->resolve(),
-            'sections' => HomeSectionResource::collection($sections)->resolve(),
-            'display_sections' => $this->displaySectionsFromTree($categories),
-            'dynamic_pages' => DynamicPageResource::collection($pages)->resolve(),
-            'products' => ProductResource::collection($products)->resolve(),
-            'suggested' => $this->suggestedPayload($user),
-            'store' => StoreSettings::payload(),
-        ];
+            $offers = $promoProducts
+                ->filter(fn (Product $product) => $product->promo_type === PromoType::Offer)
+                ->take(8)
+                ->values();
+
+            $sections = $this->optionalCollect(
+                fn () => HomeSection::query()
+                    ->active()
+                    ->with([
+                        'products' => fn ($q) => $q->active()->with($relations),
+                        'bundles' => fn ($q) => $q->active()->with($this->bundleRelations()),
+                    ])
+                    ->get()
+            );
+
+            $banners = $this->optionalCollect(
+                fn () => Banner::query()->currentlyVisible()->get()
+            );
+
+            $pages = $this->optionalCollect(
+                fn () => DynamicPage::query()
+                    ->active()
+                    ->with(['products' => fn ($q) => $q->active()->with($relations)])
+                    ->get()
+            );
+
+            return [
+                'banners' => BannerResource::collection($banners)->resolve(),
+                'categories' => CategoryResource::collection($categories)->resolve(),
+                'discounts' => ProductResource::collection($discounts)->resolve(),
+                'offers' => ProductResource::collection($offers)->resolve(),
+                'sections' => HomeSectionResource::collection($sections)->resolve(),
+                'display_sections' => $this->displaySectionsFromTree($categories),
+                'dynamic_pages' => DynamicPageResource::collection($pages)->resolve(),
+                'products' => ProductResource::collection($products)->resolve(),
+                'store' => StoreSettings::payload(),
+            ];
+        });
+
+        $payload['suggested'] = $this->suggestedPayload($user);
+
+        return $payload;
     }
 
     public function findDynamicPage(string $id): ?DynamicPage

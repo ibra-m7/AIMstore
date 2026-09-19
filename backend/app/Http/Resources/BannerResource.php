@@ -16,7 +16,7 @@ class BannerResource extends JsonResource
             'title' => $this->title,
             'show_title' => (bool) $this->show_title,
             'subtitle' => $this->subtitle,
-            'image_url' => Media::url($this->image_url) ?? '',
+            'image_url' => Media::publicUrl($this->image_url) ?? '',
             'link_type' => $this->link_type?->value ?? 'none',
             'link_id' => $this->link_id ? (string) $this->link_id : null,
             'link_url' => $this->link_url,

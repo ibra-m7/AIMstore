@@ -269,6 +269,15 @@ final class Media
         return true;
     }
 
+    public static function publicUrl(?string $path): ?string
+    {
+        if ($path === null || $path === '' || self::isMissingLocal($path)) {
+            return null;
+        }
+
+        return self::url($path);
+    }
+
     private static function isStored(?string $path): bool
     {
         $local = self::localStoragePath($path);

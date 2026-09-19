@@ -15,8 +15,8 @@ class DynamicPageResource extends JsonResource
             'id' => (string) $this->id,
             'title' => $this->title,
             'show_title' => (bool) $this->show_title,
-            'banner_image_url' => Media::url($this->banner_image_url) ?? '',
-            'appbar_image_url' => Media::url($this->appbar_image_url) ?? '',
+            'banner_image_url' => Media::publicUrl($this->banner_image_url) ?? '',
+            'appbar_image_url' => Media::publicUrl($this->appbar_image_url) ?? '',
             'placement' => $this->placement?->value ?? 'none',
             'products' => ProductResource::collection($this->whenLoaded('products')),
         ];

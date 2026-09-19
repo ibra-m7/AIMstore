@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/home_section_gradient.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class HomeSectionShell extends StatelessWidget {
   final List<Color> gradientColors;
@@ -22,6 +22,11 @@ class HomeSectionShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final imageUrl = (backgroundImageUrl ?? '').trim();
+    final gradient = LinearGradient(
+      begin: Alignment.topRight,
+      end: Alignment.bottomLeft,
+      colors: gradientColors,
+    );
 
     return ClipPath(
       clipper: _SectionWaveClipper(
@@ -30,35 +35,37 @@ class HomeSectionShell extends StatelessWidget {
       ),
       child: Container(
         width: double.infinity,
-        decoration: imageUrl.isNotEmpty
-            ? BoxDecoration(
-                image: DecorationImage(
-                  image: CachedNetworkImageProvider(imageUrl),
-                  fit: BoxFit.cover,
-                ),
-              )
-            : BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                  colors: gradientColors,
-                ),
-              ),
-        child: imageUrl.isNotEmpty
-            ? DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.08),
-                      Colors.black.withValues(alpha: 0.18),
-                    ],
+        clipBehavior: Clip.hardEdge,
+        decoration: BoxDecoration(gradient: gradient),
+        child: imageUrl.isEmpty
+            ? child
+            : Stack(
+                fit: StackFit.passthrough,
+                children: [
+                  Positioned.fill(
+                    child: AppNetworkImage(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      error: const SizedBox.shrink(),
+                    ),
                   ),
-                ),
-                child: child,
-              )
-            : child,
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.08),
+                            Colors.black.withValues(alpha: 0.18),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  child,
+                ],
+              ),
       ),
     );
   }

@@ -38,7 +38,7 @@ class SplashScreen extends Model
         return [
             'title' => $this->title,
             'media_type' => $this->media_type === 'video' ? 'video' : 'image',
-            'media_url' => (string) (\App\Support\Media::url($this->media_url) ?? ''),
+            'media_url' => (string) (\App\Support\Media::publicUrl($this->media_url) ?? ''),
             'duration_ms' => max(800, (int) $this->duration_ms),
         ];
     }

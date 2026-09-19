@@ -12,8 +12,13 @@ class ApiClient {
   ApiClient._();
   static final ApiClient instance = ApiClient._();
 
+  final http.Client _http = http.Client();
+
   String? authToken;
   String? _workingBase;
+
+  static const _firstTimeout = Duration(seconds: 12);
+  static const _failoverTimeout = Duration(seconds: 4);
 
   /// أعد ضبط الاتصال بعد تغيير `.env` أو Hot Restart.
   void resetConnection() {
@@ -38,7 +43,7 @@ class ApiClient {
   }) {
     return _send(
       path,
-      (uri) => http.post(
+      (uri) => _http.post(
         uri,
         headers: _headers(auth: auth),
         body: jsonEncode(body),
@@ -55,7 +60,7 @@ class ApiClient {
   }) {
     return _send(
       path,
-      (uri) => http.get(
+      (uri) => _http.get(
         _withQuery(uri, query),
         headers: _headers(auth: auth),
       ),
@@ -70,7 +75,7 @@ class ApiClient {
   }) {
     return _send(
       path,
-      (uri) => http.patch(
+      (uri) => _http.patch(
         uri,
         headers: _headers(auth: auth),
         body: jsonEncode(body),
@@ -85,7 +90,7 @@ class ApiClient {
   }) {
     return _send(
       path,
-      (uri) => http.delete(
+      (uri) => _http.delete(
         _withQuery(uri, query),
         headers: _headers(auth: auth),
       ),
@@ -123,16 +128,18 @@ class ApiClient {
     final tried = <String>{};
 
     Object? lastError;
+    var firstAttempt = true;
     for (final base in bases) {
       if (!tried.add(base)) continue;
+      final attemptTimeout = firstAttempt
+          ? (timeout ?? _firstTimeout)
+          : _failoverTimeout;
+      firstAttempt = false;
       try {
         final json = await _sendOnce(
           request(_uri(base, path)),
-          timeout: timeout,
+          timeout: attemptTimeout,
         );
-        if (_shouldTryNextBase(path, json) && bases.any((b) => !tried.contains(b))) {
-          continue;
-        }
         _workingBase = base;
         EnvConfig.noteWorkingApiBase(base);
         return json;
@@ -152,29 +159,11 @@ class ApiClient {
     );
   }
 
-  bool _shouldTryNextBase(String path, Map<String, dynamic> json) {
-    final normalized = path.startsWith('/') ? path : '/$path';
-    if (normalized != '/home') return false;
-
-    final data = json['data'];
-    if (data is! Map) return false;
-
-    final products = data['products'];
-    final categories = data['categories'];
-    final displaySections = data['display_sections'];
-    final hasProducts = products is List && products.isNotEmpty;
-    final hasCategories = categories is List && categories.isNotEmpty;
-    final hasDisplay =
-        displaySections is List && displaySections.isNotEmpty;
-
-    return !hasProducts && !hasCategories && !hasDisplay;
-  }
-
   Future<Map<String, dynamic>> _sendOnce(
     Future<http.Response> request, {
     Duration? timeout,
   }) async {
-    final response = await request.timeout(timeout ?? const Duration(seconds: 45));
+    final response = await request.timeout(timeout ?? _firstTimeout);
 
     Map<String, dynamic> json = {};
     if (response.body.isNotEmpty) {

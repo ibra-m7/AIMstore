@@ -8,6 +8,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/circle_back_button.dart';
 import '../../data/models/bundle_model.dart';
 import '../manager/cart_cubit.dart';
+import '../widgets/bundle_cover_images.dart';
 import '../widgets/bundle_item_card.dart';
 import '../widgets/celebrate_anchors.dart';
 import '../widgets/price_line.dart';
@@ -101,8 +102,18 @@ class _BundleDetailsScreenState extends State<BundleDetailsScreen> {
                       children: [
                         CelebrateAnchor(
                           anchor: _imageAnchor,
-                          child: const SizedBox.shrink(),
+                          child: Container(
+                            height: scale.s(168),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: AppTheme.productImageWell,
+                              borderRadius: BorderRadius.circular(scale.s(14)),
+                            ),
+                            padding: EdgeInsets.all(scale.s(12)),
+                            child: BundleCoverImages(bundle: bundle),
+                          ),
                         ),
+                        SizedBox(height: scale.s(12)),
                         Text(
                           bundle.name,
                           style: TextStyle(
